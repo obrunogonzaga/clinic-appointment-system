@@ -1,0 +1,116 @@
+name: Bug Report
+description: Report a bug to help us improve
+title: "[BUG] "
+labels: ["bug", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por reportar um bug! Por favor, preencha as informações abaixo para nos ajudar a entender e corrigir o problema.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Descrição do Bug
+      description: Descreva o bug de forma clara e concisa
+      placeholder: Descreva o que aconteceu...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para Reproduzir
+      description: Passos para reproduzir o comportamento
+      placeholder: |
+        1. Vá para '...'
+        2. Clique em '...'
+        3. Role para baixo até '...'
+        4. Veja o erro
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamento Esperado
+      description: Descreva o que você esperava que acontecesse
+      placeholder: Eu esperava que...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportamento Atual
+      description: Descreva o que realmente aconteceu
+      placeholder: Em vez disso, aconteceu...
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: Se aplicável, adicione screenshots para ajudar a explicar o problema
+      placeholder: Cole as imagens aqui...
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Componente Afetado
+      description: Qual parte do sistema é afetada?
+      options:
+        - Frontend (Interface do usuário)
+        - Backend (API)
+        - Database (Banco de dados)
+        - Authentication (Autenticação)
+        - File Upload (Upload de arquivos)
+        - PDF Generation (Geração de PDF)
+        - Reports (Relatórios)
+        - Other (Outro)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severidade
+      description: Qual a severidade do bug?
+      options:
+        - Critical (Sistema não funciona)
+        - High (Funcionalidade importante não funciona)
+        - Medium (Funcionalidade menor não funciona)
+        - Low (Problema cosmético)
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Ambiente
+      description: Informações sobre o ambiente onde o bug ocorreu
+      value: |
+        - OS: [ex. Windows 10, macOS 13, Ubuntu 22.04]
+        - Browser: [ex. Chrome 118, Firefox 119, Safari 17]
+        - Version: [ex. 1.0.0]
+        - Docker Version: [se aplicável]
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs Relevantes
+      description: Inclua logs do console ou do servidor, se relevantes
+      placeholder: Cole os logs aqui...
+      render: shell
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Informações Adicionais
+      description: Adicione qualquer outro contexto sobre o problema aqui
+      placeholder: Qualquer informação adicional...

@@ -1,0 +1,49 @@
+{
+  "recommendations": [
+    // Python extensions
+    "ms-python.python",
+    "ms-python.black-formatter",
+    "ms-python.flake8",
+    "ms-python.mypy-type-checker",
+    "ms-python.isort",
+    
+    // JavaScript/TypeScript extensions
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.vscode-typescript-next",
+    
+    // React extensions
+    "dsznajder.es7-react-js-snippets",
+    "formulahendry.auto-rename-tag",
+    
+    // Git extensions
+    "eamodio.gitlens",
+    "github.vscode-pull-request-github",
+    
+    // Docker extensions
+    "ms-azuretools.vscode-docker",
+    
+    // General productivity
+    "ms-vscode.vscode-json",
+    "redhat.vscode-yaml",
+    "yzhang.markdown-all-in-one",
+    "gruntfuggly.todo-tree",
+    "streetsidesoftware.code-spell-checker",
+    "ms-vscode-remote.remote-containers",
+    
+    // Testing extensions
+    "ms-vscode.test-adapter-converter",
+    "hbenl.vscode-test-explorer",
+    
+    // Code quality
+    "sonarsource.sonarlint-vscode",
+    
+    // Portuguese language support
+    "streetsidesoftware.code-spell-checker-portuguese-brazil"
+  ],
+  "unwantedRecommendations": [
+    "ms-vscode.vscode-typescript",
+    "hookyqr.beautify"
+  ]
+}

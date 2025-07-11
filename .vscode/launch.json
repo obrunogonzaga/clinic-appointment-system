@@ -1,0 +1,105 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: FastAPI",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/src/main.py",
+      "module": "uvicorn",
+      "args": [
+        "src.main:app",
+        "--reload",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "env": {
+        "MONGODB_URL": "mongodb://admin:changeme@localhost:27017/",
+        "DATABASE_NAME": "clinic_db_dev",
+        "SECRET_KEY": "dev-secret-key",
+        "ENVIRONMENT": "development",
+        "DEBUG": "True"
+      },
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "redirectOutput": true
+    },
+    {
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "cwd": "${workspaceFolder}/backend",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Python: Pytest",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "${workspaceFolder}/backend/tests",
+        "-v",
+        "--tb=short"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "MONGODB_URL": "mongodb://admin:changeme@localhost:27017/",
+        "DATABASE_NAME": "test_clinic_db",
+        "SECRET_KEY": "test-secret-key",
+        "ENVIRONMENT": "test"
+      }
+    },
+    {
+      "name": "Python: Pytest Current File",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "${file}",
+        "-v",
+        "--tb=short"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "MONGODB_URL": "mongodb://admin:changeme@localhost:27017/",
+        "DATABASE_NAME": "test_clinic_db",
+        "SECRET_KEY": "test-secret-key",
+        "ENVIRONMENT": "test"
+      }
+    },
+    {
+      "name": "Attach to Docker Backend",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/backend",
+          "remoteRoot": "/app"
+        }
+      ]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Launch Full Stack",
+      "configurations": [
+        "Python: FastAPI"
+      ],
+      "preLaunchTask": "Start MongoDB",
+      "stopAll": true
+    }
+  ]
+}

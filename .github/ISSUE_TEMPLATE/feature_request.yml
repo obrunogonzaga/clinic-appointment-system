@@ -1,0 +1,129 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+title: "[FEATURE] "
+labels: ["enhancement", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por sugerir uma nova funcionalidade! Por favor, preencha as informações abaixo para nos ajudar a entender sua solicitação.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema a ser Resolvido
+      description: Qual problema esta funcionalidade resolveria?
+      placeholder: Eu tenho o problema de que...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solução Proposta
+      description: Descreva a solução que você gostaria de ver
+      placeholder: Eu gostaria que...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Componente
+      description: Que parte do sistema seria afetada?
+      options:
+        - Frontend (Interface do usuário)
+        - Backend (API)
+        - Database (Banco de dados)
+        - Authentication (Autenticação)
+        - File Upload (Upload de arquivos)
+        - PDF Generation (Geração de PDF)
+        - Reports (Relatórios)
+        - New Module (Novo módulo)
+        - Other (Outro)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridade
+      description: Qual a prioridade desta funcionalidade?
+      options:
+        - High (Alta - essencial para o negócio)
+        - Medium (Média - importante mas não urgente)
+        - Low (Baixa - seria bom ter)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: user_type
+    attributes:
+      label: Tipo de Usuário
+      description: Que tipo de usuário se beneficiaria desta funcionalidade?
+      options:
+        - Admin (Administrador)
+        - Doctor (Médico)
+        - Nurse (Enfermeiro)
+        - Receptionist (Recepcionista)
+        - All Users (Todos os usuários)
+        - System (Sistema)
+    validations:
+      required: true
+
+  - type: textarea
+    id: user_story
+    attributes:
+      label: História do Usuário
+      description: Descreva a funcionalidade como uma história do usuário
+      placeholder: |
+        Como [tipo de usuário]
+        Eu quero [funcionalidade]
+        Para que eu possa [benefício]
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Critérios de Aceitação
+      description: Liste os critérios que definem quando esta funcionalidade estará completa
+      placeholder: |
+        - [ ] Critério 1
+        - [ ] Critério 2
+        - [ ] Critério 3
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Soluções Alternativas
+      description: Descreva soluções alternativas que você considerou
+      placeholder: Eu considerei...
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: Mockups ou Wireframes
+      description: Se você tem mockups ou wireframes, adicione-os aqui
+      placeholder: Cole as imagens aqui...
+
+  - type: textarea
+    id: technical_requirements
+    attributes:
+      label: Requisitos Técnicos
+      description: Liste qualquer requisito técnico específico
+      placeholder: |
+        - Integração com sistema X
+        - Performance: resposta em < 2s
+        - Compatibilidade com browsers Y e Z
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Informações Adicionais
+      description: Adicione qualquer outro contexto sobre a funcionalidade aqui
+      placeholder: Qualquer informação adicional...

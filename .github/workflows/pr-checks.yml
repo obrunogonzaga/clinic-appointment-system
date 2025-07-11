@@ -1,0 +1,269 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pr-validation:
+    name: PR Validation
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Validate PR title
+      uses: amannn/action-semantic-pull-request@v5
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        types: |
+          feat
+          fix
+          docs
+          style
+          refactor
+          perf
+          test
+          build
+          ci
+          chore
+        scopes: |
+          backend
+          frontend
+          api
+          ui
+          db
+          docker
+          ci
+          docs
+        requireScope: false
+        disallowScopes: |
+          release
+        subjectPattern: ^(?![A-Z]).+$
+        subjectPatternError: |
+          The subject "{subject}" found in the pull request title "{title}"
+          didn't match the configured pattern. Please ensure that the subject
+          doesn't start with an uppercase character.
+
+    - name: Check for breaking changes
+      run: |
+        if [[ "${{ github.event.pull_request.title }}" == *"BREAKING CHANGE"* ]]; then
+          echo "⚠️ This PR contains breaking changes"
+          echo "breaking_change=true" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Check PR size
+      run: |
+        changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} | wc -l)
+        added_lines=$(git diff --numstat ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} | awk '{sum += $1} END {print sum}')
+        
+        echo "Changed files: $changed_files"
+        echo "Added lines: $added_lines"
+        
+        if [ "$changed_files" -gt 50 ]; then
+          echo "⚠️ Large PR detected: $changed_files files changed"
+          echo "Consider breaking this PR into smaller ones"
+        fi
+        
+        if [ "$added_lines" -gt 1000 ]; then
+          echo "⚠️ Large PR detected: $added_lines lines added"
+          echo "Consider breaking this PR into smaller ones"
+        fi
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install backend dependencies
+      run: |
+        cd backend
+        pip install -r requirements.txt
+
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        npm ci
+
+    - name: Run backend code quality checks
+      run: |
+        cd backend
+        echo "🔍 Running Python code quality checks..."
+        
+        # Check for common issues
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        
+        # Check formatting
+        black --check --diff .
+        
+        # Check import sorting
+        isort --check-only --diff .
+        
+        # Type checking
+        mypy . || true
+        
+        echo "✅ Backend code quality checks completed"
+
+    - name: Run frontend code quality checks
+      run: |
+        cd frontend
+        echo "🔍 Running frontend code quality checks..."
+        
+        # Linting
+        npm run lint
+        
+        # Type checking
+        npm run type-check
+        
+        echo "✅ Frontend code quality checks completed"
+
+  dependency-check:
+    name: Dependency Security Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Check Python dependencies
+      run: |
+        pip install safety
+        cd backend
+        safety check -r requirements.txt
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Check Node.js dependencies
+      run: |
+        cd frontend
+        npm audit --audit-level high
+
+  test-changes:
+    name: Test Changed Code
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: test
+          MONGO_INITDB_ROOT_PASSWORD: test
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Get changed files
+      id: changed-files
+      run: |
+        backend_changed=$(git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} | grep "^backend/" | wc -l)
+        frontend_changed=$(git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} | grep "^frontend/" | wc -l)
+        
+        echo "backend_changed=$backend_changed" >> $GITHUB_OUTPUT
+        echo "frontend_changed=$frontend_changed" >> $GITHUB_OUTPUT
+
+    - name: Test backend changes
+      if: steps.changed-files.outputs.backend_changed > 0
+      run: |
+        echo "🧪 Testing backend changes..."
+        cd backend
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+        # Run tests with coverage
+        pytest --cov=src --cov-report=term-missing
+        echo "✅ Backend tests passed"
+
+    - name: Test frontend changes
+      if: steps.changed-files.outputs.frontend_changed > 0
+      run: |
+        echo "🧪 Testing frontend changes..."
+        cd frontend
+        npm ci
+        npm run test
+        echo "✅ Frontend tests passed"
+
+  auto-assign-reviewers:
+    name: Auto-assign Reviewers
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened'
+
+    steps:
+    - name: Assign reviewers based on changed files
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const { owner, repo, number } = context.issue;
+          
+          // Get the PR to see what files were changed
+          const pr = await github.rest.pulls.get({
+            owner,
+            repo,
+            pull_number: number
+          });
+          
+          const files = await github.rest.pulls.listFiles({
+            owner,
+            repo,
+            pull_number: number
+          });
+          
+          const changedFiles = files.data.map(file => file.filename);
+          
+          let reviewers = [];
+          
+          // Auto-assign based on changed files
+          if (changedFiles.some(file => file.startsWith('backend/'))) {
+            reviewers.push('backend-team'); // Replace with actual team/user
+          }
+          
+          if (changedFiles.some(file => file.startsWith('frontend/'))) {
+            reviewers.push('frontend-team'); // Replace with actual team/user
+          }
+          
+          if (changedFiles.some(file => file.includes('docker') || file.includes('ci'))) {
+            reviewers.push('devops-team'); // Replace with actual team/user
+          }
+          
+          // Remove duplicates and the PR author
+          reviewers = [...new Set(reviewers)].filter(reviewer => reviewer !== pr.data.user.login);
+          
+          if (reviewers.length > 0) {
+            console.log(`Requesting reviews from: ${reviewers.join(', ')}`);
+            // Uncomment when you have actual reviewers to assign
+            // await github.rest.pulls.requestReviewers({
+            //   owner,
+            //   repo,
+            //   pull_number: number,
+            //   reviewers: reviewers
+            // });
+          }
