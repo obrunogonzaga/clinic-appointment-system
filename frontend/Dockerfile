@@ -1,22 +1,22 @@
 # Multi-stage Dockerfile for React Frontend
 
 # Base stage
-FROM node:18-alpine as base
+FROM node:18-alpine AS base
 
 # Set working directory
 WORKDIR /app
 
 # Development stage
-FROM base as development
+FROM base AS development
 
 # Copy package files
-COPY package*.json ./
+COPY frontend/package*.json ./
 
 # Install dependencies
 RUN npm ci
 
 # Copy application code
-COPY . .
+COPY frontend/ .
 
 # Expose port
 EXPOSE 3000
@@ -25,22 +25,22 @@ EXPOSE 3000
 CMD ["npm", "run", "dev"]
 
 # Build stage
-FROM base as build
+FROM base AS build
 
 # Copy package files
-COPY package*.json ./
+COPY frontend/package*.json ./
 
 # Install dependencies
 RUN npm ci
 
 # Copy application code
-COPY . .
+COPY frontend/ .
 
 # Build the application
 RUN npm run build
 
 # Production stage with Nginx
-FROM nginx:alpine as production
+FROM nginx:alpine AS production
 
 # Copy custom nginx config
 COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf

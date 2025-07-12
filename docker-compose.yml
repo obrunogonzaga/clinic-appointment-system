@@ -69,8 +69,8 @@ services:
   # Frontend - React
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./frontend/Dockerfile
       target: development
     container_name: clinic-frontend
     restart: unless-stopped
