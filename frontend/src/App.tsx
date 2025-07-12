@@ -20,7 +20,7 @@ function App() {
         setHealthStatus(data)
         setLoading(false)
       })
-      .catch(err => {
+      .catch(_err => {
         setError('Failed to connect to backend API')
         setLoading(false)
       })

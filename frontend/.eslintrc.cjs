@@ -142,6 +142,15 @@ module.exports = {
     'jsx-a11y/click-events-have-key-events': 'warn',
     'jsx-a11y/no-static-element-interactions': 'warn',
   },
+  overrides: [
+    {
+      files: ['src/test/**/*', '**/*.test.*', '**/*.spec.*'],
+      rules: {
+        '@typescript-eslint/no-empty-function': 'off',
+        '@typescript-eslint/no-explicit-any': 'off',
+      },
+    },
+  ],
   settings: {
     react: {
       version: 'detect',

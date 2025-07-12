@@ -1,10 +1,18 @@
 import '@testing-library/jest-dom'
 import * as matchers from '@testing-library/jest-dom/matchers'
 import { cleanup } from '@testing-library/react'
-import { expect, afterEach } from 'vitest'
+import { expect, afterEach, vi } from 'vitest'
 
 // Extend Vitest's expect with jest-dom matchers
 expect.extend(matchers)
+
+// Global type declarations
+declare global {
+  interface Window {
+    mockFetch: any
+    mockFetchError: any
+  }
+}
 
 // Cleanup after each test case
 afterEach(() => {
@@ -12,7 +20,7 @@ afterEach(() => {
 })
 
 // Mock IntersectionObserver
-global.IntersectionObserver = class IntersectionObserver {
+;(globalThis as any).IntersectionObserver = class IntersectionObserver {
   constructor() {}
   disconnect() {}
   observe() {}
@@ -20,8 +28,8 @@ global.IntersectionObserver = class IntersectionObserver {
 }
 
 // Mock ResizeObserver
-global.ResizeObserver = class ResizeObserver {
-  constructor(callback: ResizeObserverCallback) {}
+;(globalThis as any).ResizeObserver = class ResizeObserver {
+  constructor(_callback: ResizeObserverCallback) {}
   disconnect() {}
   observe() {}
   unobserve() {}
@@ -43,10 +51,10 @@ Object.defineProperty(window, 'matchMedia', {
 })
 
 // Mock fetch
-global.fetch = vi.fn()
+;(globalThis as any).fetch = vi.fn()
 
 // Setup global test helpers
-global.mockFetch = (data: any, status = 200) => {
+;(globalThis as any).mockFetch = (data: any, status = 200) => {
   return vi.mocked(fetch).mockResolvedValue({
     ok: status >= 200 && status < 300,
     status,
@@ -55,6 +63,6 @@ global.mockFetch = (data: any, status = 200) => {
   } as Response)
 }
 
-global.mockFetchError = (error: string, status = 500) => {
+;(globalThis as any).mockFetchError = (error: string, _status = 500) => {
   return vi.mocked(fetch).mockRejectedValue(new Error(error))
 }
