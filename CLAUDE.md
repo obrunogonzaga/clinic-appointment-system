@@ -10,7 +10,27 @@ This is a Clinic Appointment Scheduling System that is currently in the planning
 
 ## Development Commands
 
-Since the project is in planning phase, no build/test commands exist yet. When implementation begins, typical commands will be:
+**CRITICAL QUALITY REQUIREMENTS:**
+- **ALWAYS run `make lint` before committing any changes and fix all errors**
+- **ALWAYS ensure test coverage stays at 80% or higher**
+- **NEVER commit code that fails linting or has coverage below 80%**
+
+Use the following commands for quality checks:
+
+**Quality Check Commands (REQUIRED before commits):**
+```bash
+# Check all linting and fix issues
+make lint
+
+# Run all tests with coverage
+make test
+
+# Check specific parts
+make lint-backend      # Backend linting only
+make lint-frontend     # Frontend linting only
+make test-backend      # Backend tests with coverage (requires 80%+)
+make test-frontend     # Frontend tests with coverage (requires 80%+)
+```
 
 **Backend (Python/FastAPI):**
 ```bash

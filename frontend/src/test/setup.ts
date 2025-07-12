@@ -12,6 +12,9 @@ declare global {
     mockFetch: any
     mockFetchError: any
   }
+
+  function mockFetch(data: any, status?: number): any
+  function mockFetchError(error: string, status?: number): any
 }
 
 // Cleanup after each test case
