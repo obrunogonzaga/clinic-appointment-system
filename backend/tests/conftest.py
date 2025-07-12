@@ -2,9 +2,10 @@
 Pytest configuration and shared fixtures.
 """
 import os
+from typing import Generator
+
 import pytest
 from fastapi.testclient import TestClient
-from typing import Generator
 
 
 @pytest.fixture(autouse=True)
