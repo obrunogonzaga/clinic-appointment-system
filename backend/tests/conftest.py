@@ -13,9 +13,9 @@ def setup_test_environment() -> Generator[None, None, None]:
     # Set test environment
     os.environ["ENVIRONMENT"] = "testing"
     os.environ["DEBUG"] = "true"
-    
+
     yield
-    
+
     # Cleanup after tests
     # Remove test environment variables if needed
     pass
@@ -25,4 +25,5 @@ def setup_test_environment() -> Generator[None, None, None]:
 def test_app() -> TestClient:
     """Create a test client for the entire test session."""
     from src.main import app
+
     return TestClient(app)
