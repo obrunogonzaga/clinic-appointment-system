@@ -22,6 +22,8 @@ export default defineConfig({
         '**/build/**',
         '**/.{idea,git,cache,output,temp}/**',
         '**/coverage/**',
+        'src/main.tsx',
+        '**/.eslintrc.*',
       ],
       thresholds: {
         global: {
