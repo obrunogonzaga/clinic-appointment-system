@@ -13,6 +13,7 @@ This is a Clinic Appointment Scheduling System that is currently in the planning
 **CRITICAL QUALITY REQUIREMENTS:**
 - **ALWAYS run `make lint` before committing any changes and fix all errors**
 - **ALWAYS ensure test coverage stays at 80% or higher**
+- **ALWAYS run security scans and fix vulnerabilities before committing**
 - **NEVER commit code that fails linting or has coverage below 80%**
 
 Use the following commands for quality checks:
@@ -24,6 +25,9 @@ make lint
 
 # Run all tests with coverage
 make test
+
+# Check for security vulnerabilities
+make check-security
 
 # Check specific parts
 make lint-backend      # Backend linting only
