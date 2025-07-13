@@ -42,7 +42,7 @@ class Container:
             AsyncIOMotorClient: MongoDB client
         """
         if self._mongodb_client is None:
-            from motor.motor_asyncio import AsyncIOMotorClient  # type: ignore
+            from motor.motor_asyncio import AsyncIOMotorClient
 
             self._mongodb_client = AsyncIOMotorClient(
                 self.settings.mongodb_url,

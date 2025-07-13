@@ -74,7 +74,7 @@ app.add_middleware(
 # Add exception handlers
 app.add_exception_handler(DomainException, domain_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
-app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+app.add_exception_handler(StarletteHTTPException, http_exception_handler)  # type: ignore[arg-type]
 
 # Include API routers
 app.include_router(api_v1_router)
@@ -111,6 +111,8 @@ async def health_check(request: Request) -> HealthResponse:
         mongodb_status = "unhealthy"
 
     return HealthResponse(
+        success=True,
+        message="Health check completed",
         status="healthy" if mongodb_status == "healthy" else "degraded",
         service=settings.app_name,
         version=settings.app_version,
