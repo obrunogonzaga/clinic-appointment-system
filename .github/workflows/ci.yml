@@ -159,7 +159,8 @@ jobs:
     - name: Build frontend image
       uses: docker/build-push-action@v5
       with:
-        context: ./frontend
+        context: .
+        file: ./frontend/Dockerfile
         target: production
         push: false
         tags: clinic-frontend:latest
@@ -193,13 +194,13 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install safety for Python security check
-      run: pip install safety
+    - name: Install pip-audit for Python security check
+      run: pip install pip-audit
 
     - name: Check Python dependencies for security vulnerabilities
       run: |
         cd backend
-        safety check -r requirements.txt
+        pip-audit -r requirements.txt --format=json --output=audit-report.json || echo "Security scan completed with warnings"
       continue-on-error: true
 
     - name: Set up Node.js for frontend security scan

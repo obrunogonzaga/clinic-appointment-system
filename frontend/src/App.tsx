@@ -20,7 +20,7 @@ function App() {
         setHealthStatus(data)
         setLoading(false)
       })
-      .catch(err => {
+      .catch(_err => {
         setError('Failed to connect to backend API')
         setLoading(false)
       })
@@ -32,12 +32,12 @@ function App() {
         <h1 className="text-3xl font-bold text-center mb-6 text-blue-600">
           Sistema de Agendamento Clínico
         </h1>
-        
+
         <div className="text-center">
           <p className="text-gray-600 mb-4">
             Bem-vindo ao sistema de agendamento de consultas
           </p>
-          
+
           <div className="border-t pt-4">
             <h2 className="text-lg font-semibold mb-2">Status da API</h2>
             {loading && <p className="text-gray-500">Carregando...</p>}
@@ -51,7 +51,7 @@ function App() {
             )}
           </div>
         </div>
-        
+
         <div className="mt-6 text-center text-sm text-gray-500">
           <p>© 2025 Clinic Appointment System</p>
         </div>

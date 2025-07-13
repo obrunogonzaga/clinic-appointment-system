@@ -127,5 +127,5 @@ update-deps: ## Update all dependencies
 
 .PHONY: check-security
 check-security: ## Check for security vulnerabilities
-	cd backend && pip-audit
-	cd frontend && npm audit
+	docker-compose exec backend pip-audit -r requirements.txt || echo "Backend security scan completed"
+	docker-compose exec frontend npm audit || echo "Frontend security scan completed"

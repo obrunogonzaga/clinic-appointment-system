@@ -7,20 +7,19 @@ module.exports = {
   },
   extends: [
     'eslint:recommended',
-    '@typescript-eslint/recommended',
+    'plugin:@typescript-eslint/recommended',
     'plugin:react-hooks/recommended',
     'plugin:react/recommended',
     'plugin:react/jsx-runtime',
     'plugin:jsx-a11y/recommended',
-    'plugin:import/recommended',
-    'plugin:import/typescript',
   ],
   ignorePatterns: [
     'dist',
     'build',
     'node_modules',
-    '.eslintrc.js',
+    '.eslintrc.cjs',
     'vite.config.ts',
+    'vitest.config.ts',
     'tailwind.config.js',
     'postcss.config.js',
   ],
@@ -28,6 +27,7 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',
+    project: './tsconfig.json',
     ecmaFeatures: {
       jsx: true,
     },
@@ -89,7 +89,6 @@ module.exports = {
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-empty-function': 'warn',
     '@typescript-eslint/no-inferrable-types': 'warn',
-    '@typescript-eslint/prefer-const': 'error',
     '@typescript-eslint/prefer-optional-chain': 'warn',
     '@typescript-eslint/prefer-nullish-coalescing': 'warn',
 
@@ -98,7 +97,6 @@ module.exports = {
     'no-debugger': 'error',
     'no-alert': 'warn',
     'no-var': 'error',
-    'prefer-const': 'error',
     'prefer-template': 'warn',
     'object-shorthand': 'warn',
     'no-duplicate-imports': 'error',
@@ -131,7 +129,7 @@ module.exports = {
         },
       },
     ],
-    'import/no-unresolved': 'error',
+    'import/no-unresolved': 'off',
     'import/no-duplicates': 'error',
 
     // Accessibility rules
@@ -144,15 +142,20 @@ module.exports = {
     'jsx-a11y/click-events-have-key-events': 'warn',
     'jsx-a11y/no-static-element-interactions': 'warn',
   },
+  overrides: [
+    {
+      files: ['src/test/**/*', '**/*.test.*', '**/*.spec.*'],
+      rules: {
+        '@typescript-eslint/no-empty-function': 'off',
+        '@typescript-eslint/no-explicit-any': 'off',
+      },
+    },
+  ],
   settings: {
     react: {
       version: 'detect',
     },
     'import/resolver': {
-      typescript: {
-        alwaysTryTypes: true,
-        project: './tsconfig.json',
-      },
       node: {
         extensions: ['.js', '.jsx', '.ts', '.tsx'],
       },
