@@ -1,6 +1,7 @@
 """
 Main FastAPI application entry point
 """
+
 import os
 from contextlib import asynccontextmanager
 from typing import Any, Dict
