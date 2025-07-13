@@ -13,8 +13,8 @@
 | **SETUP-002** | Setup | Environment | Setup Docker development environment | High | ✅ Completed | - | 4 | SETUP-001 | docker-compose.yml, Dockerfiles |
 | **SETUP-003** | Setup | Environment | Configure CI/CD pipeline (GitHub Actions) | Medium | ✅ Completed | - | 6 | SETUP-001 | Automated testing and deployment |
 | **SETUP-004** | Setup | Environment | Setup development tools (ESLint, Prettier, etc.) | Medium | ✅ Completed | - | 3 | SETUP-001 | Code quality tools - Fixed ESLint ES module conflicts |
-| **BE-001** | Backend | Core | Initialize FastAPI project structure | High | ❌ Pending | - | 4 | SETUP-001 | Clean Architecture layers |
-| **BE-002** | Backend | Core | Setup MongoDB connection and configuration | High | ❌ Pending | - | 3 | BE-001 | Database connection management |
+| **BE-001** | Backend | Core | Initialize FastAPI project structure | High | ✅ Completed | - | 4 | SETUP-001 | Clean Architecture layers - FastAPI with Clean Architecture complete |
+| **BE-002** | Backend | Core | Setup MongoDB connection and configuration | High | 🔄 In Progress | - | 3 | BE-001 | Database connection management - Container and connection setup complete |
 | **BE-003** | Backend | Core | Create domain entities (Patient, Appointment, User) | High | ❌ Pending | - | 6 | BE-001 | Core business models |
 | **BE-004** | Backend | Core | Implement repository interfaces and patterns | High | ❌ Pending | - | 5 | BE-003 | Data access layer |
 | **BE-005** | Backend | Core | Create MongoDB repositories implementation | High | ❌ Pending | - | 8 | BE-002, BE-004 | Database operations |
@@ -150,9 +150,9 @@
 
 ### Current Status
 - **Total Tasks**: 70
-- **Completed**: 4 (5.7%)
-- **In Progress**: 0 (0%)
-- **Pending**: 66 (94.3%)
+- **Completed**: 5 (7.1%)
+- **In Progress**: 1 (1.4%)
+- **Pending**: 64 (91.4%)
 
 ### Estimated Timeline
 - **Total Estimated Hours**: 434 hours
@@ -212,6 +212,29 @@
   - Removed conflicting rule definitions and parser options
   - ESLint now works correctly with project's ES module setup
   - Backend linting continues to pass, frontend linting is now functional
+
+### 2025-01-13
+- **Completed**: BE-001 - Initialize FastAPI project structure with Clean Architecture
+  - Implemented comprehensive Clean Architecture structure with domain, application, infrastructure, and presentation layers
+  - Created configuration management with Pydantic Settings supporting environment-based config
+  - Set up dependency injection container for MongoDB and application settings management
+  - Created domain base classes (Entity, ValueObject, AggregateRoot, DomainException) for DDD implementation
+  - Implemented exception handling system with Portuguese error messages and structured error responses
+  - Added API v1 router structure with OpenAPI documentation configuration
+  - Created standardized response models (BaseResponse, DataResponse, ListResponse, HealthResponse)
+  - Added comprehensive test coverage (82.04%) with pytest and async test support
+  - Configured pytest with asyncio support and proper mocking for container dependencies
+  - Added type hints throughout and resolved mypy type checking issues
+  - Applied code formatting with Black and import sorting with isort
+  - Health check endpoint with MongoDB connection status monitoring
+  - Request ID middleware for tracing and debugging support
+  - CORS configuration for frontend integration
+  - Lifespan management for proper startup/shutdown of resources
+- **In Progress**: BE-002 - Setup MongoDB connection and configuration
+  - Container-based MongoDB client management implemented
+  - Connection pooling and ping health checks configured
+  - Async Motor driver integration with proper type handling
+  - Database dependency injection ready for use cases
 
 ---
 
