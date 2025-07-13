@@ -46,7 +46,7 @@ class Container:
         """
         if self._mongodb_client is None:
             from motor.motor_asyncio import AsyncIOMotorClient  # type: ignore
-            
+
             self._mongodb_client = AsyncIOMotorClient(
                 self.settings.mongodb_url,
                 maxPoolSize=10,
@@ -92,7 +92,9 @@ container = Container()
 
 
 # Dependency injection functions
-async def get_database() -> AsyncGenerator[Any, None]:  # Actually yields AsyncIOMotorDatabase
+async def get_database() -> (
+    AsyncGenerator[Any, None]
+):  # Actually yields AsyncIOMotorDatabase
     """
     Dependency for getting database instance.
 
