@@ -109,7 +109,7 @@ module = [
     "openpyxl.*",
     "xlrd.*",
     "reportlab.*",
-    "PyPDF2.*",
+    "pypdf.*",
 ]
 ignore_missing_imports = true
 
