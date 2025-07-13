@@ -33,4 +33,6 @@ def mock_container():
         mock_admin.command = AsyncMock(return_value={"ok": 1})
         mock.mongodb_client.admin = mock_admin
 
-        yield mock
+        # Also patch the container import in main module
+        with patch("src.main.container", mock):
+            yield mock
