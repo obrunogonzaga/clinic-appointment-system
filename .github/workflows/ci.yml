@@ -159,7 +159,8 @@ jobs:
     - name: Build frontend image
       uses: docker/build-push-action@v5
       with:
-        context: ./frontend
+        context: .
+        file: ./frontend/Dockerfile
         target: production
         push: false
         tags: clinic-frontend:latest
