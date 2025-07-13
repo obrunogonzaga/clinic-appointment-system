@@ -22,7 +22,7 @@ python-decouple==3.8
 # Excel Processing
 pandas==2.1.4
 openpyxl==3.1.2
-xlrd==2.0.1
+xlrd==2.0.2
 
 # PDF Generation
 reportlab==4.0.8
