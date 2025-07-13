@@ -243,3 +243,24 @@ The project includes sample Excel files in `docs/sample-sheets/` that demonstrat
 - **Audit Trails**: Comprehensive logging for compliance
 
 When implementing features, always consider these compliance requirements and ensure proper data handling, logging, and access controls are in place.
+
+## Implementation Plan Tracking
+
+**IMPORTANT**: Always update the implementation plan when completing tasks!
+
+The project uses `IMPLEMENTATION_PLAN.md` in the root directory to track all development progress. When completing any task:
+
+1. **Update Task Status**: Change status from ❌ Pending to ✅ Completed in the task table
+2. **Add Changelog Entry**: Add detailed entry with date, task ID, and accomplishments
+3. **Update Progress**: Recalculate completion percentages in the "Current Status" section
+4. **Add Implementation Notes**: Document important details in the task notes column
+
+### Current Backend Progress
+- ✅ **BE-001**: FastAPI with Clean Architecture structure complete (82.04% test coverage)
+- 🔄 **BE-002**: MongoDB connection and configuration (container setup complete)
+- ❌ **BE-003**: Domain entities (Patient, Appointment, User) - Next priority
+- ❌ **BE-004**: Repository interfaces and patterns
+- ❌ **BE-005**: MongoDB repositories implementation
+
+### Remember to Update Plan After Each Task
+The implementation plan serves as the single source of truth for project progress and helps maintain accountability and project visibility. Always update it immediately after completing work.
