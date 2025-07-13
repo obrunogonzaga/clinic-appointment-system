@@ -2,10 +2,7 @@
 Dependency injection container for managing application dependencies.
 """
 
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
-
-if TYPE_CHECKING:
-    from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from typing import Any, AsyncGenerator, Optional
 
 from src.infrastructure.config import Settings, get_settings
 

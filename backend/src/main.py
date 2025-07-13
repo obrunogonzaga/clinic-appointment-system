@@ -6,11 +6,11 @@ from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator, Callable
 
 from fastapi import FastAPI, Request
-from starlette.types import ASGIApp
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.types import ASGIApp
 
 from src.domain.base import DomainException
 from src.infrastructure.config import get_settings
