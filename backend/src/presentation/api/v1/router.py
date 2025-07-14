@@ -17,12 +17,15 @@ api_v1_router = APIRouter(
     tags=["v1"],
 )
 
-# Import and include routers here as they are created
-# Example:
-# from src.presentation.api.v1.endpoints import auth, appointments, patients
-# api_v1_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
-# api_v1_router.include_router(appointments.router, prefix="/appointments", tags=["Appointments"])
-# api_v1_router.include_router(patients.router, prefix="/patients", tags=["Patients"])
+# Import and include routers
+from src.presentation.api.v1.endpoints import appointments
+
+# Include routers
+api_v1_router.include_router(
+    appointments.router, 
+    prefix="/appointments", 
+    tags=["Appointments"]
+)
 
 
 @api_v1_router.get("/")
@@ -34,5 +37,6 @@ async def api_v1_root() -> dict[str, Any]:
         "endpoints": {
             "docs": f"{settings.api_v1_prefix}/docs",
             "health": f"{settings.api_v1_prefix}/health",
+            "appointments": f"{settings.api_v1_prefix}/appointments",
         },
     }

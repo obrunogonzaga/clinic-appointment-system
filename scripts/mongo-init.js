@@ -37,7 +37,7 @@ db.createCollection('users', {
           description: 'Creation timestamp'
         },
         updated_at: {
-          bsonType: 'date',
+          bsonType: ['date', 'null'],
           description: 'Last update timestamp'
         }
       }
@@ -89,7 +89,7 @@ db.createCollection('patients', {
           description: 'Creation timestamp'
         },
         updated_at: {
-          bsonType: 'date',
+          bsonType: ['date', 'null'],
           description: 'Last update timestamp'
         }
       }
@@ -101,44 +101,55 @@ db.createCollection('appointments', {
   validator: {
     $jsonSchema: {
       bsonType: 'object',
-      required: ['patient_id', 'scheduled_at', 'duration_minutes', 'status', 'created_at'],
+      required: ['nome_unidade', 'nome_marca', 'nome_paciente', 'data_agendamento', 'hora_agendamento', 'created_at'],
       properties: {
-        patient_id: {
-          bsonType: 'objectId',
-          description: 'Reference to patient'
+        id: {
+          bsonType: 'string',
+          description: 'Unique appointment identifier'
         },
-        provider_id: {
-          bsonType: 'objectId',
-          description: 'Reference to healthcare provider (user)'
+        nome_unidade: {
+          bsonType: 'string',
+          description: 'Nome da Unidade de Saúde'
         },
-        scheduled_at: {
+        nome_marca: {
+          bsonType: 'string',
+          description: 'Nome da Marca/Clínica'
+        },
+        nome_paciente: {
+          bsonType: 'string',
+          description: 'Nome completo do paciente'
+        },
+        data_agendamento: {
           bsonType: 'date',
-          description: 'Appointment date and time'
+          description: 'Data do agendamento'
         },
-        duration_minutes: {
-          bsonType: 'int',
-          minimum: 15,
-          maximum: 240,
-          description: 'Appointment duration in minutes'
+        hora_agendamento: {
+          bsonType: 'string',
+          pattern: '^([0-1][0-9]|2[0-3]):[0-5][0-9]$',
+          description: 'Hora do agendamento (HH:MM)'
         },
-        type: {
-          enum: ['consultation', 'follow-up', 'procedure', 'emergency'],
-          description: 'Type of appointment'
+        tipo_consulta: {
+          bsonType: ['string', 'null'],
+          description: 'Tipo de consulta médica'
         },
         status: {
-          enum: ['scheduled', 'confirmed', 'in-progress', 'completed', 'cancelled', 'no-show'],
-          description: 'Current appointment status'
+          enum: ['Confirmado', 'Cancelado', 'Reagendado', 'Concluído', 'Não Compareceu'],
+          description: 'Status do agendamento'
         },
-        notes: {
-          bsonType: 'string',
-          description: 'Additional notes'
+        telefone: {
+          bsonType: ['string', 'null'],
+          description: 'Telefone de contato do paciente'
+        },
+        observacoes: {
+          bsonType: ['string', 'null'],
+          description: 'Observações adicionais'
         },
         created_at: {
           bsonType: 'date',
           description: 'Creation timestamp'
         },
         updated_at: {
-          bsonType: 'date',
+          bsonType: ['date', 'null'],
           description: 'Last update timestamp'
         }
       }
@@ -155,11 +166,14 @@ db.patients.createIndex({ 'email': 1 }, { unique: true });
 db.patients.createIndex({ 'phone': 1 });
 db.patients.createIndex({ 'name': 'text' });
 
-db.appointments.createIndex({ 'patient_id': 1 });
-db.appointments.createIndex({ 'provider_id': 1 });
-db.appointments.createIndex({ 'scheduled_at': 1 });
+db.appointments.createIndex({ 'nome_unidade': 1 });
+db.appointments.createIndex({ 'nome_marca': 1 });
+db.appointments.createIndex({ 'nome_paciente': 'text' });
+db.appointments.createIndex({ 'data_agendamento': 1 });
 db.appointments.createIndex({ 'status': 1 });
-db.appointments.createIndex({ 'scheduled_at': 1, 'status': 1 });
+db.appointments.createIndex({ 'data_agendamento': 1, 'status': 1 });
+db.appointments.createIndex({ 'nome_unidade': 1, 'nome_marca': 1 });
+db.appointments.createIndex({ 'id': 1 }, { unique: true, name: 'appointment_id_unique' });
 
 // Create a default admin user (password: admin123)
 // Note: In production, change this password immediately

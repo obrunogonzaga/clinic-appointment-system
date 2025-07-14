@@ -5,6 +5,7 @@ Dependency injection container for managing application dependencies.
 from typing import Any, AsyncGenerator, Optional
 
 from src.infrastructure.config import Settings, get_settings
+from src.infrastructure.repositories.appointment_repository import AppointmentRepository
 
 
 class Container:
@@ -20,6 +21,7 @@ class Container:
         self._settings: Optional[Settings] = None
         self._mongodb_client: Optional[Any] = None  # Actually AsyncIOMotorClient
         self._database: Optional[Any] = None  # Actually AsyncIOMotorDatabase
+        self._appointment_repository: Optional[AppointmentRepository] = None
 
     @property
     def settings(self) -> Settings:
@@ -62,6 +64,18 @@ class Container:
         if self._database is None:
             self._database = self.mongodb_client[self.settings.database_name]
         return self._database
+    
+    @property
+    def appointment_repository(self) -> AppointmentRepository:
+        """
+        Get appointment repository instance.
+        
+        Returns:
+            AppointmentRepository: Repository instance
+        """
+        if self._appointment_repository is None:
+            self._appointment_repository = AppointmentRepository(self.database)
+        return self._appointment_repository
 
     async def startup(self) -> None:
         """
@@ -71,6 +85,10 @@ class Container:
         try:
             await self.mongodb_client.admin.command("ping")
             print(f"✅ Connected to MongoDB at {self.settings.mongodb_url}")
+            
+            # Create database indexes
+            await self.appointment_repository.create_indexes()
+            print("✅ Database indexes created")
         except Exception as e:
             print(f"❌ Failed to connect to MongoDB: {e}")
             raise
@@ -109,3 +127,13 @@ async def get_app_settings() -> Settings:
         Settings: Application settings
     """
     return container.settings
+
+
+async def get_appointment_repository() -> AppointmentRepository:
+    """
+    Dependency for getting appointment repository instance.
+
+    Returns:
+        AppointmentRepository: Repository instance
+    """
+    return container.appointment_repository
