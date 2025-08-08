@@ -106,42 +106,51 @@ class RouteReportService:
             buf = BytesIO()
             c = canvas.Canvas(buf, pagesize=A4)
 
-            # Header fields in boxes
-            c.setFont(self.font_main, 12)
-            c.drawString(28 * mm, 258 * mm, f"Data: {start.strftime('%d/%m/%Y')}")
-            c.drawString(95 * mm, 258 * mm, f"Região: {ap.nome_unidade or ap.nome_marca or ''}")
-            c.drawString(145 * mm, 258 * mm, f"Motorista: {driver.nome_completo}")
-            # Coletora deixado em branco por enquanto
+            # Helpers for fonts
+            def set_bold(size: int) -> None:
+                try:
+                    c.setFont("Helvetica-Bold", size)
+                except Exception:
+                    c.setFont(self.font_main, size)
 
-            # Big time on the left card area
-            c.setFont(self.font_main, 24)
-            c.drawString(30 * mm, 228 * mm, (ap.hora_agendamento or "").rjust(5))
+            def set_regular(size: int) -> None:
+                c.setFont(self.font_main, size)
 
-            # Row labels
-            c.setFont(self.font_main, 11)
+            # Header fields positioned over the header boxes
+            set_bold(13)
+            c.drawString(26 * mm, 248 * mm, start.strftime("%d/%m/%Y"))  # Data
+            c.drawString(92 * mm, 248 * mm, (ap.nome_unidade or ap.nome_marca or ""))  # Região
+            c.drawString(145 * mm, 248 * mm, driver.nome_completo)  # Motorista
+
+            # Big time (HH:MM) left area
+            set_bold(28)
+            c.drawString(33 * mm, 226 * mm, (ap.hora_agendamento or "").rjust(5))
+
+            # Body fields
+            set_regular(12)
             nome = ap.nome_paciente
-            telefone = ap.telefone or ""
-            unidade_ou_marca = ap.nome_unidade or ap.nome_marca or ""
-            obs = ap.observacoes or ""
-            conf_parts = []
+            telefone = ap.telefone or "-"
+            unidade_ou_marca = ap.nome_unidade or ap.nome_marca or "-"
+            obs = ap.observacoes or "-"
+            conf_parts: list[str] = []
             if ap.canal_confirmacao:
                 conf_parts.append(ap.canal_confirmacao)
             if ap.data_confirmacao:
                 conf_parts.append(ap.data_confirmacao.strftime("%d/%m/%Y"))
             if ap.hora_confirmacao:
                 conf_parts.append(ap.hora_confirmacao)
-            obs_coleta = " ".join(conf_parts)
+            obs_coleta = " ".join(conf_parts) if conf_parts else "-"
 
             # Nome / Telefone
-            c.drawString(28 * mm, 210 * mm, _truncate(c, nome, 140 * mm))
-            c.drawString(155 * mm, 210 * mm, telefone)
+            c.drawString(26 * mm, 206 * mm, _truncate(c, nome, 120 * mm))
+            c.drawString(150 * mm, 206 * mm, telefone)
 
-            # Endereço (usando unidade/marca como referência) + número/complemento vazios
-            c.drawString(60 * mm, 195 * mm, _truncate(c, unidade_ou_marca, 120 * mm))
+            # CEP (—), Rua (unidade/marca), Nº/Complemento em branco
+            c.drawString(60 * mm, 191 * mm, _truncate(c, unidade_ou_marca, 110 * mm))
 
             # Observações
-            c.drawString(28 * mm, 168 * mm, _truncate(c, obs, 130 * mm))
-            c.drawString(150 * mm, 168 * mm, _truncate(c, obs_coleta, 40 * mm))
+            c.drawString(26 * mm, 162 * mm, _truncate(c, obs, 120 * mm))
+            c.drawString(148 * mm, 162 * mm, _truncate(c, obs_coleta, 45 * mm))
 
             c.showPage()
             c.save()
