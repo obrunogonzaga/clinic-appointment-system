@@ -75,6 +75,20 @@ class RouteReportService:
             limit=10_000,
         )
 
+        # Fallback: if there is no appointment assigned to the driver, try the same
+        # filters without driver_id so the report is not empty. This helps while the
+        # assignment flow isn't used.
+        if not appointments:
+            appointments = await self.appointment_repository.find_by_filters(
+                nome_unidade=nome_unidade,
+                nome_marca=nome_marca,
+                data_inicio=start,
+                data_fim=end,
+                status=status,
+                skip=0,
+                limit=10_000,
+            )
+
         # Sort by time
         def time_key(a: Appointment) -> Tuple[int, int]:
             try:
@@ -153,9 +167,17 @@ class RouteReportService:
             page_chunk = appointments[i : i + rows_per_page]
             overlay_pages.append(draw_page(page_chunk, i // rows_per_page))
 
-        # If no appointments, still create a single blank page with header
+        # If no appointments, still create a single page with header and message
         if not overlay_pages:
-            overlay_pages.append(draw_page([], 0))
+            buf = BytesIO()
+            c = canvas.Canvas(buf, pagesize=A4)
+            c.setFont(self.font_main, 12)
+            c.drawString(30 * mm, 270 * mm, f"Motorista: {driver.nome_completo}")
+            c.drawString(160 * mm, 270 * mm, f"Data: {start.strftime('%d/%m/%Y')}")
+            c.setFont(self.font_main, 11)
+            c.drawString(30 * mm, 250 * mm, "Sem agendamentos para os filtros informados.")
+            c.showPage(); c.save(); buf.seek(0)
+            overlay_pages.append(buf)
 
         # Merge overlay on top of template pages
         result_pdf = BytesIO()
@@ -171,20 +193,20 @@ class RouteReportService:
             writer.write(result_pdf)
             return result_pdf.getvalue()
 
-        # Overlay each rendered page on a copy of the template first page
+        # Overlay each rendered page directly onto a fresh copy of the
+        # template's first page, then append to the final writer
         for overlay in overlay_pages:
-            base = PdfWriter()
-            base.add_page(template_page)
-            base_buf = BytesIO()
-            base.write(base_buf)
-            base_buf.seek(0)
-
-            base_reader = PdfReader(base_buf)
             overlay_reader = PdfReader(overlay)
 
-            page = base_reader.pages[0]
-            page.merge_page(overlay_reader.pages[0])
-            writer.add_page(page)
+            # Add a new page cloned from template
+            writer.add_page(template_page)
+            page = writer.pages[-1]
+
+            try:
+                page.merge_page(overlay_reader.pages[0])
+            except AttributeError:
+                # pypdf >=4 alternative API
+                page.merge_transformed_page(overlay_reader.pages[0], [1, 0, 0, 1, 0, 0])
 
         writer.write(result_pdf)
         return result_pdf.getvalue()
