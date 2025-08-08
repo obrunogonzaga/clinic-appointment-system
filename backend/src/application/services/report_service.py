@@ -99,75 +99,57 @@ class RouteReportService:
 
         appointments.sort(key=time_key)
 
-        # Prepare overlay pages
+        # Prepare overlay pages (one appointment per page to match card layout)
         overlay_pages: List[BytesIO] = []
 
-        # Pagination config (will be adjusted once after first render if needed)
-        page_width, page_height = A4
-        start_x = 20 * mm
-        start_y = 245 * mm
-        row_h = 8 * mm
-        # Columns approximate widths
-        col_nome = 60 * mm
-        col_endereco = 70 * mm
-        col_hora = 18 * mm
-        col_tel = 28 * mm
-        col_obs = 40 * mm
-
-        rows_per_page = int((start_y - 20 * mm) // row_h)
-
-        # Helper to draw a page
-        def draw_page(page_appointments: List[Appointment], page_index: int) -> BytesIO:
+        def draw_card(ap: Appointment) -> BytesIO:
             buf = BytesIO()
             c = canvas.Canvas(buf, pagesize=A4)
+
+            # Header fields in boxes
             c.setFont(self.font_main, 12)
+            c.drawString(28 * mm, 258 * mm, f"Data: {start.strftime('%d/%m/%Y')}")
+            c.drawString(95 * mm, 258 * mm, f"Região: {ap.nome_unidade or ap.nome_marca or ''}")
+            c.drawString(145 * mm, 258 * mm, f"Motorista: {driver.nome_completo}")
+            # Coletora deixado em branco por enquanto
 
-            # Header (approximate positions)
-            c.drawString(30 * mm, 270 * mm, f"Motorista: {driver.nome_completo}")
-            c.drawString(160 * mm, 270 * mm, f"Data: {start.strftime('%d/%m/%Y')}")
+            # Big time on the left card area
+            c.setFont(self.font_main, 24)
+            c.drawString(30 * mm, 228 * mm, (ap.hora_agendamento or "").rjust(5))
 
-            c.setFont(self.font_main, 10)
-            y = start_y
-            for ap in page_appointments:
-                nome = ap.nome_paciente
-                # O modelo de Appointment não possui campo de endereço.
-                # Usamos a unidade/marca como referência de local.
-                endereco = (ap.nome_unidade or ap.nome_marca or "")
-                hora = ap.hora_agendamento or ""
-                telefone = ap.telefone or ""
-                conf_parts = []
-                if ap.canal_confirmacao:
-                    conf_parts.append(ap.canal_confirmacao)
-                if ap.data_confirmacao:
-                    conf_parts.append(ap.data_confirmacao.strftime("%d/%m/%Y"))
-                if ap.hora_confirmacao:
-                    conf_parts.append(ap.hora_confirmacao)
-                obs = ap.observacoes or ""
-                obs_full = "; ".join(filter(None, [obs, " ".join(conf_parts)]))
+            # Row labels
+            c.setFont(self.font_main, 11)
+            nome = ap.nome_paciente
+            telefone = ap.telefone or ""
+            unidade_ou_marca = ap.nome_unidade or ap.nome_marca or ""
+            obs = ap.observacoes or ""
+            conf_parts = []
+            if ap.canal_confirmacao:
+                conf_parts.append(ap.canal_confirmacao)
+            if ap.data_confirmacao:
+                conf_parts.append(ap.data_confirmacao.strftime("%d/%m/%Y"))
+            if ap.hora_confirmacao:
+                conf_parts.append(ap.hora_confirmacao)
+            obs_coleta = " ".join(conf_parts)
 
-                # Draw columns
-                x = start_x
-                c.drawString(x, y, _truncate(c, nome, col_nome))
-                x += col_nome
-                c.drawString(x, y, _truncate(c, endereco, col_endereco))
-                x += col_endereco
-                c.drawString(x, y, hora)
-                x += col_hora
-                c.drawString(x, y, telefone)
-                x += col_tel
-                c.drawString(x, y, _truncate(c, obs_full, col_obs))
+            # Nome / Telefone
+            c.drawString(28 * mm, 210 * mm, _truncate(c, nome, 140 * mm))
+            c.drawString(155 * mm, 210 * mm, telefone)
 
-                y -= row_h
+            # Endereço (usando unidade/marca como referência) + número/complemento vazios
+            c.drawString(60 * mm, 195 * mm, _truncate(c, unidade_ou_marca, 120 * mm))
+
+            # Observações
+            c.drawString(28 * mm, 168 * mm, _truncate(c, obs, 130 * mm))
+            c.drawString(150 * mm, 168 * mm, _truncate(c, obs_coleta, 40 * mm))
 
             c.showPage()
             c.save()
             buf.seek(0)
             return buf
 
-        # Split appointments into pages
-        for i in range(0, len(appointments), rows_per_page):
-            page_chunk = appointments[i : i + rows_per_page]
-            overlay_pages.append(draw_page(page_chunk, i // rows_per_page))
+        for ap in appointments:
+            overlay_pages.append(draw_card(ap))
 
         # If no appointments, still create a single page with header and message
         if not overlay_pages:
