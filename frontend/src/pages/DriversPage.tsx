@@ -1,23 +1,22 @@
-import React, { useState } from 'react';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { 
-  UserIcon, 
-  PlusIcon, 
-  CheckCircleIcon, 
-  XCircleIcon,
-  ExclamationTriangleIcon,
-  SunIcon
+import {
+    CheckCircleIcon,
+    ExclamationTriangleIcon,
+    PlusIcon,
+    UserIcon,
+    XCircleIcon
 } from '@heroicons/react/24/outline';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import React, { useState } from 'react';
 import { DriverFilters } from '../components/DriverFilters';
-import { DriverTable } from '../components/DriverTable';
 import { DriverForm } from '../components/DriverForm';
+import { DriverTable } from '../components/DriverTable';
 import { driverAPI, reportsAPI } from '../services/api';
-import type { 
-  DriverFilter, 
-  Driver, 
-  DriverFormData, 
-  DriverCreateRequest,
-  DriverUpdateRequest 
+import type {
+    Driver,
+    DriverCreateRequest,
+    DriverFilter,
+    DriverFormData,
+    DriverUpdateRequest
 } from '../types/driver';
 
 export const DriversPage: React.FC = () => {
@@ -29,6 +28,8 @@ export const DriversPage: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState<Driver | undefined>();
   const [error, setError] = useState<string | null>(null);
+  const [reportDate, setReportDate] = useState<string>(new Date().toISOString().slice(0, 10)); // YYYY-MM-DD
+  const [reportDriverId, setReportDriverId] = useState<string>('');
 
   // Fetch drivers
   const { 
@@ -153,10 +154,12 @@ export const DriversPage: React.FC = () => {
         alert('Não há motoristas na lista para selecionar.');
         return;
       }
-      // Se houver um selecionado, usa-o; senão usa o primeiro da lista
-      const driver = selectedDriver || driversData.drivers[0];
-      const today = new Date();
-      const date = today.toISOString().slice(0, 10); // YYYY-MM-DD
+      // Se houver um selecionado, usa-o; senão usa o escolhido no select; senão o primeiro
+      const driver = selectedDriver
+        ? selectedDriver
+        : (driversData.drivers.find(d => d.id === reportDriverId) || driversData.drivers[0]);
+
+      const date = reportDate || new Date().toISOString().slice(0, 10);
       const blob = await reportsAPI.getDriverRoutePdf(driver.id, date);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -201,11 +204,35 @@ export const DriversPage: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              {/* Seletor de motorista (quando nenhum está selecionado para edição) */}
+              {driversData?.drivers?.length ? (
+                <select
+                  value={reportDriverId}
+                  onChange={(e) => setReportDriverId(e.target.value)}
+                  className="px-3 py-2 text-sm border border-gray-300 rounded-md bg-white"
+                  title="Escolha o motorista para o relatório"
+                >
+                  <option value="">(usar selecionado ou primeiro)</option>
+                  {driversData.drivers.map((d) => (
+                    <option key={d.id} value={d.id}>{d.nome_completo}</option>
+                  ))}
+                </select>
+              ) : null}
+
+              {/* Data do relatório */}
+              <input
+                type="date"
+                value={reportDate}
+                onChange={(e) => setReportDate(e.target.value)}
+                className="px-3 py-2 text-sm border border-gray-300 rounded-md bg-white"
+                title="Data do relatório"
+              />
+
               <button
                 onClick={handleGenerateRoute}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
               >
-                Gerar Rota (hoje)
+                Gerar Rota
               </button>
               <button
                 onClick={handleNewDriver}

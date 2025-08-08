@@ -89,13 +89,13 @@ class RouteReportService:
                 limit=10_000,
             )
 
-        # Sort by time
-        def time_key(a: Appointment) -> Tuple[int, int]:
+        # Sort by unit, then time
+        def time_key(a: Appointment) -> Tuple[str, int, int]:
             try:
                 h, m = (a.hora_agendamento or "00:00").split(":")
-                return (int(h), int(m))
+                return (a.nome_unidade or "", int(h), int(m))
             except Exception:
-                return (0, 0)
+                return (a.nome_unidade or "", 0, 0)
 
         appointments.sort(key=time_key)
 
@@ -175,8 +175,12 @@ class RouteReportService:
             c.drawString(30 * mm, 270 * mm, f"Motorista: {driver.nome_completo}")
             c.drawString(160 * mm, 270 * mm, f"Data: {start.strftime('%d/%m/%Y')}")
             c.setFont(self.font_main, 11)
-            c.drawString(30 * mm, 250 * mm, "Sem agendamentos para os filtros informados.")
-            c.showPage(); c.save(); buf.seek(0)
+            c.drawString(
+                30 * mm, 250 * mm, "Sem agendamentos para os filtros informados."
+            )
+            c.showPage()
+            c.save()
+            buf.seek(0)
             overlay_pages.append(buf)
 
         # Merge overlay on top of template pages
