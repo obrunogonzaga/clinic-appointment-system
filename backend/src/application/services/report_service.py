@@ -130,7 +130,9 @@ class RouteReportService:
             y = start_y
             for ap in page_appointments:
                 nome = ap.nome_paciente
-                endereco = ap.endereco or ""
+                # O modelo de Appointment não possui campo de endereço.
+                # Usamos a unidade/marca como referência de local.
+                endereco = (ap.nome_unidade or ap.nome_marca or "")
                 hora = ap.hora_agendamento or ""
                 telefone = ap.telefone or ""
                 conf_parts = []
