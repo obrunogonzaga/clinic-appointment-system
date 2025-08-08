@@ -9,6 +9,7 @@ export interface Appointment {
   status: string;
   telefone?: string;
   observacoes?: string;
+  driver_id?: string;
   created_at: string;
   updated_at?: string;
 }

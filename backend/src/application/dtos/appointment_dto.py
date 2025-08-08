@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 
 class AppointmentCreateDTO(BaseModel):
     """DTO for creating a new appointment."""
-    
+
     nome_marca: str = Field(..., description="Nome da Marca")
     nome_unidade: str = Field(..., description="Nome da Unidade")
     nome_paciente: str = Field(..., description="Nome do Paciente")
@@ -21,11 +21,18 @@ class AppointmentCreateDTO(BaseModel):
     status: str = Field("Confirmado", description="Status do Agendamento")
     telefone: Optional[str] = Field(None, description="Telefone do Paciente")
     observacoes: Optional[str] = Field(None, description="Observações")
+    driver_id: Optional[str] = Field(None, description="ID do Motorista")
+
+
+class AppointmentUpdateDTO(BaseModel):
+    """DTO for updating an appointment."""
+
+    driver_id: Optional[str] = Field(None, description="ID do Motorista")
 
 
 class AppointmentResponseDTO(BaseModel):
     """DTO for appointment response."""
-    
+
     id: UUID
     nome_marca: str
     nome_unidade: str
@@ -36,13 +43,14 @@ class AppointmentResponseDTO(BaseModel):
     status: str
     telefone: Optional[str]
     observacoes: Optional[str]
+    driver_id: Optional[str]
     created_at: datetime
     updated_at: Optional[datetime]
 
 
 class AppointmentFilterDTO(BaseModel):
     """DTO for filtering appointments."""
-    
+
     nome_unidade: Optional[str] = None
     nome_marca: Optional[str] = None
     data_inicio: Optional[str] = None
@@ -54,7 +62,7 @@ class AppointmentFilterDTO(BaseModel):
 
 class PaginationDTO(BaseModel):
     """DTO for pagination information."""
-    
+
     page: int
     page_size: int
     total_items: int
@@ -65,7 +73,7 @@ class PaginationDTO(BaseModel):
 
 class AppointmentListResponseDTO(BaseModel):
     """DTO for appointment list response."""
-    
+
     success: bool
     message: Optional[str] = None
     appointments: List[AppointmentResponseDTO]
@@ -74,7 +82,7 @@ class AppointmentListResponseDTO(BaseModel):
 
 class ExcelUploadResponseDTO(BaseModel):
     """DTO for Excel upload response."""
-    
+
     success: bool
     message: str
     filename: Optional[str] = None
@@ -88,7 +96,7 @@ class ExcelUploadResponseDTO(BaseModel):
 
 class FilterOptionsDTO(BaseModel):
     """DTO for filter options."""
-    
+
     success: bool
     message: Optional[str] = None
     units: List[str] = []
@@ -98,7 +106,7 @@ class FilterOptionsDTO(BaseModel):
 
 class DashboardStatsDTO(BaseModel):
     """DTO for dashboard statistics."""
-    
+
     success: bool
     message: Optional[str] = None
     stats: Dict = {}
@@ -106,7 +114,7 @@ class DashboardStatsDTO(BaseModel):
 
 class AppointmentUpdateDTO(BaseModel):
     """DTO for updating appointment."""
-    
+
     nome_marca: Optional[str] = None
     nome_unidade: Optional[str] = None
     nome_paciente: Optional[str] = None
@@ -116,10 +124,11 @@ class AppointmentUpdateDTO(BaseModel):
     status: Optional[str] = None
     telefone: Optional[str] = None
     observacoes: Optional[str] = None
+    driver_id: Optional[str] = None
 
 
 class AppointmentDeleteResponseDTO(BaseModel):
     """DTO for appointment deletion response."""
-    
+
     success: bool
     message: str

@@ -6,6 +6,16 @@ import type {
   DashboardStats,
   AppointmentFilter
 } from '../types/appointment';
+import type {
+  DriverListResponse,
+  DriverResponse,
+  DriverStats,
+  DriverFilterOptions,
+  ActiveDriverListResponse,
+  DriverCreateRequest,
+  DriverUpdateRequest,
+  DriverFilter
+} from '../types/driver';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -97,6 +107,81 @@ export const appointmentAPI = {
   // Delete appointment
   deleteAppointment: async (id: string): Promise<void> => {
     await api.delete(`/appointments/${id}`);
+  },
+
+  // Update appointment driver
+  updateAppointmentDriver: async (appointmentId: string, driverId: string): Promise<void> => {
+    await api.put(`/appointments/${appointmentId}`, {
+      driver_id: driverId || null
+    });
+  },
+};
+
+export const driverAPI = {
+  // Create driver
+  createDriver: async (data: DriverCreateRequest): Promise<DriverResponse> => {
+    const response = await api.post<DriverResponse>('/drivers', data);
+    return response.data;
+  },
+
+  // Get drivers with filters
+  getDrivers: async (filters: DriverFilter): Promise<DriverListResponse> => {
+    const params = new URLSearchParams();
+    
+    if (filters.nome_completo) params.append('nome_completo', filters.nome_completo);
+    if (filters.cnh) params.append('cnh', filters.cnh);
+    if (filters.telefone) params.append('telefone', filters.telefone);
+    if (filters.email) params.append('email', filters.email);
+    if (filters.status) params.append('status', filters.status);
+    if (filters.page) params.append('page', filters.page.toString());
+    if (filters.page_size) params.append('page_size', filters.page_size.toString());
+    
+    const response = await api.get<DriverListResponse>(
+      `/drivers?${params.toString()}`
+    );
+    
+    return response.data;
+  },
+
+  // Get driver by ID
+  getDriver: async (id: string): Promise<DriverResponse> => {
+    const response = await api.get<DriverResponse>(`/drivers/${id}`);
+    return response.data;
+  },
+
+  // Update driver
+  updateDriver: async (id: string, data: DriverUpdateRequest): Promise<DriverResponse> => {
+    const response = await api.put<DriverResponse>(`/drivers/${id}`, data);
+    return response.data;
+  },
+
+  // Delete driver
+  deleteDriver: async (id: string): Promise<void> => {
+    await api.delete(`/drivers/${id}`);
+  },
+
+  // Update driver status
+  updateDriverStatus: async (id: string, status: string): Promise<DriverResponse> => {
+    const response = await api.put<DriverResponse>(`/drivers/${id}/status?new_status=${status}`);
+    return response.data;
+  },
+
+  // Get active drivers
+  getActiveDrivers: async (): Promise<ActiveDriverListResponse> => {
+    const response = await api.get<ActiveDriverListResponse>('/drivers/active');
+    return response.data;
+  },
+
+  // Get driver statistics
+  getDriverStats: async (): Promise<DriverStats> => {
+    const response = await api.get<DriverStats>('/drivers/stats');
+    return response.data;
+  },
+
+  // Get driver filter options
+  getDriverFilterOptions: async (): Promise<DriverFilterOptions> => {
+    const response = await api.get<DriverFilterOptions>('/drivers/filter-options');
+    return response.data;
   },
 };
 

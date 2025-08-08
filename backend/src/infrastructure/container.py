@@ -6,6 +6,7 @@ from typing import Any, AsyncGenerator, Optional
 
 from src.infrastructure.config import Settings, get_settings
 from src.infrastructure.repositories.appointment_repository import AppointmentRepository
+from src.infrastructure.repositories.driver_repository import DriverRepository
 
 
 class Container:
@@ -22,6 +23,7 @@ class Container:
         self._mongodb_client: Optional[Any] = None  # Actually AsyncIOMotorClient
         self._database: Optional[Any] = None  # Actually AsyncIOMotorDatabase
         self._appointment_repository: Optional[AppointmentRepository] = None
+        self._driver_repository: Optional[DriverRepository] = None
 
     @property
     def settings(self) -> Settings:
@@ -64,18 +66,30 @@ class Container:
         if self._database is None:
             self._database = self.mongodb_client[self.settings.database_name]
         return self._database
-    
+
     @property
     def appointment_repository(self) -> AppointmentRepository:
         """
         Get appointment repository instance.
-        
+
         Returns:
             AppointmentRepository: Repository instance
         """
         if self._appointment_repository is None:
             self._appointment_repository = AppointmentRepository(self.database)
         return self._appointment_repository
+
+    @property
+    def driver_repository(self) -> DriverRepository:
+        """
+        Get driver repository instance.
+
+        Returns:
+            DriverRepository: Repository instance
+        """
+        if self._driver_repository is None:
+            self._driver_repository = DriverRepository(self.database)
+        return self._driver_repository
 
     async def startup(self) -> None:
         """
@@ -85,9 +99,10 @@ class Container:
         try:
             await self.mongodb_client.admin.command("ping")
             print(f"✅ Connected to MongoDB at {self.settings.mongodb_url}")
-            
+
             # Create database indexes
             await self.appointment_repository.create_indexes()
+            await self.driver_repository.create_indexes()
             print("✅ Database indexes created")
         except Exception as e:
             print(f"❌ Failed to connect to MongoDB: {e}")
@@ -137,3 +152,13 @@ async def get_appointment_repository() -> AppointmentRepository:
         AppointmentRepository: Repository instance
     """
     return container.appointment_repository
+
+
+async def get_driver_repository() -> DriverRepository:
+    """
+    Dependency for getting driver repository instance.
+
+    Returns:
+        DriverRepository: Repository instance
+    """
+    return container.driver_repository

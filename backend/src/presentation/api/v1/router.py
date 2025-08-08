@@ -8,6 +8,9 @@ from fastapi import APIRouter
 
 from src.infrastructure.config import get_settings
 
+# Import and include routers
+from src.presentation.api.v1.endpoints import appointments, drivers
+
 # Get settings
 settings = get_settings()
 
@@ -17,15 +20,12 @@ api_v1_router = APIRouter(
     tags=["v1"],
 )
 
-# Import and include routers
-from src.presentation.api.v1.endpoints import appointments
-
 # Include routers
 api_v1_router.include_router(
-    appointments.router, 
-    prefix="/appointments", 
-    tags=["Appointments"]
+    appointments.router, prefix="/appointments", tags=["Appointments"]
 )
+
+api_v1_router.include_router(drivers.router, prefix="/drivers", tags=["Drivers"])
 
 
 @api_v1_router.get("/")
@@ -38,5 +38,6 @@ async def api_v1_root() -> dict[str, Any]:
             "docs": f"{settings.api_v1_prefix}/docs",
             "health": f"{settings.api_v1_prefix}/health",
             "appointments": f"{settings.api_v1_prefix}/appointments",
+            "drivers": f"{settings.api_v1_prefix}/drivers",
         },
     }
