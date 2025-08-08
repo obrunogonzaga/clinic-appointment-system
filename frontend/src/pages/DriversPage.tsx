@@ -11,7 +11,7 @@ import {
 import { DriverFilters } from '../components/DriverFilters';
 import { DriverTable } from '../components/DriverTable';
 import { DriverForm } from '../components/DriverForm';
-import { driverAPI } from '../services/api';
+import { driverAPI, reportsAPI } from '../services/api';
 import type { 
   DriverFilter, 
   Driver, 
@@ -147,6 +147,30 @@ export const DriversPage: React.FC = () => {
     setIsFormOpen(true);
   };
 
+  const handleGenerateRoute = async () => {
+    try {
+      if (!driversData || driversData.drivers.length === 0) {
+        alert('Não há motoristas na lista para selecionar.');
+        return;
+      }
+      // Se houver um selecionado, usa-o; senão usa o primeiro da lista
+      const driver = selectedDriver || driversData.drivers[0];
+      const today = new Date();
+      const date = today.toISOString().slice(0, 10); // YYYY-MM-DD
+      const blob = await reportsAPI.getDriverRoutePdf(driver.id, date);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rota_${driver.nome_completo.replace(/\s+/g, '_')}_${date}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err?.response?.data?.detail || 'Erro ao gerar relatório');
+    }
+  };
+
   const handleCloseForm = () => {
     setIsFormOpen(false);
     setSelectedDriver(undefined);
@@ -176,13 +200,21 @@ export const DriversPage: React.FC = () => {
                 Cadastre e gerencie motoristas para coletas domiciliares
               </p>
             </div>
-            <button
-              onClick={handleNewDriver}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <PlusIcon className="w-4 h-4 mr-2" />
-              Novo Motorista
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleGenerateRoute}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              >
+                Gerar Rota (hoje)
+              </button>
+              <button
+                onClick={handleNewDriver}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <PlusIcon className="w-4 h-4 mr-2" />
+                Novo Motorista
+              </button>
+            </div>
           </div>
         </div>
 

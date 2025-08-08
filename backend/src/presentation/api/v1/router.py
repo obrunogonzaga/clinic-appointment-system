@@ -5,11 +5,10 @@ Main router for API v1 endpoints.
 from typing import Any
 
 from fastapi import APIRouter
-
 from src.infrastructure.config import get_settings
 
 # Import and include routers
-from src.presentation.api.v1.endpoints import appointments, drivers
+from src.presentation.api.v1.endpoints import appointments, drivers, reports
 
 # Get settings
 settings = get_settings()
@@ -26,6 +25,8 @@ api_v1_router.include_router(
 )
 
 api_v1_router.include_router(drivers.router, prefix="/drivers", tags=["Drivers"])
+
+api_v1_router.include_router(reports.router, prefix="/reports", tags=["Reports"])
 
 
 @api_v1_router.get("/")

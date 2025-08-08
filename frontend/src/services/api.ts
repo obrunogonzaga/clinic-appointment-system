@@ -185,4 +185,23 @@ export const driverAPI = {
   },
 };
 
+export const reportsAPI = {
+  // Generate route PDF for a given driver and date (YYYY-MM-DD)
+  getDriverRoutePdf: async (
+    driverId: string,
+    date: string,
+    params?: { nome_unidade?: string; nome_marca?: string; status?: string }
+  ): Promise<Blob> => {
+    const usp = new URLSearchParams({ driver_id: driverId, date });
+    if (params?.nome_unidade) usp.append('nome_unidade', params.nome_unidade);
+    if (params?.nome_marca) usp.append('nome_marca', params.nome_marca);
+    if (params?.status) usp.append('status', params.status);
+
+    const response = await api.get(`/reports/route?${usp.toString()}`, {
+      responseType: 'blob'
+    });
+    return response.data as Blob;
+  },
+};
+
 export default api;
