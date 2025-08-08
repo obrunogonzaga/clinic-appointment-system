@@ -6,7 +6,6 @@ from datetime import datetime
 from typing import Optional
 
 from pydantic import Field, field_validator
-
 from src.domain.base import Entity
 
 
@@ -27,11 +26,20 @@ class Appointment(Entity):
 
     # Optional fields
     tipo_consulta: Optional[str] = Field(None, description="Tipo de consulta médica")
-    status: Optional[str] = Field("Confirmado", description="Status do agendamento")
+    status: Optional[str] = Field("Agendado", description="Status do agendamento")
     telefone: Optional[str] = Field(None, description="Telefone de contato do paciente")
     observacoes: Optional[str] = Field(None, description="Observações adicionais")
     driver_id: Optional[str] = Field(
         None, description="ID do motorista responsável pela coleta"
+    )
+    canal_confirmacao: Optional[str] = Field(
+        None, description="Canal utilizado para confirmação (ex.: WhatsApp, Telefone)"
+    )
+    data_confirmacao: Optional[datetime] = Field(
+        None, description="Data da confirmação do agendamento"
+    )
+    hora_confirmacao: Optional[str] = Field(
+        None, description="Hora da confirmação (HH:MM)"
     )
 
     # Metadata fields (handled by Entity base class)
@@ -101,9 +109,10 @@ class Appointment(Entity):
     def validate_status(cls, value: Optional[str]) -> str:
         """Validate appointment status."""
         if not value:
-            return "Confirmado"
+            return "Agendado"
 
         valid_statuses = [
+            "Agendado",
             "Confirmado",
             "Cancelado",
             "Reagendado",

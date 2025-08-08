@@ -8,7 +8,6 @@ from typing import Any, BinaryIO, Dict, List, Optional, Tuple
 
 import pandas as pd
 from pydantic import BaseModel, ValidationError
-
 from src.domain.entities.appointment import Appointment
 
 
@@ -49,6 +48,10 @@ class ExcelParserService:
         "Contato(s) do Paciente": "telefone",
         "Observação": "observacoes",
         "Nomes dos Exames": "tipo_consulta",
+        # Campos de confirmação
+        "Canal de Confirmação": "canal_confirmacao",
+        "Data da Confirmação": "data_confirmacao",
+        "Hora da Confirmação": "hora_confirmacao",
     }
 
     # Status mapping from Excel to our domain model
@@ -58,7 +61,7 @@ class ExcelParserService:
         "Reagendado": "Reagendado",
         "Realizado": "Concluído",
         "Não Compareceu": "Não Compareceu",
-        "Agendado": "Confirmado",  # Default mapping
+        "Agendado": "Agendado",
         "Efetivado": "Confirmado",
     }
 
@@ -204,10 +207,13 @@ class ExcelParserService:
             )
 
             # Parse optional fields
-            status = self._map_status(row.get("Status Agendamento"))
+            status = self._decide_status(row)
             telefone = self._clean_phone(row.get("Contato(s) do Paciente"))
             observacoes = self._clean_string(row.get("Observação"))
             tipo_consulta = self._clean_string(row.get("Nomes dos Exames"))
+            canal_confirmacao = self._clean_string(row.get("Canal de Confirmação"))
+            data_conf = self._parse_optional_date(row.get("Data da Confirmação"))
+            hora_conf = self._parse_optional_time(row.get("Hora da Confirmação"))
 
             # Create appointment entity
             appointment = Appointment(
@@ -220,6 +226,9 @@ class ExcelParserService:
                 telefone=telefone,
                 observacoes=observacoes,
                 tipo_consulta=tipo_consulta,
+                canal_confirmacao=canal_confirmacao,
+                data_confirmacao=data_conf,
+                hora_confirmacao=hora_conf,
                 driver_id=None,  # Driver can be assigned later
             )
 
@@ -249,47 +258,45 @@ class ExcelParserService:
 
     def _clean_phone(self, value: Any) -> Optional[str]:
         """
-        Clean and format phone number.
+        Clean and normalize phone number from mixed text.
 
-        Args:
-            value: Raw phone value from Excel
-
-        Returns:
-            Optional[str]: Cleaned phone number or None
+        Preference order:
+        1) Numbers with DDD (10 or 11 digits)
+        2) Otherwise, return None (do not fail the row)
         """
         if pd.isna(value) or value is None:
             return None
 
-        # Convert to string and clean
-        phone_text = str(value).strip()
-
-        # Extract phone numbers using regex
         import re
 
-        # Look for "Celular: " pattern first
-        celular_match = re.search(r"Celular:\s*([0-9\s\(\)\-]+)", phone_text)
-        if celular_match:
-            phone = celular_match.group(1)
-        else:
-            # Look for any phone-like pattern
-            phone_match = re.search(r"([0-9\s\(\)\-]{8,})", phone_text)
-            if phone_match:
-                phone = phone_match.group(1)
-            else:
-                return None
+        text = str(value).strip()
+        # Remove country code formats
+        text = text.replace("+55", "").replace("+ 55", "").replace("+  55", "")
 
-        # Clean the extracted phone
-        phone = (
-            phone.replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
-        )
-        phone = phone.replace("+55", "").replace("55", "", 1)  # Remove country code
+        # Find candidate numbers with optional DDD and formatting
+        # e.g.: (41) 99945-7777, 41999457777, 41 3333-4444
+        pattern = r"(?:\(\d{2}\)\s*|\b\d{2}\s*)?\d{4,5}\s*-?\s*\d{4}"
+        matches = re.findall(pattern, text)
 
-        # Remove leading zeros if more than 11 digits
-        if len(phone) > 11:
-            phone = phone.lstrip("0")
+        def only_digits(s: str) -> str:
+            return re.sub(r"\D", "", s)
 
-        # Return phone if valid length
-        return phone if 8 <= len(phone) <= 11 else None
+        # Normalize and pick the first valid (10 or 11 digits)
+        for m in matches:
+            digits = only_digits(m)
+            # Remove leading 55 if present
+            if digits.startswith("55") and len(digits) > 11:
+                digits = digits[2:]
+            if len(digits) in (10, 11):
+                return digits
+
+        # Fallback: look for any contiguous 10-11 digits
+        contiguous = re.findall(r"\d{10,11}", only_digits(text))
+        if contiguous:
+            return contiguous[0]
+
+        # If nothing with DDD was found, ignore shorter numbers
+        return None
 
     def _parse_datetime(self, value: Any) -> Tuple[datetime, str]:
         """
@@ -343,10 +350,62 @@ class ExcelParserService:
             str: Mapped status
         """
         if pd.isna(value) or value is None:
-            return "Confirmado"  # Default status
+            return "Agendado"  # Default status
 
         status = str(value).strip()
-        return self.STATUS_MAPPING.get(status, "Confirmado")
+        return self.STATUS_MAPPING.get(status, "Agendado")
+
+    def _parse_optional_date(self, value: Any) -> Optional[datetime]:
+        """Parse optional date without time, returning midnight when present."""
+        if pd.isna(value) or value is None:
+            return None
+        if isinstance(value, datetime):
+            return value.replace(hour=0, minute=0, second=0, microsecond=0)
+        if isinstance(value, str):
+            for fmt in ["%d/%m/%Y", "%Y-%m-%d"]:
+                try:
+                    dt = datetime.strptime(value.strip(), fmt)
+                    return dt
+                except ValueError:
+                    continue
+        return None
+
+    def _parse_optional_time(self, value: Any) -> Optional[str]:
+        """Parse optional HH:MM time string."""
+        if pd.isna(value) or value is None:
+            return None
+        if isinstance(value, str):
+            import re
+
+            m = re.match(r"^(\d{1,2}):(\d{2})", value.strip())
+            if m:
+                hours = int(m.group(1))
+                minutes = int(m.group(2))
+                if 0 <= hours <= 23 and 0 <= minutes <= 59:
+                    return f"{hours:02d}:{minutes:02d}"
+        return None
+
+    def _decide_status(self, row: pd.Series) -> str:
+        """Decide final status based on explicit status and confirmation fields."""
+        status_raw = row.get("Status Agendamento")
+        status = self._map_status(status_raw)
+
+        # Se há canal e data/hora de confirmação, e status não indicar cancelamento,
+        # consideramos Confirmado.
+        canal = self._clean_string(row.get("Canal de Confirmação"))
+        data_conf = row.get("Data da Confirmação")
+        hora_conf = row.get("Hora da Confirmação")
+
+        has_confirmation = (
+            canal is not None
+            or (not pd.isna(data_conf) and data_conf is not None)
+            or (isinstance(hora_conf, str) and hora_conf.strip() != "")
+        )
+
+        if has_confirmation and status not in {"Cancelado", "Não Compareceu"}:
+            return "Confirmado"
+
+        return status
 
     def get_file_info(self, file_content: BinaryIO, filename: str) -> Dict:
         """
