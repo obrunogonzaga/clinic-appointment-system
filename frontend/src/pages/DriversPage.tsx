@@ -10,7 +10,7 @@ import React, { useState } from 'react';
 import { DriverFilters } from '../components/DriverFilters';
 import { DriverForm } from '../components/DriverForm';
 import { DriverTable } from '../components/DriverTable';
-import { driverAPI, reportsAPI } from '../services/api';
+import { driverAPI } from '../services/api';
 import type {
     Driver,
     DriverCreateRequest,
@@ -154,23 +154,14 @@ export const DriversPage: React.FC = () => {
         alert('Não há motoristas na lista para selecionar.');
         return;
       }
-      // Se houver um selecionado, usa-o; senão usa o escolhido no select; senão o primeiro
       const driver = selectedDriver
         ? selectedDriver
         : (driversData.drivers.find(d => d.id === reportDriverId) || driversData.drivers[0]);
-
       const date = reportDate || new Date().toISOString().slice(0, 10);
-      const blob = await reportsAPI.getDriverRoutePdf(driver.id, date);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `rota_${driver.nome_completo.replace(/\s+/g, '_')}_${date}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
+      const url = `/routes/driver?driverId=${encodeURIComponent(driver.id)}&date=${encodeURIComponent(date)}`;
+      window.open(url, '_blank');
     } catch (err: any) {
-      alert(err?.response?.data?.detail || 'Erro ao gerar relatório');
+      alert('Erro ao abrir página de rota');
     }
   };
 

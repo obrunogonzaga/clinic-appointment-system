@@ -26,12 +26,17 @@ class Appointment(Entity):
 
     # Optional fields
     tipo_consulta: Optional[str] = Field(None, description="Tipo de consulta médica")
-    status: Optional[str] = Field("Agendado", description="Status do agendamento")
+    status: Optional[str] = Field("Confirmado", description="Status do agendamento")
     telefone: Optional[str] = Field(None, description="Telefone de contato do paciente")
     observacoes: Optional[str] = Field(None, description="Observações adicionais")
     driver_id: Optional[str] = Field(
         None, description="ID do motorista responsável pela coleta"
     )
+    # Campos adicionais de endereço/convenio (podem não existir em todas as planilhas)
+    cep: Optional[str] = Field(None, description="CEP do endereço de coleta")
+    endereco_coleta: Optional[str] = Field(None, description="Endereço da coleta")
+    numero_convenio: Optional[str] = Field(None, description="Número do convênio")
+    nome_convenio: Optional[str] = Field(None, description="Nome do convênio")
     canal_confirmacao: Optional[str] = Field(
         None, description="Canal utilizado para confirmação (ex.: WhatsApp, Telefone)"
     )
@@ -109,11 +114,11 @@ class Appointment(Entity):
     def validate_status(cls, value: Optional[str]) -> str:
         """Validate appointment status."""
         if not value:
-            return "Agendado"
+            return "Confirmado"
 
         valid_statuses = [
-            "Agendado",
             "Confirmado",
+            "Agendado",
             "Cancelado",
             "Reagendado",
             "Concluído",

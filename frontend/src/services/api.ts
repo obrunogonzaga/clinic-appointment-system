@@ -1,20 +1,20 @@
 import axios from 'axios';
-import type { 
-  AppointmentListResponse, 
-  ExcelUploadResponse, 
-  FilterOptions, 
-  DashboardStats,
-  AppointmentFilter
+import type {
+    AppointmentFilter,
+    AppointmentListResponse,
+    DashboardStats,
+    ExcelUploadResponse,
+    FilterOptions
 } from '../types/appointment';
 import type {
-  DriverListResponse,
-  DriverResponse,
-  DriverStats,
-  DriverFilterOptions,
-  ActiveDriverListResponse,
-  DriverCreateRequest,
-  DriverUpdateRequest,
-  DriverFilter
+    ActiveDriverListResponse,
+    DriverCreateRequest,
+    DriverFilter,
+    DriverFilterOptions,
+    DriverListResponse,
+    DriverResponse,
+    DriverStats,
+    DriverUpdateRequest
 } from '../types/driver';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -77,11 +77,12 @@ export const appointmentAPI = {
     if (filters.data_inicio) params.append('data_inicio', filters.data_inicio);
     if (filters.data_fim) params.append('data_fim', filters.data_fim);
     if (filters.status) params.append('status', filters.status);
+    if (filters.driver_id) params.append('driver_id', filters.driver_id);
     if (filters.page) params.append('page', filters.page.toString());
     if (filters.page_size) params.append('page_size', filters.page_size.toString());
     
     const response = await api.get<AppointmentListResponse>(
-      `/appointments?${params.toString()}`
+      `/appointments/?${params.toString()}`
     );
     
     return response.data;

@@ -2,7 +2,7 @@
 Service for managing appointments business logic.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, BinaryIO, Dict, List, Optional
 
 from src.application.services.excel_parser_service import (
@@ -118,6 +118,7 @@ class AppointmentService:
         data_inicio: Optional[str] = None,
         data_fim: Optional[str] = None,
         status: Optional[str] = None,
+        driver_id: Optional[str] = None,
         page: int = 1,
         page_size: int = 50,
     ) -> Dict:
@@ -150,6 +151,7 @@ class AppointmentService:
                 data_inicio=parsed_dates[0],
                 data_fim=parsed_dates[1],
                 status=status,
+                driver_id=driver_id,
                 skip=skip,
                 limit=page_size,
             )
@@ -158,6 +160,8 @@ class AppointmentService:
             filters = self._build_pagination_filters(
                 nome_unidade, nome_marca, status, parsed_dates
             )
+            if driver_id:
+                filters["driver_id"] = driver_id
             total_count = await self.appointment_repository.count(filters)
 
             # Calculate pagination info
@@ -364,20 +368,41 @@ class AppointmentService:
                 return {"success": False, "message": "Erro ao atualizar motorista"}
 
         except Exception as e:
-            return {"success": False, "message": f"Erro ao atualizar motorista: {str(e)}"}
+            return {
+                "success": False,
+                "message": f"Erro ao atualizar motorista: {str(e)}",
+            }
 
     def _parse_filter_dates(
         self, data_inicio: Optional[str], data_fim: Optional[str]
     ) -> tuple[Optional[datetime], Optional[datetime]]:
-        """Parse filter dates from string format."""
+        """Parse filter dates (YYYY-MM-DD) and normalize to full-day range.
 
-        parsed_data_inicio = None
-        parsed_data_fim = None
+        - If only ``data_inicio`` is provided, returns [start_of_day, end_of_day].
+        - If both are provided and equal, expands ``data_fim`` to end_of_day.
+        - If both are provided and different, returns the two midnights as-is
+          (inclusive range will be built downstream with $gte/$lte).
+        """
+
+        parsed_data_inicio: Optional[datetime] = None
+        parsed_data_fim: Optional[datetime] = None
 
         if data_inicio:
             parsed_data_inicio = datetime.strptime(data_inicio, "%Y-%m-%d")
         if data_fim:
             parsed_data_fim = datetime.strptime(data_fim, "%Y-%m-%d")
+
+        # Normalize to full day when appropriate
+        if parsed_data_inicio and not parsed_data_fim:
+            # single-day filter → end of day
+            parsed_data_fim = parsed_data_inicio + timedelta(days=1)
+        if (
+            parsed_data_inicio
+            and parsed_data_fim
+            and parsed_data_inicio.date() == parsed_data_fim.date()
+        ):
+            # same day → set end to next midnight
+            parsed_data_fim = parsed_data_inicio + timedelta(days=1)
 
         return parsed_data_inicio, parsed_data_fim
 

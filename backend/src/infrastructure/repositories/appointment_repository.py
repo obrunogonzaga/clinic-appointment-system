@@ -8,7 +8,6 @@ from uuid import UUID
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import ASCENDING, DESCENDING
-
 from src.domain.entities.appointment import Appointment
 from src.domain.repositories.appointment_repository_interface import (
     AppointmentRepositoryInterface,
@@ -140,6 +139,7 @@ class AppointmentRepository(AppointmentRepositoryInterface):
         data_inicio: Optional[datetime] = None,
         data_fim: Optional[datetime] = None,
         status: Optional[str] = None,
+        driver_id: Optional[str] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> List[Appointment]:
@@ -177,6 +177,9 @@ class AppointmentRepository(AppointmentRepositoryInterface):
 
         if status:
             query["status"] = status
+
+        if driver_id is not None:
+            query["driver_id"] = driver_id
 
         # Execute query
         cursor = self.collection.find(query).skip(skip).limit(limit)

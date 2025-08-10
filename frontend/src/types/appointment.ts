@@ -10,6 +10,11 @@ export interface Appointment {
   telefone?: string;
   observacoes?: string;
   driver_id?: string;
+  // Campos opcionais que podem vir a existir no backend
+  cep?: string;
+  endereco_coleta?: string;
+  numero_convenio?: string;
+  nome_convenio?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -20,6 +25,7 @@ export interface AppointmentFilter {
   data_inicio?: string;
   data_fim?: string;
   status?: string;
+  driver_id?: string;
   page?: number;
   page_size?: number;
 }

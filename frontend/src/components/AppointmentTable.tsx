@@ -1,14 +1,14 @@
-import React from 'react';
-import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  type ColumnDef,
-  type SortingState,
-  flexRender,
-} from '@tanstack/react-table';
-import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/20/solid';
+import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/20/solid';
 import { TrashIcon } from '@heroicons/react/24/outline';
+import {
+    flexRender,
+    getCoreRowModel,
+    getSortedRowModel,
+    useReactTable,
+    type ColumnDef,
+    type SortingState,
+} from '@tanstack/react-table';
+import React from 'react';
 import type { Appointment } from '../types/appointment';
 import type { ActiveDriver } from '../types/driver';
 
@@ -146,7 +146,6 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
         header: 'Motorista',
         cell: ({ row }) => {
           const appointment = row.original;
-          const selectedDriver = drivers.find(d => d.id === appointment.driver_id);
           
           return (
             <select

@@ -8,7 +8,6 @@ from typing import Dict, List
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import JSONResponse
-
 from src.application.dtos.appointment_dto import (
     AppointmentFilterDTO,
     AppointmentListResponseDTO,
@@ -121,6 +120,7 @@ async def get_appointments(
     data_inicio: str = Query(None, description="Data de início (YYYY-MM-DD)"),
     data_fim: str = Query(None, description="Data de fim (YYYY-MM-DD)"),
     status: str = Query(None, description="Filtrar por status"),
+    driver_id: str = Query(None, description="Filtrar por ID do motorista"),
     page: int = Query(1, ge=1, description="Número da página"),
     page_size: int = Query(50, ge=1, le=100, description="Itens por página"),
     service: AppointmentService = Depends(get_appointment_service),
@@ -148,6 +148,7 @@ async def get_appointments(
             data_inicio=data_inicio,
             data_fim=data_fim,
             status=status,
+            driver_id=driver_id,
             page=page,
             page_size=page_size,
         )

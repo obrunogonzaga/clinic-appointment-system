@@ -52,6 +52,13 @@ class ExcelParserService:
         "Canal de Confirmação": "canal_confirmacao",
         "Data da Confirmação": "data_confirmacao",
         "Hora da Confirmação": "hora_confirmacao",
+        # Campos extras tentativos (se existirem nas planilhas)
+        "CEP": "cep",
+        "Endereço Coleta": "endereco_coleta",
+        "Numero Convenio": "numero_convenio",
+        "Número Convênio": "numero_convenio",
+        "Nome Convenio": "nome_convenio",
+        "Nome Convênio": "nome_convenio",
     }
 
     # Status mapping from Excel to our domain model
@@ -211,6 +218,14 @@ class ExcelParserService:
             telefone = self._clean_phone(row.get("Contato(s) do Paciente"))
             observacoes = self._clean_string(row.get("Observação"))
             tipo_consulta = self._clean_string(row.get("Nomes dos Exames"))
+            cep = self._clean_string(row.get("CEP"))
+            endereco_coleta = self._clean_string(row.get("Endereço Coleta"))
+            numero_convenio = self._clean_string(
+                row.get("Numero Convenio") or row.get("Número Convênio")
+            )
+            nome_convenio = self._clean_string(
+                row.get("Nome Convenio") or row.get("Nome Convênio")
+            )
             canal_confirmacao = self._clean_string(row.get("Canal de Confirmação"))
             data_conf = self._parse_optional_date(row.get("Data da Confirmação"))
             hora_conf = self._parse_optional_time(row.get("Hora da Confirmação"))
@@ -229,7 +244,11 @@ class ExcelParserService:
                 canal_confirmacao=canal_confirmacao,
                 data_confirmacao=data_conf,
                 hora_confirmacao=hora_conf,
-                driver_id=None,  # Driver can be assigned later
+                driver_id=None,
+                cep=cep,
+                endereco_coleta=endereco_coleta,
+                numero_convenio=numero_convenio,
+                nome_convenio=nome_convenio,
             )
 
             return appointment
@@ -350,10 +369,10 @@ class ExcelParserService:
             str: Mapped status
         """
         if pd.isna(value) or value is None:
-            return "Agendado"  # Default status
+            return "Confirmado"  # Default status mantém compatibilidade
 
         status = str(value).strip()
-        return self.STATUS_MAPPING.get(status, "Agendado")
+        return self.STATUS_MAPPING.get(status, "Confirmado")
 
     def _parse_optional_date(self, value: Any) -> Optional[datetime]:
         """Parse optional date without time, returning midnight when present."""

@@ -81,6 +81,7 @@ class AppointmentRepositoryInterface(ABC):
         data_inicio: Optional[datetime] = None,
         data_fim: Optional[datetime] = None,
         status: Optional[str] = None,
+        driver_id: Optional[str] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> List[Appointment]:
@@ -93,6 +94,7 @@ class AppointmentRepositoryInterface(ABC):
             data_inicio: Filter by start date
             data_fim: Filter by end date
             status: Filter by appointment status
+            driver_id: Filter by assigned driver id
             skip: Number of records to skip
             limit: Maximum number of records to return
 
