@@ -2,8 +2,8 @@
 Service for parsing Excel files containing appointment data.
 """
 
-import io
 from datetime import datetime
+import re
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple
 
 import pandas as pd
@@ -75,6 +75,15 @@ class ExcelParserService:
     def __init__(self) -> None:
         """Initialize the parser service."""
         self.supported_formats = [".xlsx", ".xls", ".csv"]
+        # Importar somente quando "Nome da Sala" iniciar com o padrão
+        # AA-AA-AA-AA-AA (ex.: AD-SF-FQ-AC-AV). Texto extra à direita
+        # (ex.: "CENTER 3 CARRO 1 - UND84") será preservado.
+        self.SALA_PATTERN = re.compile(
+            r"^[A-Z]{2}(?:-[A-Z]{2}){4}(?:\s+.*)?$"
+        )
+        self.SALA_EXTRACT_PATTERN = re.compile(
+            r"^(?P<sala>[A-Z]{2}(?:-[A-Z]{2}){4})(?:\s+(?P<carro>.+))?$"
+        )
 
     async def parse_excel_file(
         self, file_content: BinaryIO, filename: str
@@ -141,12 +150,19 @@ class ExcelParserService:
             raise ValueError("Arquivo Excel está vazio")
 
         # Check if required columns exist
-        required_columns = ["Nome da Marca", "Nome da Unidade", "Nome do Paciente"]
-        missing_columns = [col for col in required_columns if col not in df.columns]
+        required_columns = [
+            "Nome da Marca",
+            "Nome da Unidade",
+            "Nome do Paciente",
+        ]
+        missing_columns = [
+            col for col in required_columns if col not in df.columns
+        ]
 
         if missing_columns:
             raise ValueError(
-                f"Colunas obrigatórias não encontradas: {', '.join(missing_columns)}"
+                "Colunas obrigatórias não encontradas: "
+                + ", ".join(missing_columns)
             )
 
         return df
@@ -163,7 +179,21 @@ class ExcelParserService:
         """
         appointments = []
         errors = []
-        total_rows = len(df)
+        original_total_rows = len(df)
+
+        # Filtra por padrão do "Nome da Sala" quando a coluna existir.
+        # Somente linhas no formato AA-AA-AA-AA-AA devem ser importadas.
+        if "Nome da Sala" in df.columns:
+            try:
+                mask = df["Nome da Sala"].astype(str).str.fullmatch(
+                    self.SALA_PATTERN
+                )
+                # Algumas versões retornam NaN para valores vazios
+                mask = mask.fillna(False)
+                df = df[mask]
+            except Exception:
+                # Se falhar o filtro, não interromper a importação
+                pass
 
         for index, row in df.iterrows():
             try:
@@ -172,13 +202,15 @@ class ExcelParserService:
                     appointments.append(appointment)
 
             except Exception as e:
-                errors.append(f"Linha {index + 1}: {str(e)}")
+                errors.append(
+                    f"Linha {index + 1}: {str(e)}"
+                )
 
         return ExcelParseResult(
             success=len(errors) == 0,
             appointments=appointments,
             errors=errors,
-            total_rows=total_rows,
+            total_rows=original_total_rows,
             valid_rows=len(appointments),
             invalid_rows=len(errors),
         )
@@ -217,6 +249,21 @@ class ExcelParserService:
             status = self._decide_status(row)
             telefone = self._clean_phone(row.get("Contato(s) do Paciente"))
             observacoes = self._clean_string(row.get("Observação"))
+            # Extrai info de sala/carro do campo "Nome da Sala" (se existir)
+            sala_val = self._clean_string(row.get("Nome da Sala"))
+            if sala_val:
+                m = self.SALA_EXTRACT_PATTERN.match(sala_val)
+                if m:
+                    sala_code = m.group("sala")
+                    carro_info = m.group("carro")
+                    # Anexa às observações para preservarmos as informações
+                    parts: list[str] = []
+                    if observacoes:
+                        parts.append(observacoes)
+                    parts.append(f"Sala: {sala_code}")
+                    if carro_info:
+                        parts.append(f"Carro: {carro_info}")
+                    observacoes = " | ".join(parts)
             tipo_consulta = self._clean_string(row.get("Nomes dos Exames"))
             cep = self._clean_string(row.get("CEP"))
             endereco_coleta = self._clean_string(row.get("Endereço Coleta"))
