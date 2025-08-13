@@ -1,12 +1,12 @@
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/20/solid';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import {
-    flexRender,
-    getCoreRowModel,
-    getSortedRowModel,
-    useReactTable,
-    type ColumnDef,
-    type SortingState,
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type ColumnDef,
+  type SortingState,
 } from '@tanstack/react-table';
 import React from 'react';
 import type { Appointment } from '../types/appointment';
@@ -80,10 +80,13 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
         accessorKey: 'data_agendamento',
         header: 'Data',
         cell: ({ row }) => {
-          const date = new Date(row.original.data_agendamento);
+          const iso = row.original.data_agendamento ?? '';
+          const ymd = iso.split('T')[0] || iso; // "YYYY-MM-DD"
+          const [y, m, d] = ymd.split('-');
+          const formatted = y && m && d ? `${d}/${m}/${y}` : '';
           return (
             <div className="text-sm text-gray-900">
-              {date.toLocaleDateString('pt-BR')}
+              {formatted || '-'}
             </div>
           );
         },
