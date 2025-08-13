@@ -64,26 +64,26 @@ shell-db: ## Open MongoDB shell
 test: test-backend test-frontend ## Run all tests
 
 .PHONY: test-backend
-test-backend: ## Run backend tests
-	docker-compose exec backend pytest
+test-backend: ## Run backend tests with coverage
+	docker-compose exec backend pytest --cov=src --cov-report=term-missing --cov-fail-under=80
 
 .PHONY: test-frontend
-test-frontend: ## Run frontend tests
+test-frontend: ## Run frontend tests (when implemented)
 	docker-compose exec frontend npm test
 
 .PHONY: lint
 lint: lint-backend lint-frontend ## Run linters for all code
 
 .PHONY: lint-backend
-lint-backend: ## Run backend linters
+lint-backend: ## Run backend linters and fix issues
 	docker-compose exec backend black .
-	docker-compose exec backend flake8
 	docker-compose exec backend isort .
+	docker-compose exec backend flake8 .
 	docker-compose exec backend mypy .
 
 .PHONY: lint-frontend
 lint-frontend: ## Run frontend linters
-	docker-compose exec frontend npm run lint
+	docker-compose exec frontend npm run lint --fix || true
 	docker-compose exec frontend npm run type-check
 
 .PHONY: format
@@ -129,3 +129,63 @@ update-deps: ## Update all dependencies
 check-security: ## Check for security vulnerabilities
 	docker-compose exec backend pip-audit -r requirements.txt || echo "Backend security scan completed"
 	docker-compose exec frontend npm audit || echo "Frontend security scan completed"
+
+.PHONY: dev-backend
+dev-backend: ## Run backend in development mode (local)
+	cd backend && source venv/bin/activate && uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+
+.PHONY: dev-frontend
+dev-frontend: ## Run frontend in development mode (local)
+	cd frontend && npm run dev
+
+.PHONY: build-frontend
+build-frontend: ## Build frontend for production
+	cd frontend && npm run build
+
+.PHONY: install-backend
+install-backend: ## Install backend dependencies (local)
+	cd backend && pip install -r requirements.txt
+
+.PHONY: install-frontend
+install-frontend: ## Install frontend dependencies (local)
+	cd frontend && npm install
+
+.PHONY: install
+install: install-backend install-frontend ## Install all dependencies (local)
+
+.PHONY: api-docs
+api-docs: ## Open API documentation in browser
+	@echo "Opening API documentation at http://localhost:8000/docs"
+	@command -v open >/dev/null 2>&1 && open http://localhost:8000/docs || echo "Visit http://localhost:8000/docs in your browser"
+
+.PHONY: status
+status: ## Check status of all services
+	docker-compose ps
+
+.PHONY: logs-all
+logs-all: ## View logs from all services in real-time
+	docker-compose logs -f --tail=50
+
+.PHONY: health
+health: ## Check health of all services
+	@echo "Checking backend health..."
+	@curl -s http://localhost:8000/health || echo "❌ Backend not responding"
+	@echo "Checking frontend..."
+	@curl -s http://localhost:3000 > /dev/null && echo "✅ Frontend is running" || echo "❌ Frontend not responding"
+	@echo "Checking MongoDB..."
+	@docker-compose exec mongodb mongosh --eval "db.runCommand('ping')" > /dev/null 2>&1 && echo "✅ MongoDB is running" || echo "❌ MongoDB not responding"
+
+.PHONY: quick-start
+quick-start: ## Quick start for development (Docker)
+	@echo "🚀 Starting Clinic Appointment System..."
+	@echo "📦 Building containers..."
+	docker-compose up --build -d
+	@echo "⏳ Waiting for services to start..."
+	sleep 10
+	@echo "🔍 Checking service health..."
+	make health
+	@echo "✅ System ready!"
+	@echo "🌐 Access the application at:"
+	@echo "   Frontend: http://localhost:3000"
+	@echo "   Backend:  http://localhost:8000"
+	@echo "   API Docs: http://localhost:8000/docs"

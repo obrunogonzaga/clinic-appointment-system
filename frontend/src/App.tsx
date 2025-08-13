@@ -1,63 +1,55 @@
-import { useState, useEffect } from 'react'
-import './App.css'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useState } from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { Navigation } from './components/Navigation';
+import { AppointmentsPage } from './pages/AppointmentsPage';
+import { Dashboard } from './pages/Dashboard';
+import { DriverRoutePage } from './pages/DriverRoutePage';
+import { DriversPage } from './pages/DriversPage';
 
-interface HealthStatus {
-  status: string
-  service: string
-  version: string
-  environment: string
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
+
+function Shell() {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return <Dashboard onTabChange={setActiveTab} />;
+      case 'appointments':
+        return <AppointmentsPage />;
+      case 'drivers':
+        return <DriversPage />;
+      default:
+        return <Dashboard onTabChange={setActiveTab} />;
+    }
+  };
+  return (
+    <div className="min-h-screen bg-gray-50 flex">
+      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+      <main className="flex-1 p-8">{renderContent()}</main>
+    </div>
+  );
 }
 
 function App() {
-  const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    fetch('http://localhost:8000/health')
-      .then(response => response.json())
-      .then(data => {
-        setHealthStatus(data)
-        setLoading(false)
-      })
-      .catch(_err => {
-        setError('Failed to connect to backend API')
-        setLoading(false)
-      })
-  }, [])
-
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-md w-96">
-        <h1 className="text-3xl font-bold text-center mb-6 text-blue-600">
-          Sistema de Agendamento Clínico
-        </h1>
-
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">
-            Bem-vindo ao sistema de agendamento de consultas
-          </p>
-
-          <div className="border-t pt-4">
-            <h2 className="text-lg font-semibold mb-2">Status da API</h2>
-            {loading && <p className="text-gray-500">Carregando...</p>}
-            {error && <p className="text-red-500">{error}</p>}
-            {healthStatus && (
-              <div className="text-sm text-gray-600">
-                <p>Status: <span className="text-green-500 font-semibold">{healthStatus.status}</span></p>
-                <p>Versão: {healthStatus.version}</p>
-                <p>Ambiente: {healthStatus.environment}</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-6 text-center text-sm text-gray-500">
-          <p>© 2025 Clinic Appointment System</p>
-        </div>
-      </div>
-    </div>
-  )
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/routes/driver" element={<DriverRoutePage />} />
+          <Route path="*" element={<Shell />} />
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
 }
 
-export default App
+export default App;

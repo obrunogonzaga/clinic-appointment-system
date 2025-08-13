@@ -5,8 +5,10 @@ Main router for API v1 endpoints.
 from typing import Any
 
 from fastapi import APIRouter
-
 from src.infrastructure.config import get_settings
+
+# Import and include routers
+from src.presentation.api.v1.endpoints import appointments, drivers, reports
 
 # Get settings
 settings = get_settings()
@@ -17,12 +19,14 @@ api_v1_router = APIRouter(
     tags=["v1"],
 )
 
-# Import and include routers here as they are created
-# Example:
-# from src.presentation.api.v1.endpoints import auth, appointments, patients
-# api_v1_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
-# api_v1_router.include_router(appointments.router, prefix="/appointments", tags=["Appointments"])
-# api_v1_router.include_router(patients.router, prefix="/patients", tags=["Patients"])
+# Include routers
+api_v1_router.include_router(
+    appointments.router, prefix="/appointments", tags=["Appointments"]
+)
+
+api_v1_router.include_router(drivers.router, prefix="/drivers", tags=["Drivers"])
+
+api_v1_router.include_router(reports.router, prefix="/reports", tags=["Reports"])
 
 
 @api_v1_router.get("/")
@@ -34,5 +38,7 @@ async def api_v1_root() -> dict[str, Any]:
         "endpoints": {
             "docs": f"{settings.api_v1_prefix}/docs",
             "health": f"{settings.api_v1_prefix}/health",
+            "appointments": f"{settings.api_v1_prefix}/appointments",
+            "drivers": f"{settings.api_v1_prefix}/drivers",
         },
     }
