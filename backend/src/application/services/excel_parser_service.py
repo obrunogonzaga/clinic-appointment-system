@@ -183,8 +183,10 @@ class ExcelParserService:
         # Somente linhas no formato AA-AA-AA-AA-AA devem ser importadas.
         if "Nome da Sala" in df.columns:
             try:
-                mask = df["Nome da Sala"].astype(str).str.fullmatch(
-                    self.SALA_PATTERN
+                mask = (
+                    df["Nome da Sala"]
+                    .astype(str)
+                    .str.fullmatch(self.SALA_PATTERN)
                 )
                 # Algumas versões retornam NaN para valores vazios
                 mask = mask.fillna(False)
