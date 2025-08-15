@@ -4,21 +4,34 @@ import {
     XCircleIcon,
 } from '@heroicons/react/24/outline';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppointmentFilters } from '../components/AppointmentFilters';
 import { AppointmentTable } from '../components/AppointmentTable';
+import { AppointmentCardList } from '../components/AppointmentCardList';
+import { ViewModeToggle, type ViewMode } from '../components/ViewModeToggle';
 import { FileUpload } from '../components/FileUpload';
+import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import { appointmentAPI, driverAPI } from '../services/api';
 import type { AppointmentFilter, ExcelUploadResponse } from '../types/appointment';
 
 export const AppointmentsPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const { isMobile } = useResponsiveLayout();
+  
   const [filters, setFilters] = useState<AppointmentFilter>({
     page: 1,
     page_size: 50
   });
   const [uploadResult, setUploadResult] = useState<ExcelUploadResponse | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
+
+  // Auto-switch to cards view on mobile devices
+  useEffect(() => {
+    if (isMobile && viewMode === 'table') {
+      setViewMode('cards');
+    }
+  }, [isMobile, viewMode]);
 
   // Fetch appointments
   const { 
@@ -115,13 +128,22 @@ export const AppointmentsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">
-          Gerenciamento de Agendamentos
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Faça upload de arquivos Excel e gerencie agendamentos
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Gerenciamento de Agendamentos
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Faça upload de arquivos Excel e gerencie agendamentos
+          </p>
+        </div>
+        
+        <div className="mt-4 sm:mt-0">
+          <ViewModeToggle 
+            viewMode={viewMode} 
+            onViewChange={setViewMode}
+          />
+        </div>
       </div>
 
       {/* Upload Section */}
@@ -157,7 +179,7 @@ export const AppointmentsPage: React.FC = () => {
                     <p className="text-sm font-medium text-red-800">Erros encontrados:</p>
                     <ul className="text-sm text-red-600 mt-1 ml-4">
                       {uploadResult.errors.slice(0, 5).map((error, index) => (
-                        <li key={index}>• {error}</li>
+                        <li key={`error-${index}-${error.slice(0, 10)}`}>• {error}</li>
                       ))}
                       {uploadResult.errors.length > 5 && (
                         <li>• ... e mais {uploadResult.errors.length - 5} erros</li>
@@ -190,11 +212,23 @@ export const AppointmentsPage: React.FC = () => {
         isLoading={isLoadingFilters}
       />
 
-      {/* Appointments Table */}
+      {/* Appointments Display */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Agendamentos</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Agendamentos
+              {viewMode === 'cards' && (
+                <span className="ml-2 text-sm font-normal text-gray-500">
+                  (Visualização Cards)
+                </span>
+              )}
+              {viewMode === 'calendar' && (
+                <span className="ml-2 text-sm font-normal text-gray-500">
+                  (Visualização Calendário)
+                </span>
+              )}
+            </h2>
             
             {appointmentsData?.pagination && (
               <div className="text-sm text-gray-500">
@@ -203,14 +237,41 @@ export const AppointmentsPage: React.FC = () => {
             )}
           </div>
 
-          <AppointmentTable
-            appointments={appointmentsData?.appointments || []}
-            drivers={driversData?.drivers || []}
-            isLoading={isLoadingAppointments}
-            onStatusChange={handleStatusChange}
-            onDelete={handleDelete}
-            onDriverChange={handleDriverChange}
-          />
+          {/* Render content based on view mode */}
+          {viewMode === 'cards' && (
+            <AppointmentCardList
+              appointments={appointmentsData?.appointments || []}
+              drivers={driversData?.drivers || []}
+              isLoading={isLoadingAppointments}
+              onStatusChange={handleStatusChange}
+              onDriverChange={handleDriverChange}
+              onDelete={handleDelete}
+            />
+          )}
+
+          {viewMode === 'calendar' && (
+            <div className="text-center py-12">
+              <div className="text-gray-500 text-lg mb-2">
+                📅 Visualização em Calendário
+              </div>
+              <div className="text-gray-400 text-sm">
+                Em desenvolvimento - será implementado na Fase 2
+              </div>
+            </div>
+          )}
+
+          {viewMode === 'table' && (
+            <div className="overflow-x-auto">
+              <AppointmentTable
+                appointments={appointmentsData?.appointments || []}
+                drivers={driversData?.drivers || []}
+                isLoading={isLoadingAppointments}
+                onStatusChange={handleStatusChange}
+                onDelete={handleDelete}
+                onDriverChange={handleDriverChange}
+              />
+            </div>
+          )}
 
           {/* Pagination */}
           {appointmentsData?.pagination && appointmentsData.pagination.total_pages > 1 && (
