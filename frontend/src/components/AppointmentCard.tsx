@@ -10,14 +10,17 @@ import {
 } from '@heroicons/react/24/outline';
 import type { Appointment } from '../types/appointment';
 import type { ActiveDriver } from '../types/driver';
+import type { ActiveCollector } from '../types/collector';
 import { getStatusBadgeClass } from '../utils/statusColors';
 import { formatDate } from '../utils/dateUtils';
 
 interface AppointmentCardProps {
   appointment: Appointment;
   drivers: ActiveDriver[];
+  collectors?: ActiveCollector[];
   onStatusChange: (id: string, status: string) => void;
   onDriverChange: (appointmentId: string, driverId: string) => void;
+  onCollectorChange?: (appointmentId: string, collectorId: string) => void;
   onDelete: (id: string) => void;
   compact?: boolean;
 }
@@ -33,8 +36,10 @@ const statusOptions = [
 export const AppointmentCard: React.FC<AppointmentCardProps> = ({
   appointment,
   drivers,
+  collectors = [],
   onStatusChange,
   onDriverChange,
+  onCollectorChange,
   onDelete,
   compact = false
 }) => {
@@ -136,35 +141,61 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-100">
-        {/* Driver Selection */}
-        <div className="flex-1 mr-3">
-          <select
-            value={appointment.driver_id || ''}
-            onChange={(e) => onDriverChange(appointment.id, e.target.value)}
-            className={`
-              w-full border border-gray-300 rounded px-2 py-1.5 
-              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-              ${compact ? 'text-xs' : 'text-sm'}
-            `}
-          >
-            <option value="">Selecionar motorista</option>
-            {drivers.map((driver) => (
-              <option key={driver.id} value={driver.id}>
-                {driver.nome_completo}
-              </option>
-            ))}
-          </select>
+      <div className="mt-4 pt-3 border-t border-gray-100">
+        <div className="flex gap-2 mb-3">
+          {/* Driver Selection */}
+          <div className="flex-1">
+            <select
+              value={appointment.driver_id || ''}
+              onChange={(e) => onDriverChange(appointment.id, e.target.value)}
+              className={`
+                w-full border border-gray-300 rounded px-2 py-1.5 
+                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                ${compact ? 'text-xs' : 'text-sm'}
+              `}
+            >
+              <option value="">Selecionar motorista</option>
+              {drivers.map((driver) => (
+                <option key={driver.id} value={driver.id}>
+                  {driver.nome_completo}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Collector Selection */}
+          {onCollectorChange && (
+            <div className="flex-1">
+              <select
+                value={appointment.collector_id || ''}
+                onChange={(e) => onCollectorChange(appointment.id, e.target.value)}
+                className={`
+                  w-full border border-gray-300 rounded px-2 py-1.5 
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                  ${compact ? 'text-xs' : 'text-sm'}
+                `}
+              >
+                <option value="">Selecionar coletor</option>
+                {collectors.map((collector) => (
+                  <option key={collector.id} value={collector.id}>
+                    {collector.nome_completo}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Actions */}
-        <button
-          onClick={handleDelete}
-          className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
-          title="Excluir agendamento"
-        >
-          <TrashIcon className="w-4 h-4" />
-        </button>
+        <div className="flex justify-end">
+          <button
+            onClick={handleDelete}
+            className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+            title="Excluir agendamento"
+          >
+            <TrashIcon className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

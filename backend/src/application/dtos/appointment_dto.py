@@ -22,12 +22,14 @@ class AppointmentCreateDTO(BaseModel):
     telefone: Optional[str] = Field(None, description="Telefone do Paciente")
     observacoes: Optional[str] = Field(None, description="Observações")
     driver_id: Optional[str] = Field(None, description="ID do Motorista")
+    collector_id: Optional[str] = Field(None, description="ID da Coletora")
 
 
 class AppointmentUpdateDTO(BaseModel):
     """DTO for updating an appointment."""
 
     driver_id: Optional[str] = Field(None, description="ID do Motorista")
+    collector_id: Optional[str] = Field(None, description="ID da Coletora")
 
 
 class AppointmentResponseDTO(BaseModel):
@@ -44,6 +46,7 @@ class AppointmentResponseDTO(BaseModel):
     telefone: Optional[str]
     observacoes: Optional[str]
     driver_id: Optional[str]
+    collector_id: Optional[str]
     created_at: datetime
     updated_at: Optional[datetime]
 
@@ -125,6 +128,7 @@ class AppointmentUpdateDTO(BaseModel):
     telefone: Optional[str] = None
     observacoes: Optional[str] = None
     driver_id: Optional[str] = None
+    collector_id: Optional[str] = None
 
 
 class AppointmentDeleteResponseDTO(BaseModel):

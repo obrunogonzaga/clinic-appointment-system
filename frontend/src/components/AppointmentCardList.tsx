@@ -2,14 +2,17 @@ import React from 'react';
 import { AppointmentCard } from './AppointmentCard';
 import type { Appointment } from '../types/appointment';
 import type { ActiveDriver } from '../types/driver';
+import type { ActiveCollector } from '../types/collector';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 
 interface AppointmentCardListProps {
   appointments: Appointment[];
   drivers: ActiveDriver[];
+  collectors?: ActiveCollector[];
   isLoading?: boolean;
   onStatusChange: (id: string, status: string) => void;
   onDriverChange: (appointmentId: string, driverId: string) => void;
+  onCollectorChange?: (appointmentId: string, collectorId: string) => void;
   onDelete: (id: string) => void;
 }
 
@@ -34,9 +37,11 @@ const CardSkeleton: React.FC = () => (
 export const AppointmentCardList: React.FC<AppointmentCardListProps> = ({
   appointments,
   drivers,
+  collectors = [],
   isLoading = false,
   onStatusChange,
   onDriverChange,
+  onCollectorChange,
   onDelete
 }) => {
   const { isMobile, isTablet } = useResponsiveLayout();
@@ -52,7 +57,7 @@ export const AppointmentCardList: React.FC<AppointmentCardListProps> = ({
     return (
       <div className={`grid ${getGridColumns()} gap-4`}>
         {Array.from({ length: 6 }, (_, index) => (
-          <CardSkeleton key={`skeleton-${Date.now()}-${index}`} />
+          <CardSkeleton key={`skeleton-loading-${index}`} />
         ))}
       </div>
     );
@@ -78,8 +83,10 @@ export const AppointmentCardList: React.FC<AppointmentCardListProps> = ({
           key={appointment.id}
           appointment={appointment}
           drivers={drivers}
+          collectors={collectors}
           onStatusChange={onStatusChange}
           onDriverChange={onDriverChange}
+          onCollectorChange={onCollectorChange}
           onDelete={onDelete}
           compact={isMobile}
         />

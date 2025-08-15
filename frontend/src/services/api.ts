@@ -7,6 +7,16 @@ import type {
     FilterOptions
 } from '../types/appointment';
 import type {
+    ActiveCollectorListResponse,
+    CollectorCreateRequest,
+    CollectorFilter,
+    CollectorFilterOptions,
+    CollectorListResponse,
+    CollectorResponse,
+    CollectorStats,
+    CollectorUpdateRequest
+} from '../types/collector';
+import type {
     ActiveDriverListResponse,
     DriverCreateRequest,
     DriverFilter,
@@ -116,6 +126,11 @@ export const appointmentAPI = {
       driver_id: driverId || null
     });
   },
+
+  // Update appointment collector
+  updateAppointmentCollector: async (appointmentId: string, collectorId: string): Promise<void> => {
+    await api.put(`/appointments/${appointmentId}/collector?collector_id=${collectorId || ''}`);
+  },
 };
 
 export const driverAPI = {
@@ -182,6 +197,74 @@ export const driverAPI = {
   // Get driver filter options
   getDriverFilterOptions: async (): Promise<DriverFilterOptions> => {
     const response = await api.get<DriverFilterOptions>('/drivers/filter-options');
+    return response.data;
+  },
+};
+
+export const collectorAPI = {
+  // Create collector
+  createCollector: async (data: CollectorCreateRequest): Promise<CollectorResponse> => {
+    const response = await api.post<CollectorResponse>('/collectors', data);
+    return response.data;
+  },
+
+  // Get collectors with filters
+  getCollectors: async (filters: CollectorFilter): Promise<CollectorListResponse> => {
+    const params = new URLSearchParams();
+    
+    if (filters.nome_completo) params.append('nome_completo', filters.nome_completo);
+    if (filters.cpf) params.append('cpf', filters.cpf);
+    if (filters.telefone) params.append('telefone', filters.telefone);
+    if (filters.email) params.append('email', filters.email);
+    if (filters.status) params.append('status', filters.status);
+    if (filters.page) params.append('page', filters.page.toString());
+    if (filters.page_size) params.append('page_size', filters.page_size.toString());
+    
+    const response = await api.get<CollectorListResponse>(
+      `/collectors?${params.toString()}`
+    );
+    
+    return response.data;
+  },
+
+  // Get collector by ID
+  getCollector: async (id: string): Promise<CollectorResponse> => {
+    const response = await api.get<CollectorResponse>(`/collectors/${id}`);
+    return response.data;
+  },
+
+  // Update collector
+  updateCollector: async (id: string, data: CollectorUpdateRequest): Promise<CollectorResponse> => {
+    const response = await api.put<CollectorResponse>(`/collectors/${id}`, data);
+    return response.data;
+  },
+
+  // Delete collector
+  deleteCollector: async (id: string): Promise<void> => {
+    await api.delete(`/collectors/${id}`);
+  },
+
+  // Update collector status
+  updateCollectorStatus: async (id: string, status: string): Promise<CollectorResponse> => {
+    const response = await api.put<CollectorResponse>(`/collectors/${id}/status?new_status=${status}`);
+    return response.data;
+  },
+
+  // Get active collectors
+  getActiveCollectors: async (): Promise<ActiveCollectorListResponse> => {
+    const response = await api.get<ActiveCollectorListResponse>('/collectors/active');
+    return response.data;
+  },
+
+  // Get collector statistics
+  getCollectorStats: async (): Promise<CollectorStats> => {
+    const response = await api.get<CollectorStats>('/collectors/stats');
+    return response.data;
+  },
+
+  // Get collector filter options
+  getCollectorFilterOptions: async (): Promise<CollectorFilterOptions> => {
+    const response = await api.get<CollectorFilterOptions>('/collectors/filter-options');
     return response.data;
   },
 };

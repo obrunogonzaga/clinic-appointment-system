@@ -5,7 +5,12 @@ Dependency injection container for managing application dependencies.
 from typing import Any, AsyncGenerator, Optional
 
 from src.infrastructure.config import Settings, get_settings
-from src.infrastructure.repositories.appointment_repository import AppointmentRepository
+from src.infrastructure.repositories.appointment_repository import (
+    AppointmentRepository,
+)
+from src.infrastructure.repositories.collector_repository import (
+    CollectorRepository,
+)
 from src.infrastructure.repositories.driver_repository import DriverRepository
 
 
@@ -20,10 +25,13 @@ class Container:
     def __init__(self) -> None:
         """Initialize the container with empty resources."""
         self._settings: Optional[Settings] = None
-        self._mongodb_client: Optional[Any] = None  # Actually AsyncIOMotorClient
+        self._mongodb_client: Optional[Any] = (
+            None  # Actually AsyncIOMotorClient
+        )
         self._database: Optional[Any] = None  # Actually AsyncIOMotorDatabase
         self._appointment_repository: Optional[AppointmentRepository] = None
         self._driver_repository: Optional[DriverRepository] = None
+        self._collector_repository: Optional[CollectorRepository] = None
 
     @property
     def settings(self) -> Settings:
@@ -91,6 +99,18 @@ class Container:
             self._driver_repository = DriverRepository(self.database)
         return self._driver_repository
 
+    @property
+    def collector_repository(self) -> CollectorRepository:
+        """
+        Get collector repository instance.
+
+        Returns:
+            CollectorRepository: Repository instance
+        """
+        if self._collector_repository is None:
+            self._collector_repository = CollectorRepository(self.database)
+        return self._collector_repository
+
     async def startup(self) -> None:
         """
         Initialize resources on application startup.
@@ -103,6 +123,7 @@ class Container:
             # Create database indexes
             await self.appointment_repository.create_indexes()
             await self.driver_repository.create_indexes()
+            await self.collector_repository.create_indexes()
             print("✅ Database indexes created")
         except Exception as e:
             print(f"❌ Failed to connect to MongoDB: {e}")
@@ -162,3 +183,13 @@ async def get_driver_repository() -> DriverRepository:
         DriverRepository: Repository instance
     """
     return container.driver_repository
+
+
+async def get_collector_repository() -> CollectorRepository:
+    """
+    Dependency for getting collector repository instance.
+
+    Returns:
+        CollectorRepository: Repository instance
+    """
+    return container.collector_repository

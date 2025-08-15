@@ -1,10 +1,10 @@
-import React from 'react';
 import {
-  HomeIcon,
-  UserIcon,
-  CalendarDaysIcon,
-  TruckIcon,
+    CalendarDaysIcon,
+    HomeIcon,
+    TruckIcon,
+    UserIcon,
 } from '@heroicons/react/24/outline';
+import React from 'react';
 
 interface NavigationProps {
   activeTab: string;
@@ -29,6 +29,12 @@ const navigationItems = [
     name: 'Motoristas',
     icon: TruckIcon,
     description: 'Cadastrar e gerenciar motoristas',
+  },
+  {
+    id: 'collectors',
+    name: 'Coletoras',
+    icon: UserIcon,
+    description: 'Cadastrar e gerenciar coletoras',
   },
 ];
 

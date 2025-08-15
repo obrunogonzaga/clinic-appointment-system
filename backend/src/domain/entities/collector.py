@@ -1,5 +1,5 @@
 """
-Driver entity representing a delivery/transport driver.
+Collector entity representing a medical sample collector.
 """
 
 import re
@@ -10,30 +10,36 @@ from pydantic import Field, field_validator
 from src.domain.base import Entity
 
 
-class Driver(Entity):
+class Collector(Entity):
     """
-    Driver entity representing a delivery/transport driver.
+    Collector entity representing a medical sample collector.
 
-    This entity contains all essential information about a driver
-    responsible for patient transport and home collections.
+    This entity contains all essential information about a collector
+    responsible for collecting medical samples from patients.
     """
 
     # Required fields
-    nome_completo: str = Field(..., description="Nome completo do motorista")
-    cnh: str = Field(
-        ..., description="Número da CNH (Carteira Nacional de Habilitação)"
+    nome_completo: str = Field(..., description="Nome completo da coletora")
+    cpf: str = Field(
+        ..., description="Número do CPF (Cadastro de Pessoa Física)"
     )
-    telefone: str = Field(..., description="Telefone de contato do motorista")
+    telefone: str = Field(..., description="Telefone de contato da coletora")
 
     # Optional fields
-    email: Optional[str] = Field(None, description="Email do motorista")
+    email: Optional[str] = Field(None, description="Email da coletora")
     data_nascimento: Optional[datetime] = Field(
         None, description="Data de nascimento"
     )
     endereco: Optional[str] = Field(None, description="Endereço completo")
-    status: Optional[str] = Field("Ativo", description="Status do motorista")
+    status: Optional[str] = Field("Ativo", description="Status da coletora")
     observacoes: Optional[str] = Field(
         None, description="Observações adicionais"
+    )
+    registro_profissional: Optional[str] = Field(
+        None, description="Registro profissional (CRF, COREN, etc.)"
+    )
+    especializacao: Optional[str] = Field(
+        None, description="Especialização ou área de atuação"
     )
 
     # Metadata fields (handled by Entity base class)
@@ -55,37 +61,41 @@ class Driver(Entity):
 
         return value.strip()
 
-    @field_validator("cnh")
+    @field_validator("cpf")
     @classmethod
-    def validate_cnh(cls, value: str) -> str:
-        """Validate CNH format (Brazilian driver's license)."""
+    def validate_cpf(cls, value: str) -> str:
+        """Validate CPF format (Brazilian tax ID)."""
         if not value or not value.strip():
-            raise ValueError("CNH é obrigatória")
+            raise ValueError("CPF é obrigatório")
 
         # Remove spaces and special characters
-        cnh = re.sub(r"\D", "", value.strip())
+        cpf = re.sub(r"\D", "", value.strip())
 
-        # CNH must have exactly 11 digits
-        if len(cnh) != 11:
-            raise ValueError("CNH deve ter exatamente 11 dígitos")
+        # CPF must have exactly 11 digits
+        if len(cpf) != 11:
+            raise ValueError("CPF deve ter exatamente 11 dígitos")
 
-        # Basic validation algorithm for CNH
-        if not cls._validate_cnh_algorithm(cnh):
-            raise ValueError("CNH inválida")
+        # Check for invalid CPFs (all same digits)
+        if cpf == cpf[0] * 11:
+            raise ValueError("CPF inválido")
 
-        return cnh
+        # Validate CPF algorithm
+        if not cls._validate_cpf_algorithm(cpf):
+            raise ValueError("CPF inválido")
+
+        return cpf
 
     @classmethod
-    def _validate_cnh_algorithm(cls, cnh: str) -> bool:
-        """Validate CNH using the official algorithm."""
-        if len(cnh) != 11:
+    def _validate_cpf_algorithm(cls, cpf: str) -> bool:
+        """Validate CPF using the official algorithm."""
+        if len(cpf) != 11:
             return False
 
         # Convert to list of integers
-        digits = [int(d) for d in cnh]
+        digits = [int(d) for d in cpf]
 
         # First verification digit
-        sum1 = sum(digits[i] * (9 - i) for i in range(9))
+        sum1 = sum(digits[i] * (10 - i) for i in range(9))
         remainder1 = sum1 % 11
         first_digit = 0 if remainder1 < 2 else 11 - remainder1
 
@@ -93,9 +103,7 @@ class Driver(Entity):
             return False
 
         # Second verification digit
-        # Official CNH algorithm: multiply by sequence (1,2,3,4,5,6,7,8,9,1)
-        multipliers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 1]
-        sum2 = sum(digits[i] * multipliers[i] for i in range(10))
+        sum2 = sum(digits[i] * (11 - i) for i in range(10))
         remainder2 = sum2 % 11
         second_digit = 0 if remainder2 < 2 else 11 - remainder2
 
@@ -150,7 +158,7 @@ class Driver(Entity):
     @field_validator("status")
     @classmethod
     def validate_status(cls, value: Optional[str]) -> str:
-        """Validate driver status."""
+        """Validate collector status."""
         if not value:
             return "Ativo"
 
@@ -168,15 +176,17 @@ class Driver(Entity):
 
         json_schema_extra = {
             "example": {
-                "id": "507f1f77bcf86cd799439011",
-                "nome_completo": "João Silva Santos",
-                "cnh": "12345678901",
+                "id": "507f1f77bcf86cd799439012",
+                "nome_completo": "Maria Silva Santos",
+                "cpf": "12345678901",
                 "telefone": "11999887766",
-                "email": "joao.silva@email.com",
-                "data_nascimento": "1985-03-15T00:00:00",
-                "endereco": "Rua das Flores, 123 - São Paulo, SP",
+                "email": "maria.silva@email.com",
+                "data_nascimento": "1990-05-20T00:00:00",
+                "endereco": "Rua das Flores, 456 - São Paulo, SP",
                 "status": "Ativo",
-                "observacoes": "Motorista experiente, conhece bem a região",
+                "observacoes": "Coletora experiente, especializada em coletas domiciliares",
+                "registro_profissional": "COREN-SP 123456",
+                "especializacao": "Coleta domiciliar",
                 "created_at": "2025-01-14T10:00:00",
                 "updated_at": "2025-01-14T10:00:00",
             }
