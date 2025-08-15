@@ -147,5 +147,6 @@
   "emmet.syntaxProfiles": {
     "javascript": "jsx",
     "typescript": "tsx"
-  }
+  },
+  "cursorpyright.analysis.typeCheckingMode": "basic"
 }

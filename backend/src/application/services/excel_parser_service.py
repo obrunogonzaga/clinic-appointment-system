@@ -2,7 +2,7 @@
 Service for parsing Excel files containing appointment data.
 """
 
-import io
+import re
 from datetime import datetime
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple
 
@@ -75,8 +75,15 @@ class ExcelParserService:
     def __init__(self) -> None:
         """Initialize the parser service."""
         self.supported_formats = [".xlsx", ".xls", ".csv"]
+        # Importar somente quando "Nome da Sala" iniciar com o padrão
+        # AA-AA-AA-AA-AA (ex.: AD-SF-FQ-AC-AV). Texto extra à direita
+        # (ex.: "CENTER 3 CARRO 1 - UND84") será preservado.
+        self.SALA_PATTERN = re.compile(r"^[A-Z]{2}(?:-[A-Z]{2}){4}(?:\s+.*)?$")
+        self.SALA_EXTRACT_PATTERN = re.compile(
+            r"^(?P<sala>[A-Z]{2}(?:-[A-Z]{2}){4})(?:\s+(?P<carro>.+))?$"
+        )
 
-    async def parse_excel_file(
+    def parse_excel_file(
         self, file_content: BinaryIO, filename: str
     ) -> ExcelParseResult:
         """
@@ -91,10 +98,10 @@ class ExcelParserService:
         """
         try:
             # Read Excel file
-            df = await self._read_excel_file(file_content, filename)
+            df = self._read_excel_file(file_content, filename)
 
             # Parse appointments
-            return await self._parse_dataframe(df)
+            return self._parse_dataframe(df)
 
         except Exception as e:
             return ExcelParseResult(
@@ -103,7 +110,7 @@ class ExcelParserService:
                 total_rows=0,
             )
 
-    async def _read_excel_file(
+    def _read_excel_file(
         self, file_content: BinaryIO, filename: str
     ) -> pd.DataFrame:
         """
@@ -141,17 +148,24 @@ class ExcelParserService:
             raise ValueError("Arquivo Excel está vazio")
 
         # Check if required columns exist
-        required_columns = ["Nome da Marca", "Nome da Unidade", "Nome do Paciente"]
-        missing_columns = [col for col in required_columns if col not in df.columns]
+        required_columns = [
+            "Nome da Marca",
+            "Nome da Unidade",
+            "Nome do Paciente",
+        ]
+        missing_columns = [
+            col for col in required_columns if col not in df.columns
+        ]
 
         if missing_columns:
             raise ValueError(
-                f"Colunas obrigatórias não encontradas: {', '.join(missing_columns)}"
+                "Colunas obrigatórias não encontradas: "
+                + ", ".join(missing_columns)
             )
 
         return df
 
-    async def _parse_dataframe(self, df: pd.DataFrame) -> ExcelParseResult:
+    def _parse_dataframe(self, df: pd.DataFrame) -> ExcelParseResult:
         """
         Parse DataFrame into Appointment entities.
 
@@ -163,11 +177,27 @@ class ExcelParserService:
         """
         appointments = []
         errors = []
-        total_rows = len(df)
+        original_total_rows = len(df)
+
+        # Filtra por padrão do "Nome da Sala" quando a coluna existir.
+        # Somente linhas no formato AA-AA-AA-AA-AA devem ser importadas.
+        if "Nome da Sala" in df.columns:
+            try:
+                mask = (
+                    df["Nome da Sala"]
+                    .astype(str)
+                    .str.fullmatch(self.SALA_PATTERN)
+                )
+                # Algumas versões retornam NaN para valores vazios
+                mask = mask.fillna(False)
+                df = df[mask]
+            except Exception:
+                # Se falhar o filtro, não interromper a importação
+                pass
 
         for index, row in df.iterrows():
             try:
-                appointment = await self._parse_row(row, index + 1)
+                appointment = self._parse_row(row)
                 if appointment:
                     appointments.append(appointment)
 
@@ -178,20 +208,17 @@ class ExcelParserService:
             success=len(errors) == 0,
             appointments=appointments,
             errors=errors,
-            total_rows=total_rows,
+            total_rows=original_total_rows,
             valid_rows=len(appointments),
             invalid_rows=len(errors),
         )
 
-    async def _parse_row(
-        self, row: pd.Series, row_number: int
-    ) -> Optional[Appointment]:
+    def _parse_row(self, row: pd.Series) -> Optional[Appointment]:
         """
         Parse a single row into an Appointment entity.
 
         Args:
             row: Pandas Series representing a row
-            row_number: Row number for error reporting
 
         Returns:
             Optional[Appointment]: Parsed appointment or None if invalid
@@ -205,7 +232,8 @@ class ExcelParserService:
             # Validate required fields
             if not nome_marca or not nome_unidade or not nome_paciente:
                 raise ValueError(
-                    "Campos obrigatórios em branco (Nome da Marca, Nome da Unidade, Nome do Paciente)"
+                    "Campos obrigatórios em branco "
+                    "(Nome da Marca, Nome da Unidade, Nome do Paciente)"
                 )
 
             # Parse date and time
@@ -217,6 +245,21 @@ class ExcelParserService:
             status = self._decide_status(row)
             telefone = self._clean_phone(row.get("Contato(s) do Paciente"))
             observacoes = self._clean_string(row.get("Observação"))
+            # Extrai info de sala/carro do campo "Nome da Sala" (se existir)
+            sala_val = self._clean_string(row.get("Nome da Sala"))
+            if sala_val:
+                m = self.SALA_EXTRACT_PATTERN.match(sala_val)
+                if m:
+                    sala_code = m.group("sala")
+                    carro_info = m.group("carro")
+                    # Anexa às observações para preservarmos as informações
+                    parts: list[str] = []
+                    if observacoes:
+                        parts.append(observacoes)
+                    parts.append(f"Sala: {sala_code}")
+                    if carro_info:
+                        parts.append(f"Carro: {carro_info}")
+                    observacoes = " | ".join(parts)
             tipo_consulta = self._clean_string(row.get("Nomes dos Exames"))
             cep = self._clean_string(row.get("CEP"))
             endereco_coleta = self._clean_string(row.get("Endereço Coleta"))
@@ -226,9 +269,15 @@ class ExcelParserService:
             nome_convenio = self._clean_string(
                 row.get("Nome Convenio") or row.get("Nome Convênio")
             )
-            canal_confirmacao = self._clean_string(row.get("Canal de Confirmação"))
-            data_conf = self._parse_optional_date(row.get("Data da Confirmação"))
-            hora_conf = self._parse_optional_time(row.get("Hora da Confirmação"))
+            canal_confirmacao = self._clean_string(
+                row.get("Canal de Confirmação")
+            )
+            data_conf = self._parse_optional_date(
+                row.get("Data da Confirmação")
+            )
+            hora_conf = self._parse_optional_time(
+                row.get("Hora da Confirmação")
+            )
 
             # Create appointment entity
             appointment = Appointment(
@@ -254,8 +303,12 @@ class ExcelParserService:
             return appointment
 
         except ValidationError as e:
-            error_messages = [f"{err['loc'][0]}: {err['msg']}" for err in e.errors()]
-            raise ValueError(f"Erro de validação - {'; '.join(error_messages)}")
+            error_messages = [
+                f"{err['loc'][0]}: {err['msg']}" for err in e.errors()
+            ]
+            raise ValueError(
+                f"Erro de validação - {'; '.join(error_messages)}"
+            )
         except Exception as e:
             raise ValueError(f"Erro ao processar linha: {str(e)}")
 
@@ -353,7 +406,9 @@ class ExcelParserService:
             raise ValueError(f"Tipo de data/hora não suportado: {type(value)}")
 
         # Extract date and time
-        data_agendamento = dt.replace(hour=0, minute=0, second=0, microsecond=0)
+        data_agendamento = dt.replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
         hora_agendamento = dt.strftime("%H:%M")
 
         return data_agendamento, hora_agendamento
@@ -375,7 +430,7 @@ class ExcelParserService:
         return self.STATUS_MAPPING.get(status, "Confirmado")
 
     def _parse_optional_date(self, value: Any) -> Optional[datetime]:
-        """Parse optional date without time, returning midnight when present."""
+        """Parse optional date without time, returning midnight."""
         if pd.isna(value) or value is None:
             return None
         if isinstance(value, datetime):
@@ -405,11 +460,12 @@ class ExcelParserService:
         return None
 
     def _decide_status(self, row: pd.Series) -> str:
-        """Decide final status based on explicit status and confirmation fields."""
+        """Decide final status based on explicit and confirmation fields."""
         status_raw = row.get("Status Agendamento")
         status = self._map_status(status_raw)
 
-        # Se há canal e data/hora de confirmação, e status não indicar cancelamento,
+        # Se há canal e data/hora de confirmação,
+        # e status não indicar cancelamento,
         # consideramos Confirmado.
         canal = self._clean_string(row.get("Canal de Confirmação"))
         data_conf = row.get("Data da Confirmação")
@@ -447,10 +503,14 @@ class ExcelParserService:
                 "columns": list(df.columns),
                 "has_required_columns": all(
                     col in df.columns
-                    for col in ["Nome da Marca", "Nome da Unidade", "Nome do Paciente"]
+                    for col in [
+                        "Nome da Marca",
+                        "Nome da Unidade",
+                        "Nome do Paciente",
+                    ]
                 ),
                 "file_size": (
-                    len(file_content.getvalue())
+                    len(file_content.getvalue())  # type: ignore
                     if hasattr(file_content, "getvalue")
                     else 0
                 ),
