@@ -3,13 +3,9 @@ Service for managing appointments business logic.
 """
 
 from datetime import datetime, timedelta
-from typing import Any, BinaryIO, Dict, List, Optional
+from typing import Any, BinaryIO, Dict, Optional
 
-from src.application.services.excel_parser_service import (
-    ExcelParseResult,
-    ExcelParserService,
-)
-from src.domain.entities.appointment import Appointment
+from src.application.services.excel_parser_service import ExcelParserService
 from src.domain.repositories.appointment_repository_interface import (
     AppointmentRepositoryInterface,
 )
@@ -57,7 +53,7 @@ class AppointmentService:
         """
         try:
             # Parse Excel file
-            parse_result = await self.excel_parser.parse_excel_file(
+            parse_result = self.excel_parser.parse_excel_file(
                 file_content, filename
             )
 

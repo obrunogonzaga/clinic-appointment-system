@@ -7,7 +7,6 @@ from datetime import datetime
 
 import pandas as pd
 import pytest
-
 from src.application.services.excel_parser_service import ExcelParserService
 
 
@@ -38,7 +37,11 @@ class TestExcelParserService:
                 "11 98765-4321",
             ],
             "Observação": ["Primeira consulta", None, "Retorno"],
-            "Nomes dos Exames": ["Clínico Geral", "Cardiologia", "Dermatologia"],
+            "Nomes dos Exames": [
+                "Clínico Geral",
+                "Cardiologia",
+                "Dermatologia",
+            ],
         }
 
     def create_excel_file(self, data: dict) -> io.BytesIO:
@@ -49,13 +52,13 @@ class TestExcelParserService:
         buffer.seek(0)
         return buffer
 
-    async def test_parse_valid_excel_file(
+    def test_parse_valid_excel_file(
         self, parser_service: ExcelParserService, sample_excel_data
     ):
         """Test parsing valid Excel file."""
         excel_file = self.create_excel_file(sample_excel_data)
 
-        result = await parser_service.parse_excel_file(excel_file, "test.xlsx")
+        result = parser_service.parse_excel_file(excel_file, "test.xlsx")
 
         assert result.success is True
         assert result.total_rows == 3
@@ -75,7 +78,7 @@ class TestExcelParserService:
         assert appointment.observacoes == "Primeira consulta"
         assert appointment.tipo_consulta == "Clínico Geral"
 
-    async def test_parse_excel_with_missing_columns(
+    def test_parse_excel_with_missing_columns(
         self, parser_service: ExcelParserService
     ):
         """Test parsing Excel file with missing required columns."""
@@ -89,12 +92,12 @@ class TestExcelParserService:
 
         excel_file = self.create_excel_file(data)
 
-        result = await parser_service.parse_excel_file(excel_file, "test.xlsx")
+        result = parser_service.parse_excel_file(excel_file, "test.xlsx")
 
         assert result.success is False
         assert "Colunas obrigatórias não encontradas" in result.errors[0]
 
-    async def test_parse_excel_with_invalid_data(
+    def test_parse_excel_with_invalid_data(
         self, parser_service: ExcelParserService
     ):
         """Test parsing Excel file with invalid data."""
@@ -114,7 +117,7 @@ class TestExcelParserService:
 
         excel_file = self.create_excel_file(data)
 
-        result = await parser_service.parse_excel_file(excel_file, "test.xlsx")
+        result = parser_service.parse_excel_file(excel_file, "test.xlsx")
 
         assert result.total_rows == 2
         assert result.valid_rows == 1  # Only first row is valid
@@ -123,10 +126,13 @@ class TestExcelParserService:
         assert len(result.errors) == 1
         assert "Linha 2" in result.errors[0]
 
-    async def test_clean_string_method(self, parser_service: ExcelParserService):
+    def test_clean_string_method(self, parser_service: ExcelParserService):
         """Test string cleaning method."""
         # Test normal string
-        assert parser_service._clean_string("  Normal String  ") == "Normal String"
+        assert (
+            parser_service._clean_string("  Normal String  ")
+            == "Normal String"
+        )
 
         # Test empty/None values
         assert parser_service._clean_string("") is None
@@ -138,22 +144,27 @@ class TestExcelParserService:
 
         assert parser_service._clean_string(np.nan) is None
 
-    async def test_clean_phone_method(self, parser_service: ExcelParserService):
+    def test_clean_phone_method(self, parser_service: ExcelParserService):
         """Test phone cleaning method."""
         # Test various phone formats
         assert parser_service._clean_phone("(11) 9 9988-7766") == "11999887766"
-        assert parser_service._clean_phone("+55 11 99988-7766") == "11999887766"
+        assert (
+            parser_service._clean_phone("+55 11 99988-7766") == "11999887766"
+        )
         assert parser_service._clean_phone("11 99988-7766") == "11999887766"
 
         # Test multiple phones (semicolon separated)
-        assert parser_service._clean_phone("11999887766;11988776655") == "11999887766"
+        assert (
+            parser_service._clean_phone("11999887766;11988776655")
+            == "11999887766"
+        )
 
         # Test invalid phones
         assert parser_service._clean_phone("123") is None
         assert parser_service._clean_phone("") is None
         assert parser_service._clean_phone(None) is None
 
-    async def test_parse_datetime_method(self, parser_service: ExcelParserService):
+    def test_parse_datetime_method(self, parser_service: ExcelParserService):
         """Test datetime parsing method."""
         # Test string format
         date, time = parser_service._parse_datetime("15/01/2025 14:30")
@@ -174,20 +185,22 @@ class TestExcelParserService:
         with pytest.raises(ValueError):
             parser_service._parse_datetime(None)
 
-    async def test_map_status_method(self, parser_service: ExcelParserService):
+    def test_map_status_method(self, parser_service: ExcelParserService):
         """Test status mapping method."""
         # Test valid statuses
         assert parser_service._map_status("Confirmado") == "Confirmado"
         assert parser_service._map_status("Cancelado") == "Cancelado"
         assert parser_service._map_status("Agendado") == "Confirmado"  # Mapped
-        assert parser_service._map_status("Efetivado") == "Confirmado"  # Mapped
+        assert (
+            parser_service._map_status("Efetivado") == "Confirmado"
+        )  # Mapped
 
         # Test invalid/None status
         assert parser_service._map_status("Unknown") == "Confirmado"  # Default
         assert parser_service._map_status(None) == "Confirmado"  # Default
         assert parser_service._map_status("") == "Confirmado"  # Default
 
-    async def test_get_file_info(
+    def test_get_file_info(
         self, parser_service: ExcelParserService, sample_excel_data
     ):
         """Test getting file information."""
@@ -203,7 +216,7 @@ class TestExcelParserService:
         assert "Nome da Unidade" in info["columns"]
         assert "Nome do Paciente" in info["columns"]
 
-    async def test_parse_empty_excel_file(self, parser_service: ExcelParserService):
+    def test_parse_empty_excel_file(self, parser_service: ExcelParserService):
         """Test parsing empty Excel file."""
         # Create empty DataFrame
         df = pd.DataFrame()
@@ -211,12 +224,12 @@ class TestExcelParserService:
         df.to_excel(buffer, index=False, engine="openpyxl")
         buffer.seek(0)
 
-        result = await parser_service.parse_excel_file(buffer, "empty.xlsx")
+        result = parser_service.parse_excel_file(buffer, "empty.xlsx")
 
         assert result.success is False
         assert "Arquivo Excel está vazio" in result.errors[0]
 
-    async def test_parse_csv_file(
+    def test_parse_csv_file(
         self, parser_service: ExcelParserService, sample_excel_data
     ):
         """Test parsing CSV file."""
@@ -225,25 +238,25 @@ class TestExcelParserService:
         df.to_csv(buffer, index=False, encoding="utf-8")
         buffer.seek(0)
 
-        result = await parser_service.parse_excel_file(buffer, "test.csv")
+        result = parser_service.parse_excel_file(buffer, "test.csv")
 
         assert result.success is True
         assert result.total_rows == 3
         assert result.valid_rows == 3
         assert len(result.appointments) == 3
 
-    async def test_parse_unsupported_file_format(
+    def test_parse_unsupported_file_format(
         self, parser_service: ExcelParserService
     ):
         """Test parsing unsupported file format."""
         buffer = io.BytesIO(b"some text content")
 
-        result = await parser_service.parse_excel_file(buffer, "test.txt")
+        result = parser_service.parse_excel_file(buffer, "test.txt")
 
         assert result.success is False
         assert "Formato de arquivo não suportado" in result.errors[0]
 
-    async def test_parse_file_with_different_datetime_formats(
+    def test_parse_file_with_different_datetime_formats(
         self, parser_service: ExcelParserService
     ):
         """Test parsing file with different datetime formats."""
@@ -257,14 +270,22 @@ class TestExcelParserService:
                 datetime(2025, 1, 17, 16, 45),
             ],
             "Status Agendamento": ["Confirmado", "Confirmado", "Confirmado"],
-            "Contato(s) do Paciente": ["11999887766", "11988776655", "11977665544"],
+            "Contato(s) do Paciente": [
+                "11999887766",
+                "11988776655",
+                "11977665544",
+            ],
             "Observação": ["OK", "OK", "OK"],
-            "Nomes dos Exames": ["Clínico Geral", "Cardiologia", "Dermatologia"],
+            "Nomes dos Exames": [
+                "Clínico Geral",
+                "Cardiologia",
+                "Dermatologia",
+            ],
         }
 
         excel_file = self.create_excel_file(data)
 
-        result = await parser_service.parse_excel_file(excel_file, "test.xlsx")
+        result = parser_service.parse_excel_file(excel_file, "test.xlsx")
 
         assert result.success is True
         assert result.total_rows == 3
