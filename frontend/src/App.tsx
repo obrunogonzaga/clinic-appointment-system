@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Navigation } from './components/Navigation';
 import { AppointmentsPage } from './pages/AppointmentsPage';
+import { CollectorsPage } from './pages/CollectorsPage';
 import { Dashboard } from './pages/Dashboard';
 import { DriverRoutePage } from './pages/DriverRoutePage';
 import { DriversPage } from './pages/DriversPage';
@@ -27,6 +28,8 @@ function Shell() {
         return <AppointmentsPage />;
       case 'drivers':
         return <DriversPage />;
+      case 'collectors':
+        return <CollectorsPage />;
       default:
         return <Dashboard onTabChange={setActiveTab} />;
     }

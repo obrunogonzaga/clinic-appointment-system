@@ -1,71 +1,80 @@
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import React, { useEffect, useState } from 'react';
-import type { DRIVER_STATUS, Driver, DriverFormData } from '../types/driver';
+import type { COLLECTOR_STATUS, Collector, CollectorFormData } from '../types/collector';
 
-interface DriverFormProps {
-  driver?: Driver;
+interface CollectorFormProps {
+  collector?: Collector;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: DriverFormData) => void;
+  onSubmit: (data: CollectorFormData) => void;
   isLoading?: boolean;
 }
 
-const initialFormData: DriverFormData = {
+const initialFormData: CollectorFormData = {
   nome_completo: '',
-  cnh: '',
+  cpf: '',
   telefone: '',
   email: '',
   data_nascimento: '',
   endereco: '',
   status: 'Ativo',
   observacoes: '',
+  registro_profissional: '',
+  especializacao: '',
 };
 
-export const DriverForm: React.FC<DriverFormProps> = ({
-  driver,
+export const CollectorForm: React.FC<CollectorFormProps> = ({
+  collector,
   isOpen,
   onClose,
   onSubmit,
   isLoading = false
 }) => {
-  const [formData, setFormData] = useState<DriverFormData>(initialFormData);
-  const [errors, setErrors] = useState<Partial<DriverFormData>>({});
+  const [formData, setFormData] = useState<CollectorFormData>(initialFormData);
+  const [errors, setErrors] = useState<Partial<CollectorFormData>>({});
 
-  // Reset form when modal opens/closes or driver changes
+  // Reset form when modal opens/closes or collector changes
   useEffect(() => {
-    if (isOpen && driver) {
+    if (isOpen && collector) {
       setFormData({
-        nome_completo: driver.nome_completo || '',
-        cnh: driver.cnh || '',
-        telefone: driver.telefone || '',
-        email: driver.email || '',
-        data_nascimento: driver.data_nascimento ? 
-          new Date(driver.data_nascimento).toISOString().split('T')[0] : '',
-        endereco: driver.endereco || '',
-        status: driver.status as typeof DRIVER_STATUS[keyof typeof DRIVER_STATUS] || 'Ativo',
-        observacoes: driver.observacoes || '',
+        nome_completo: collector.nome_completo || '',
+        cpf: collector.cpf || '',
+        telefone: collector.telefone || '',
+        email: collector.email || '',
+        data_nascimento: collector.data_nascimento ? 
+          new Date(collector.data_nascimento).toISOString().split('T')[0] : '',
+        endereco: collector.endereco || '',
+        status: collector.status as typeof COLLECTOR_STATUS[keyof typeof COLLECTOR_STATUS] || 'Ativo',
+        observacoes: collector.observacoes || '',
+        registro_profissional: collector.registro_profissional || '',
+        especializacao: collector.especializacao || '',
       });
-    } else if (isOpen && !driver) {
+    } else if (isOpen && !collector) {
       setFormData(initialFormData);
     }
     setErrors({});
-  }, [isOpen, driver]);
+  }, [isOpen, collector]);
 
-  const validateCNH = (cnh: string): boolean => {
+  const validateCPF = (cpf: string): boolean => {
     // Remove any non-digit characters
-    const cleanCNH = cnh.replace(/\D/g, '');
+    const cleanCPF = cpf.replace(/\D/g, '');
     
-    if (cleanCNH.length !== 11) {
+    if (cleanCPF.length !== 11) {
+      return false;
+    }
+
+    // Check for invalid CPFs (all same digits)
+    if (cleanCPF === cleanCPF[0].repeat(11)) {
       return false;
     }
 
     // Convert to array of numbers
-    const digits = cleanCNH.split('').map(Number);
+    const digits = cleanCPF.split('').map(Number);
 
     // First verification digit
     let sum1 = 0;
     for (let i = 0; i < 9; i++) {
-      sum1 += digits[i] * (9 - i);
+      sum1 += digits[i] * (10 - i);
     }
     const remainder1 = sum1 % 11;
     const firstDigit = remainder1 < 2 ? 0 : 11 - remainder1;
@@ -75,11 +84,9 @@ export const DriverForm: React.FC<DriverFormProps> = ({
     }
 
     // Second verification digit
-    // Official CNH algorithm: multiply by sequence (1,2,3,4,5,6,7,8,9,1)
-    const multipliers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 1];
     let sum2 = 0;
     for (let i = 0; i < 10; i++) {
-      sum2 += digits[i] * multipliers[i];
+      sum2 += digits[i] * (11 - i);
     }
     const remainder2 = sum2 % 11;
     const secondDigit = remainder2 < 2 ? 0 : 11 - remainder2;
@@ -92,31 +99,31 @@ export const DriverForm: React.FC<DriverFormProps> = ({
   ) => {
     const { name, value } = e.target;
     
-    // For CNH, only allow numbers
-    if (name === 'cnh') {
+    // For CPF, only allow numbers
+    if (name === 'cpf') {
       const cleanValue = value.replace(/\D/g, '');
       setFormData(prev => ({
         ...prev,
         [name]: cleanValue
       }));
       
-      // Real-time CNH validation
+      // Real-time CPF validation
       if (cleanValue.length === 11) {
-        if (!validateCNH(cleanValue)) {
+        if (!validateCPF(cleanValue)) {
           setErrors(prev => ({
             ...prev,
-            cnh: 'CNH inválida. Verifique os dígitos.'
+            cpf: 'CPF inválido. Verifique os dígitos.'
           }));
         } else {
           setErrors(prev => ({
             ...prev,
-            cnh: undefined
+            cpf: undefined
           }));
         }
       } else if (cleanValue.length > 0) {
         setErrors(prev => ({
           ...prev,
-          cnh: undefined
+          cpf: undefined
         }));
       }
     } else {
@@ -126,8 +133,8 @@ export const DriverForm: React.FC<DriverFormProps> = ({
       }));
     }
     
-    // Clear error when user starts typing (except for CNH which has its own validation)
-    if (name !== 'cnh' && errors[name as keyof DriverFormData]) {
+    // Clear error when user starts typing (except for CPF which has its own validation)
+    if (name !== 'cpf' && errors[name as keyof CollectorFormData]) {
       setErrors(prev => ({
         ...prev,
         [name]: undefined
@@ -136,16 +143,16 @@ export const DriverForm: React.FC<DriverFormProps> = ({
   };
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<DriverFormData> = {};
+    const newErrors: Partial<CollectorFormData> = {};
 
     if (!formData.nome_completo.trim()) {
       newErrors.nome_completo = 'Nome completo é obrigatório';
     }
 
-    if (!formData.cnh.trim()) {
-      newErrors.cnh = 'CNH é obrigatória';
-    } else if (formData.cnh.length !== 11) {
-      newErrors.cnh = 'CNH deve ter 11 dígitos';
+    if (!formData.cpf.trim()) {
+      newErrors.cpf = 'CPF é obrigatório';
+    } else if (formData.cpf.length !== 11) {
+      newErrors.cpf = 'CPF deve ter 11 dígitos';
     }
 
     if (!formData.telefone.trim()) {
@@ -182,7 +189,7 @@ export const DriverForm: React.FC<DriverFormProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">
-            {driver ? 'Editar Motorista' : 'Cadastrar Novo Motorista'}
+            {collector ? 'Editar Coletora' : 'Cadastrar Nova Coletora'}
           </h2>
           <button
             onClick={onClose}
@@ -215,33 +222,33 @@ export const DriverForm: React.FC<DriverFormProps> = ({
             )}
           </div>
 
-          {/* CNH e Status */}
+          {/* CPF e Status */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="cnh" className="block text-sm font-medium text-gray-700 mb-1">
-                CNH *
+              <label htmlFor="cpf" className="block text-sm font-medium text-gray-700 mb-1">
+                CPF *
               </label>
               <input
                 type="text"
-                id="cnh"
-                name="cnh"
-                value={formData.cnh}
+                id="cpf"
+                name="cpf"
+                value={formData.cpf}
                 onChange={handleInputChange}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.cnh ? 'border-red-500' : 'border-gray-300'
+                  errors.cpf ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Ex: 12345678908 (apenas números)"
+                placeholder="Ex: 12345678909 (apenas números)"
                 maxLength={11}
               />
-              {errors.cnh && (
-                <p className="mt-1 text-sm text-red-600">{errors.cnh}</p>
+              {errors.cpf && (
+                <p className="mt-1 text-sm text-red-600">{errors.cpf}</p>
               )}
-              {!errors.cnh && formData.cnh.length === 11 && validateCNH(formData.cnh) && (
-                <p className="mt-1 text-sm text-green-600">✓ CNH válida</p>
+              {!errors.cpf && formData.cpf.length === 11 && validateCPF(formData.cpf) && (
+                <p className="mt-1 text-sm text-green-600">✓ CPF válido</p>
               )}
-              {!errors.cnh && formData.cnh.length < 11 && (
+              {!errors.cpf && formData.cpf.length < 11 && (
                 <p className="mt-1 text-xs text-gray-500">
-                  Digite uma CNH válida com 11 dígitos (sem espaços ou pontos)
+                  Digite um CPF válido com 11 dígitos (sem espaços ou pontos)
                 </p>
               )}
             </div>
@@ -308,6 +315,39 @@ export const DriverForm: React.FC<DriverFormProps> = ({
             </div>
           </div>
 
+          {/* Registro Profissional e Especialização */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="registro_profissional" className="block text-sm font-medium text-gray-700 mb-1">
+                Registro Profissional
+              </label>
+              <input
+                type="text"
+                id="registro_profissional"
+                name="registro_profissional"
+                value={formData.registro_profissional}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Ex: COREN-SP 123456"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="especializacao" className="block text-sm font-medium text-gray-700 mb-1">
+                Especialização
+              </label>
+              <input
+                type="text"
+                id="especializacao"
+                name="especializacao"
+                value={formData.especializacao}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Ex: Coleta domiciliar, Pediatria"
+              />
+            </div>
+          </div>
+
           {/* Data de Nascimento */}
           <div>
             <label htmlFor="data_nascimento" className="block text-sm font-medium text-gray-700 mb-1">
@@ -369,7 +409,7 @@ export const DriverForm: React.FC<DriverFormProps> = ({
               disabled={isLoading}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Salvando...' : (driver ? 'Atualizar' : 'Cadastrar')}
+              {isLoading ? 'Salvando...' : (collector ? 'Atualizar' : 'Cadastrar')}
             </button>
           </div>
         </form>

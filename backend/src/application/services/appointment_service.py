@@ -39,7 +39,10 @@ class AppointmentService:
         self.excel_parser = excel_parser
 
     async def import_appointments_from_excel(
-        self, file_content: BinaryIO, filename: str, replace_existing: bool = False
+        self,
+        file_content: BinaryIO,
+        filename: str,
+        replace_existing: bool = False,
     ) -> Dict:
         """
         Import appointments from Excel file.
@@ -72,8 +75,12 @@ class AppointmentService:
             # Handle existing appointments if needed
             if replace_existing:
                 # Get distinct units and brands from import
-                units = list(set(apt.nome_unidade for apt in parse_result.appointments))
-                brands = list(set(apt.nome_marca for apt in parse_result.appointments))
+                units = list(
+                    set(apt.nome_unidade for apt in parse_result.appointments)
+                )
+                brands = list(
+                    set(apt.nome_marca for apt in parse_result.appointments)
+                )
 
                 # Delete existing appointments from same units/brands
                 for unit in units:
@@ -85,8 +92,10 @@ class AppointmentService:
             # Save appointments to database
             saved_appointments = []
             if parse_result.appointments:
-                saved_appointments = await self.appointment_repository.create_many(
-                    parse_result.appointments
+                saved_appointments = (
+                    await self.appointment_repository.create_many(
+                        parse_result.appointments
+                    )
                 )
 
             return {
@@ -207,7 +216,9 @@ class AppointmentService:
             units = await self.appointment_repository.get_distinct_values(
                 "nome_unidade"
             )
-            brands = await self.appointment_repository.get_distinct_values("nome_marca")
+            brands = await self.appointment_repository.get_distinct_values(
+                "nome_marca"
+            )
 
             # Get available statuses
             statuses = [
@@ -271,17 +282,28 @@ class AppointmentService:
         """
         try:
             # Check if appointment exists
-            appointment = await self.appointment_repository.find_by_id(appointment_id)
+            appointment = await self.appointment_repository.find_by_id(
+                appointment_id
+            )
             if not appointment:
-                return {"success": False, "message": "Agendamento não encontrado"}
+                return {
+                    "success": False,
+                    "message": "Agendamento não encontrado",
+                }
 
             # Delete appointment
             deleted = await self.appointment_repository.delete(appointment_id)
 
             if deleted:
-                return {"success": True, "message": "Agendamento excluído com sucesso"}
+                return {
+                    "success": True,
+                    "message": "Agendamento excluído com sucesso",
+                }
             else:
-                return {"success": False, "message": "Erro ao excluir agendamento"}
+                return {
+                    "success": False,
+                    "message": "Erro ao excluir agendamento",
+                }
 
         except Exception as e:
             return {
@@ -329,10 +351,16 @@ class AppointmentService:
                     "appointment": updated.model_dump(),
                 }
             else:
-                return {"success": False, "message": "Agendamento não encontrado"}
+                return {
+                    "success": False,
+                    "message": "Agendamento não encontrado",
+                }
 
         except Exception as e:
-            return {"success": False, "message": f"Erro ao atualizar status: {str(e)}"}
+            return {
+                "success": False,
+                "message": f"Erro ao atualizar status: {str(e)}",
+            }
 
     async def update_appointment_driver(
         self, appointment_id: str, driver_id: Optional[str]
@@ -349,9 +377,14 @@ class AppointmentService:
         """
         try:
             # Check if appointment exists
-            appointment = await self.appointment_repository.find_by_id(appointment_id)
+            appointment = await self.appointment_repository.find_by_id(
+                appointment_id
+            )
             if not appointment:
-                return {"success": False, "message": "Agendamento não encontrado"}
+                return {
+                    "success": False,
+                    "message": "Agendamento não encontrado",
+                }
 
             # Update appointment
             updated = await self.appointment_repository.update(
@@ -365,12 +398,62 @@ class AppointmentService:
                     "appointment": updated.model_dump(),
                 }
             else:
-                return {"success": False, "message": "Erro ao atualizar motorista"}
+                return {
+                    "success": False,
+                    "message": "Erro ao atualizar motorista",
+                }
 
         except Exception as e:
             return {
                 "success": False,
                 "message": f"Erro ao atualizar motorista: {str(e)}",
+            }
+
+    async def update_appointment_collector(
+        self, appointment_id: str, collector_id: Optional[str]
+    ) -> Dict:
+        """
+        Update appointment collector.
+
+        Args:
+            appointment_id: ID of the appointment
+            collector_id: ID of the collector (can be None to remove collector)
+
+        Returns:
+            Dict: Update result
+        """
+        try:
+            # Check if appointment exists
+            appointment = await self.appointment_repository.find_by_id(
+                appointment_id
+            )
+            if not appointment:
+                return {
+                    "success": False,
+                    "message": "Agendamento não encontrado",
+                }
+
+            # Update appointment
+            updated = await self.appointment_repository.update(
+                appointment_id, {"collector_id": collector_id}
+            )
+
+            if updated:
+                return {
+                    "success": True,
+                    "message": "Coletora atualizada com sucesso",
+                    "appointment": updated.model_dump(),
+                }
+            else:
+                return {
+                    "success": False,
+                    "message": "Erro ao atualizar coletora",
+                }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Erro ao atualizar coletora: {str(e)}",
             }
 
     def _parse_filter_dates(

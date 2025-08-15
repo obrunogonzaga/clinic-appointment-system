@@ -20,15 +20,23 @@ from src.application.dtos.appointment_dto import (
 from src.application.services.appointment_service import AppointmentService
 from src.application.services.excel_parser_service import ExcelParserService
 from src.infrastructure.container import get_appointment_repository
-from src.infrastructure.repositories.appointment_repository import AppointmentRepository
-from src.presentation.api.responses import BaseResponse, DataResponse, ListResponse
+from src.infrastructure.repositories.appointment_repository import (
+    AppointmentRepository,
+)
+from src.presentation.api.responses import (
+    BaseResponse,
+    DataResponse,
+    ListResponse,
+)
 
 router = APIRouter()
 
 
 # Dependency to get appointment service
 async def get_appointment_service(
-    appointment_repository: AppointmentRepository = Depends(get_appointment_repository),
+    appointment_repository: AppointmentRepository = Depends(
+        get_appointment_repository
+    ),
 ) -> AppointmentService:
     """Get appointment service instance."""
     excel_parser = ExcelParserService()
@@ -43,7 +51,9 @@ async def get_appointment_service(
 )
 async def upload_excel_file(
     file: UploadFile = File(...),
-    replace_existing: bool = Query(False, description="Replace existing appointments"),
+    replace_existing: bool = Query(
+        False, description="Replace existing appointments"
+    ),
     service: AppointmentService = Depends(get_appointment_service),
 ) -> ExcelUploadResponseDTO:
     """
@@ -59,11 +69,15 @@ async def upload_excel_file(
     """
     # Validate file
     if not file.filename:
-        raise HTTPException(status_code=400, detail="Nome do arquivo é obrigatório")
+        raise HTTPException(
+            status_code=400, detail="Nome do arquivo é obrigatório"
+        )
 
     # Check file extension
     allowed_extensions = [".xlsx", ".xls", ".csv"]
-    if not any(file.filename.lower().endswith(ext) for ext in allowed_extensions):
+    if not any(
+        file.filename.lower().endswith(ext) for ext in allowed_extensions
+    ):
         raise HTTPException(
             status_code=400,
             detail=f"Formato de arquivo não suportado. Formatos permitidos: {', '.join(allowed_extensions)}",
@@ -73,7 +87,8 @@ async def upload_excel_file(
     max_size = 10 * 1024 * 1024  # 10MB
     if file.size and file.size > max_size:
         raise HTTPException(
-            status_code=400, detail="Arquivo muito grande. Tamanho máximo: 10MB"
+            status_code=400,
+            detail="Arquivo muito grande. Tamanho máximo: 10MB",
         )
 
     try:
@@ -154,7 +169,9 @@ async def get_appointments(
         )
 
         # Convert to response DTOs
-        appointments = [AppointmentResponseDTO(**apt) for apt in result["appointments"]]
+        appointments = [
+            AppointmentResponseDTO(**apt) for apt in result["appointments"]
+        ]
 
         return AppointmentListResponseDTO(
             success=result["success"],
@@ -244,7 +261,8 @@ async def get_dashboard_stats(
     description="Get a specific appointment by ID",
 )
 async def get_appointment(
-    appointment_id: str, service: AppointmentService = Depends(get_appointment_service)
+    appointment_id: str,
+    service: AppointmentService = Depends(get_appointment_service),
 ) -> DataResponse[AppointmentResponseDTO]:
     """
     Get appointment by ID.
@@ -262,7 +280,9 @@ async def get_appointment(
         appointment = await repo.find_by_id(appointment_id)
 
         if not appointment:
-            raise HTTPException(status_code=404, detail="Agendamento não encontrado")
+            raise HTTPException(
+                status_code=404, detail="Agendamento não encontrado"
+            )
 
         return DataResponse(
             success=True,
@@ -301,11 +321,15 @@ async def update_appointment_status(
         DataResponse[AppointmentResponseDTO]: Updated appointment
     """
     try:
-        result = await service.update_appointment_status(appointment_id, new_status)
+        result = await service.update_appointment_status(
+            appointment_id, new_status
+        )
 
         if not result["success"]:
             raise HTTPException(
-                status_code=400 if "não encontrado" not in result["message"] else 404,
+                status_code=(
+                    400 if "não encontrado" not in result["message"] else 404
+                ),
                 detail=result["message"],
             )
 
@@ -330,7 +354,8 @@ async def update_appointment_status(
     description="Delete an appointment by ID",
 )
 async def delete_appointment(
-    appointment_id: str, service: AppointmentService = Depends(get_appointment_service)
+    appointment_id: str,
+    service: AppointmentService = Depends(get_appointment_service),
 ) -> BaseResponse:
     """
     Delete appointment.
@@ -347,7 +372,9 @@ async def delete_appointment(
 
         if not result["success"]:
             raise HTTPException(
-                status_code=404 if "não encontrado" in result["message"] else 400,
+                status_code=(
+                    404 if "não encontrado" in result["message"] else 400
+                ),
                 detail=result["message"],
             )
 
@@ -391,7 +418,58 @@ async def update_appointment(
 
         if not result["success"]:
             raise HTTPException(
-                status_code=404 if "não encontrado" in result["message"] else 400,
+                status_code=(
+                    404 if "não encontrado" in result["message"] else 400
+                ),
+                detail=result["message"],
+            )
+
+        return DataResponse(
+            success=True,
+            message=result["message"],
+            data=AppointmentResponseDTO(**result["appointment"]),
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Erro interno do servidor: {str(e)}"
+        )
+
+
+@router.put(
+    "/{appointment_id}/collector",
+    response_model=DataResponse[AppointmentResponseDTO],
+    summary="Update appointment collector",
+    description="Update the collector assigned to an appointment",
+)
+async def update_appointment_collector(
+    appointment_id: str,
+    collector_id: str = Query(None, description="ID da coletora"),
+    service: AppointmentService = Depends(get_appointment_service),
+) -> DataResponse[AppointmentResponseDTO]:
+    """
+    Update appointment collector.
+
+    Args:
+        appointment_id: Appointment ID
+        collector_id: Collector ID
+        service: Appointment service instance
+
+    Returns:
+        DataResponse: Update result
+    """
+    try:
+        result = await service.update_appointment_collector(
+            appointment_id, collector_id
+        )
+
+        if not result["success"]:
+            raise HTTPException(
+                status_code=(
+                    404 if "não encontrado" in result["message"] else 400
+                ),
                 detail=result["message"],
             )
 

@@ -22,23 +22,41 @@ class Appointment(Entity):
     nome_marca: str = Field(..., description="Nome da Marca/Clínica")
     nome_paciente: str = Field(..., description="Nome completo do paciente")
     data_agendamento: datetime = Field(..., description="Data do agendamento")
-    hora_agendamento: str = Field(..., description="Hora do agendamento (HH:MM)")
+    hora_agendamento: str = Field(
+        ..., description="Hora do agendamento (HH:MM)"
+    )
 
     # Optional fields
-    tipo_consulta: Optional[str] = Field(None, description="Tipo de consulta médica")
-    status: Optional[str] = Field("Confirmado", description="Status do agendamento")
-    telefone: Optional[str] = Field(None, description="Telefone de contato do paciente")
-    observacoes: Optional[str] = Field(None, description="Observações adicionais")
+    tipo_consulta: Optional[str] = Field(
+        None, description="Tipo de consulta médica"
+    )
+    status: Optional[str] = Field(
+        "Confirmado", description="Status do agendamento"
+    )
+    telefone: Optional[str] = Field(
+        None, description="Telefone de contato do paciente"
+    )
+    observacoes: Optional[str] = Field(
+        None, description="Observações adicionais"
+    )
     driver_id: Optional[str] = Field(
         None, description="ID do motorista responsável pela coleta"
     )
+    collector_id: Optional[str] = Field(
+        None, description="ID da coletora responsável pela coleta"
+    )
     # Campos adicionais de endereço/convenio (podem não existir em todas as planilhas)
     cep: Optional[str] = Field(None, description="CEP do endereço de coleta")
-    endereco_coleta: Optional[str] = Field(None, description="Endereço da coleta")
-    numero_convenio: Optional[str] = Field(None, description="Número do convênio")
+    endereco_coleta: Optional[str] = Field(
+        None, description="Endereço da coleta"
+    )
+    numero_convenio: Optional[str] = Field(
+        None, description="Número do convênio"
+    )
     nome_convenio: Optional[str] = Field(None, description="Nome do convênio")
     canal_confirmacao: Optional[str] = Field(
-        None, description="Canal utilizado para confirmação (ex.: WhatsApp, Telefone)"
+        None,
+        description="Canal utilizado para confirmação (ex.: WhatsApp, Telefone)",
     )
     data_confirmacao: Optional[datetime] = Field(
         None, description="Data da confirmação do agendamento"
