@@ -2,6 +2,7 @@
 Application configuration management using Pydantic Settings.
 """
 
+import json
 from functools import lru_cache
 from typing import Any, Dict, List, Optional
 
@@ -18,6 +19,10 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        # Map environment variables to field names
+        env_nested_delimiter="__",
+        env_prefix="",
+        env_alias_generator=None,
     )
 
     # Application settings
@@ -46,6 +51,7 @@ class Settings(BaseSettings):
     allowed_origins: List[str] = Field(
         default=["http://localhost:3000", "http://localhost:5173"],
         description="Origens permitidas para CORS",
+        validation_alias="CORS_ORIGINS"
     )
 
     # Database settings
@@ -149,6 +155,30 @@ class Settings(BaseSettings):
         default=None,
         description="Email remetente padrão",
     )
+
+    @field_validator("allowed_origins", mode="before")
+    @classmethod
+    def validate_allowed_origins(cls, v) -> List[str]:
+        """Validate and parse CORS origins from environment variable."""
+        if isinstance(v, str):
+            try:
+                # Try to parse as JSON array
+                parsed = json.loads(v)
+                if isinstance(parsed, list):
+                    return parsed
+                else:
+                    # If not a list, treat as single origin
+                    return [v]
+            except json.JSONDecodeError:
+                # If not valid JSON, split by comma or treat as single origin
+                if "," in v:
+                    return [origin.strip() for origin in v.split(",")]
+                else:
+                    return [v.strip()]
+        elif isinstance(v, list):
+            return v
+        else:
+            return ["http://localhost:3000", "http://localhost:5173"]
 
     @field_validator("environment")
     @classmethod
