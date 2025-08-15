@@ -1,16 +1,16 @@
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/20/solid';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import {
-  flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
-  type ColumnDef,
-  type SortingState,
+    flexRender,
+    getCoreRowModel,
+    getSortedRowModel,
+    useReactTable,
+    type ColumnDef,
+    type SortingState,
 } from '@tanstack/react-table';
 import React from 'react';
-import type { Appointment } from '../types/appointment';
-import type { ActiveDriver } from '../types/driver';
+import type { Appointment } from '../types/appointment.ts';
+import type { ActiveDriver } from '../types/driver.ts';
 
 interface AppointmentTableProps {
   appointments: Appointment[];
@@ -66,6 +66,22 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
             {row.original.nome_unidade}
           </div>
         ),
+      },
+      {
+        id: 'carro',
+        header: 'Carro',
+        cell: ({ row }) => {
+          // Extrai informação do carro das observações
+          const obs = row.original.observacoes || '';
+          const carroMatch = obs.match(/Carro:\s*([^|]+)/);
+          const carro = carroMatch ? carroMatch[1].trim() : '';
+          
+          return (
+            <div className="text-sm text-gray-600 font-mono">
+              {carro || '-'}
+            </div>
+          );
+        },
       },
       {
         accessorKey: 'nome_marca',
