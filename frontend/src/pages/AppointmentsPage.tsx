@@ -4,19 +4,16 @@ import {
     XCircleIcon,
 } from '@heroicons/react/24/outline';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import React, { useState, useEffect } from 'react';
-import { AppointmentFilters } from '../components/AppointmentFilters';
-import { AppointmentTable } from '../components/AppointmentTable';
+import React, { useState } from 'react';
 import { AppointmentCardList } from '../components/AppointmentCardList';
-import { ViewModeToggle, type ViewMode } from '../components/ViewModeToggle';
+import { AppointmentFilters } from '../components/AppointmentFilters';
 import { FileUpload } from '../components/FileUpload';
-import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
+import { ViewModeToggle, type ViewMode } from '../components/ViewModeToggle';
 import { appointmentAPI, collectorAPI, driverAPI } from '../services/api';
 import type { AppointmentFilter, ExcelUploadResponse } from '../types/appointment';
 
 export const AppointmentsPage: React.FC = () => {
   const queryClient = useQueryClient();
-  const { isMobile } = useResponsiveLayout();
   
   const [filters, setFilters] = useState<AppointmentFilter>({
     page: 1,
@@ -24,14 +21,7 @@ export const AppointmentsPage: React.FC = () => {
   });
   const [uploadResult, setUploadResult] = useState<ExcelUploadResponse | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('table');
-
-  // Auto-switch to cards view on mobile devices
-  useEffect(() => {
-    if (isMobile && viewMode === 'table') {
-      setViewMode('cards');
-    }
-  }, [isMobile, viewMode]);
+  const [viewMode, setViewMode] = useState<ViewMode>('cards');
 
   // Fetch appointments
   const { 
@@ -234,11 +224,6 @@ export const AppointmentsPage: React.FC = () => {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-gray-900">
               Agendamentos
-              {viewMode === 'cards' && (
-                <span className="ml-2 text-sm font-normal text-gray-500">
-                  (Visualização Cards)
-                </span>
-              )}
               {viewMode === 'calendar' && (
                 <span className="ml-2 text-sm font-normal text-gray-500">
                   (Visualização Calendário)
@@ -275,21 +260,6 @@ export const AppointmentsPage: React.FC = () => {
               <div className="text-gray-400 text-sm">
                 Em desenvolvimento - será implementado na Fase 2
               </div>
-            </div>
-          )}
-
-          {viewMode === 'table' && (
-            <div className="overflow-x-auto">
-              <AppointmentTable
-                appointments={appointmentsData?.appointments || []}
-                drivers={driversData?.drivers || []}
-                collectors={collectorsData?.collectors || []}
-                isLoading={isLoadingAppointments}
-                onStatusChange={handleStatusChange}
-                onDelete={handleDelete}
-                onDriverChange={handleDriverChange}
-                onCollectorChange={handleCollectorChange}
-              />
             </div>
           )}
 

@@ -1,12 +1,10 @@
-import React from 'react';
 import {
-  ListBulletIcon,
-  Squares2X2Icon,
-  CalendarIcon,
+    CalendarIcon,
+    Squares2X2Icon,
 } from '@heroicons/react/24/outline';
-import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
+import React from 'react';
 
-export type ViewMode = 'table' | 'cards' | 'calendar';
+export type ViewMode = 'cards' | 'calendar';
 
 interface ViewModeToggleProps {
   viewMode: ViewMode;
@@ -22,12 +20,6 @@ interface ViewOption {
 }
 
 const viewOptions: ViewOption[] = [
-  {
-    mode: 'table',
-    label: 'Tabela',
-    icon: ListBulletIcon,
-    description: 'Visualização em tabela'
-  },
   {
     mode: 'cards',
     label: 'Cards',
@@ -47,16 +39,9 @@ export const ViewModeToggle: React.FC<ViewModeToggleProps> = ({
   onViewChange,
   className = ''
 }) => {
-  const { isMobile } = useResponsiveLayout();
-  
-  // Filter out table mode on mobile devices
-  const availableOptions = viewOptions.filter(option => 
-    !isMobile || option.mode !== 'table'
-  );
-
   return (
     <div className={`flex bg-gray-100 rounded-lg p-1 ${className}`}>
-      {availableOptions.map(({ mode, label, icon: Icon, description }) => (
+      {viewOptions.map(({ mode, label, icon: Icon, description }) => (
         <button
           key={mode}
           onClick={() => onViewChange(mode)}
