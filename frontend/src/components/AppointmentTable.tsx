@@ -10,14 +10,17 @@ import {
 } from '@tanstack/react-table';
 import React from 'react';
 import type { Appointment } from '../types/appointment.ts';
+import type { ActiveCollector } from '../types/collector.ts';
 import type { ActiveDriver } from '../types/driver.ts';
 
 interface AppointmentTableProps {
   appointments: Appointment[];
   drivers?: ActiveDriver[];
+  collectors?: ActiveCollector[];
   isLoading?: boolean;
   onStatusChange?: (id: string, status: string) => void;
   onDriverChange?: (appointmentId: string, driverId: string) => void;
+  onCollectorChange?: (appointmentId: string, collectorId: string) => void;
   onDelete?: (id: string) => void;
 }
 
@@ -40,9 +43,11 @@ const statusOptions = [
 export const AppointmentTable: React.FC<AppointmentTableProps> = ({
   appointments,
   drivers = [],
+  collectors = [],
   isLoading = false,
   onStatusChange,
   onDriverChange,
+  onCollectorChange,
   onDelete
 }) => {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -183,6 +188,28 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
         },
       },
       {
+        accessorKey: 'collector_id',
+        header: 'Coletora',
+        cell: ({ row }) => {
+          const appointment = row.original;
+          
+          return (
+            <select
+              value={appointment.collector_id || ''}
+              onChange={(e) => onCollectorChange?.(appointment.id, e.target.value)}
+              className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="">Selecionar coletora</option>
+              {collectors.map((collector) => (
+                <option key={collector.id} value={collector.id}>
+                  {collector.nome_completo}
+                </option>
+              ))}
+            </select>
+          );
+        },
+      },
+      {
         id: 'actions',
         header: 'Ações',
         cell: ({ row }) => (
@@ -198,7 +225,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
         ),
       },
     ],
-    [onStatusChange, onDriverChange, onDelete, drivers]
+    [onStatusChange, onDriverChange, onCollectorChange, onDelete, drivers, collectors]
   );
 
   const table = useReactTable({

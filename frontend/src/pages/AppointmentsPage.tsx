@@ -8,7 +8,7 @@ import React, { useState } from 'react';
 import { AppointmentFilters } from '../components/AppointmentFilters';
 import { AppointmentTable } from '../components/AppointmentTable';
 import { FileUpload } from '../components/FileUpload';
-import { appointmentAPI, driverAPI } from '../services/api';
+import { appointmentAPI, collectorAPI, driverAPI } from '../services/api';
 import type { AppointmentFilter, ExcelUploadResponse } from '../types/appointment';
 
 export const AppointmentsPage: React.FC = () => {
@@ -44,6 +44,13 @@ export const AppointmentsPage: React.FC = () => {
   const { data: driversData } = useQuery({
     queryKey: ['activeDrivers'],
     queryFn: () => driverAPI.getActiveDrivers(),
+    refetchOnWindowFocus: false,
+  });
+
+  // Fetch active collectors
+  const { data: collectorsData } = useQuery({
+    queryKey: ['activeCollectors'],
+    queryFn: () => collectorAPI.getActiveCollectors(),
     refetchOnWindowFocus: false,
   });
 
@@ -109,6 +116,15 @@ export const AppointmentsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
     } catch (error) {
       console.error('Error updating appointment driver:', error);
+    }
+  };
+
+  const handleCollectorChange = async (appointmentId: string, collectorId: string) => {
+    try {
+      await appointmentAPI.updateAppointmentCollector(appointmentId, collectorId);
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+    } catch (error) {
+      console.error('Error updating appointment collector:', error);
     }
   };
 
@@ -206,10 +222,12 @@ export const AppointmentsPage: React.FC = () => {
           <AppointmentTable
             appointments={appointmentsData?.appointments || []}
             drivers={driversData?.drivers || []}
+            collectors={collectorsData?.collectors || []}
             isLoading={isLoadingAppointments}
             onStatusChange={handleStatusChange}
             onDelete={handleDelete}
             onDriverChange={handleDriverChange}
+            onCollectorChange={handleCollectorChange}
           />
 
           {/* Pagination */}

@@ -1,14 +1,15 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { 
-  CalendarDaysIcon, 
-  CheckCircleIcon, 
-  XCircleIcon,
-  BuildingOfficeIcon,
-  TagIcon,
-  TruckIcon,
-  UserGroupIcon,
+import {
+    BuildingOfficeIcon,
+    CalendarDaysIcon,
+    CheckCircleIcon,
+    TagIcon,
+    TruckIcon,
+    UserGroupIcon,
+    UserIcon,
+    XCircleIcon,
 } from '@heroicons/react/24/outline';
+import { useQuery } from '@tanstack/react-query';
+import React from 'react';
 import { appointmentAPI, driverAPI } from '../services/api';
 
 interface DashboardProps {
@@ -206,12 +207,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
           </button>
 
           <button
-            onClick={() => alert('Funcionalidade de relatórios será implementada em breve!')}
+            onClick={() => onTabChange?.('collectors')}
             className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <BuildingOfficeIcon className="w-8 h-8 text-purple-600 mb-2" />
-            <h3 className="font-medium text-gray-900">Relatórios</h3>
-            <p className="text-sm text-gray-600">Gerar relatórios de agendamentos e motoristas</p>
+            <UserIcon className="w-8 h-8 text-purple-600 mb-2" />
+            <h3 className="font-medium text-gray-900">Cadastrar Coletoras</h3>
+            <p className="text-sm text-gray-600">Adicionar novas coletoras e gerenciar dados existentes</p>
           </button>
         </div>
       </div>
