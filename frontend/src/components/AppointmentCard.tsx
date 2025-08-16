@@ -1,18 +1,18 @@
-import React from 'react';
 import {
-  CalendarIcon,
-  ClockIcon,
-  BuildingOfficeIcon,
-  TruckIcon,
-  PhoneIcon,
-  TrashIcon,
-  UserIcon,
+    BuildingOfficeIcon,
+    CalendarIcon,
+    ClockIcon,
+    PhoneIcon,
+    TrashIcon,
+    TruckIcon,
+    UserIcon,
 } from '@heroicons/react/24/outline';
+import React from 'react';
 import type { Appointment } from '../types/appointment';
-import type { ActiveDriver } from '../types/driver';
 import type { ActiveCollector } from '../types/collector';
-import { getStatusBadgeClass } from '../utils/statusColors';
+import type { ActiveDriver } from '../types/driver';
 import { formatDate } from '../utils/dateUtils';
+import { getStatusBadgeClass } from '../utils/statusColors';
 
 interface AppointmentCardProps {
   appointment: Appointment;
@@ -43,12 +43,12 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
   onDelete,
   compact = false
 }) => {
-  // Extract car info from observations
-  const getCarInfo = (observacoes?: string): string => {
-    if (!observacoes) return '-';
+  // Extract car info from carro field
+  const getCarInfo = (carro?: string): string => {
+    if (!carro) return '-';
     const carroRegex = /Carro:\s*([^|]+)/;
-    const carroMatch = carroRegex.exec(observacoes);
-    return carroMatch ? carroMatch[1].trim() : '-';
+    const carroMatch = carroRegex.exec(carro);
+    return carroMatch ? carroMatch[1].trim() : carro;
   };
 
   const handleDelete = () => {
@@ -117,7 +117,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
             {appointment.nome_marca}
             {!compact && (
               <span className="text-gray-500 ml-1">
-                • {getCarInfo(appointment.observacoes)}
+                • {getCarInfo(appointment.carro)}
               </span>
             )}
           </span>

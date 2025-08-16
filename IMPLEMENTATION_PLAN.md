@@ -59,7 +59,7 @@ interface Appointment {
   tipoConsulta?: string;      // Tipo de Consulta
   status?: string;            // Status (Confirmado, Cancelado, etc)
   telefone?: string;          // Telefone de Contato
-  observacoes?: string;       // Observações
+  carro?: string;             // Informações do carro utilizado
   createdAt: Date;
   updatedAt: Date;
 }

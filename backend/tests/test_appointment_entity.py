@@ -6,7 +6,6 @@ from datetime import datetime
 
 import pytest
 from pydantic import ValidationError
-
 from src.domain.entities.appointment import Appointment
 
 
@@ -43,13 +42,13 @@ class TestAppointmentEntity:
             tipo_consulta="Cardiologia",
             status="Reagendado",
             telefone="11999887766",
-            observacoes="Paciente com hipertensão",
+            carro="Honda Civic Prata",
         )
 
         assert appointment.tipo_consulta == "Cardiologia"
         assert appointment.status == "Reagendado"
         assert appointment.telefone == "11999887766"
-        assert appointment.observacoes == "Paciente com hipertensão"
+        assert appointment.carro == "Honda Civic Prata"
 
     def test_string_validation_strips_whitespace(self):
         """Test that string fields are properly trimmed."""
@@ -78,7 +77,10 @@ class TestAppointmentEntity:
 
         errors = exc_info.value.errors()
         assert any(e["loc"] == ("nome_unidade",) for e in errors)
-        assert any("Campo obrigatório não pode estar vazio" in e["msg"] for e in errors)
+        assert any(
+            "Campo obrigatório não pode estar vazio" in e["msg"]
+            for e in errors
+        )
 
     def test_time_format_validation(self):
         """Test time format validation."""
@@ -103,7 +105,9 @@ class TestAppointmentEntity:
             )
 
         errors = exc_info.value.errors()
-        assert any("Hora deve estar no formato HH:MM" in e["msg"] for e in errors)
+        assert any(
+            "Hora deve estar no formato HH:MM" in e["msg"] for e in errors
+        )
 
     def test_time_range_validation(self):
         """Test that time values are within valid ranges."""
@@ -131,7 +135,9 @@ class TestAppointmentEntity:
             )
 
         errors = exc_info.value.errors()
-        assert any("Minutos devem estar entre 00 e 59" in e["msg"] for e in errors)
+        assert any(
+            "Minutos devem estar entre 00 e 59" in e["msg"] for e in errors
+        )
 
     def test_phone_validation(self):
         """Test phone number validation and normalization."""
@@ -169,7 +175,9 @@ class TestAppointmentEntity:
             )
 
         errors = exc_info.value.errors()
-        assert any("Telefone deve ter 10 ou 11 dígitos" in e["msg"] for e in errors)
+        assert any(
+            "Telefone deve ter 10 ou 11 dígitos" in e["msg"] for e in errors
+        )
 
     def test_status_validation(self):
         """Test appointment status validation."""

@@ -76,10 +76,10 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
         id: 'carro',
         header: 'Carro',
         cell: ({ row }) => {
-          // Extrai informação do carro das observações
-          const obs = row.original.observacoes || '';
-          const carroMatch = obs.match(/Carro:\s*([^|]+)/);
-          const carro = carroMatch ? carroMatch[1].trim() : '';
+          // Extrai informação do carro
+          const carroInfo = row.original.carro || '';
+          const carroMatch = carroInfo.match(/Carro:\s*([^|]+)/);
+          const carro = carroMatch ? carroMatch[1].trim() : carroInfo;
           
           return (
             <div className="text-sm text-gray-600 font-mono">

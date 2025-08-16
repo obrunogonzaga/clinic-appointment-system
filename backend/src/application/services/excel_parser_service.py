@@ -46,12 +46,14 @@ class ExcelParserService:
         "Data/Hora Início Agendamento": "data_hora_agendamento",
         "Status Agendamento": "status_agendamento",
         "Contato(s) do Paciente": "telefone",
-        "Observação": "observacoes",
+        "Observação": "carro",
         "Nomes dos Exames": "tipo_consulta",
         # Campos de confirmação
-        "Canal de Confirmação": "canal_confirmacao",
-        "Data da Confirmação": "data_confirmacao",
-        "Hora da Confirmação": "hora_confirmacao",
+        "Canal Confirmação": "canal_confirmacao",
+        "Canal de Confirmação": "canal_confirmacao",  # Alternativo
+        "Data/Hora Confirmação": "data_hora_confirmacao",
+        "Data da Confirmação": "data_confirmacao",  # Alternativo
+        "Hora da Confirmação": "hora_confirmacao",  # Alternativo
         # Campos extras tentativos (se existirem nas planilhas)
         "CEP": "cep",
         "Endereço Coleta": "endereco_coleta",
@@ -249,7 +251,7 @@ class ExcelParserService:
             # Parse optional fields
             status = self._decide_status(row)
             telefone = self._clean_phone(row.get("Contato(s) do Paciente"))
-            observacoes = self._clean_string(row.get("Observação"))
+            carro = self._clean_string(row.get("Observação"))
             # Extrai info de sala/carro do campo "Nome da Sala" (se existir)
             sala_val = self._clean_string(row.get("Nome da Sala"))
             if sala_val:
@@ -257,14 +259,14 @@ class ExcelParserService:
                 if m:
                     sala_code = m.group("sala")
                     carro_info = m.group("carro")
-                    # Anexa às observações para preservarmos as informações
+                    # Anexa às informações do carro para preservarmos as informações
                     parts: list[str] = []
-                    if observacoes:
-                        parts.append(observacoes)
+                    if carro:
+                        parts.append(carro)
                     parts.append(f"Sala: {sala_code}")
                     if carro_info:
                         parts.append(f"Carro: {carro_info}")
-                    observacoes = " | ".join(parts)
+                    carro = " | ".join(parts)
             tipo_consulta = self._clean_string(row.get("Nomes dos Exames"))
             cep = self._clean_string(row.get("CEP"))
             endereco_coleta = self._clean_string(row.get("Endereço Coleta"))
@@ -284,13 +286,14 @@ class ExcelParserService:
                 or row.get("Carteira")
             )
             canal_confirmacao = self._clean_string(
-                row.get("Canal de Confirmação")
+                row.get("Canal Confirmação") or row.get("Canal de Confirmação")
             )
-            data_conf = self._parse_optional_date(
-                row.get("Data da Confirmação")
-            )
-            hora_conf = self._parse_optional_time(
-                row.get("Hora da Confirmação")
+
+            # Tentar extrair data/hora do campo combinado ou campos separados
+            data_conf, hora_conf = self._parse_confirmacao_datetime(
+                row.get("Data/Hora Confirmação"),
+                row.get("Data da Confirmação"),
+                row.get("Hora da Confirmação"),
             )
 
             # Create appointment entity
@@ -302,7 +305,7 @@ class ExcelParserService:
                 hora_agendamento=hora_agendamento,
                 status=status,
                 telefone=telefone,
-                observacoes=observacoes,
+                carro=carro,
                 tipo_consulta=tipo_consulta,
                 canal_confirmacao=canal_confirmacao,
                 data_confirmacao=data_conf,
@@ -474,28 +477,98 @@ class ExcelParserService:
                     return f"{hours:02d}:{minutes:02d}"
         return None
 
+    def _parse_confirmacao_datetime(
+        self, data_hora_combined: Any, data_separada: Any, hora_separada: Any
+    ) -> tuple[Optional[datetime], Optional[str]]:
+        """
+        Parse confirmation datetime from combined field or separate fields.
+
+        Args:
+            data_hora_combined: Combined date/time field value
+            data_separada: Separate date field value
+            hora_separada: Separate time field value
+
+        Returns:
+            tuple: (parsed_date, parsed_time) or (None, None)
+        """
+        # Primeiro tentar campos separados (mais confiáveis)
+        if data_separada is not None and not pd.isna(data_separada):
+            data_conf = self._parse_optional_date(data_separada)
+            hora_conf = self._parse_optional_time(hora_separada)
+            return data_conf, hora_conf
+
+        # Tentar campo combinado
+        if data_hora_combined is not None and not pd.isna(data_hora_combined):
+            combined_str = str(data_hora_combined).strip()
+
+            # Verificar se não é um valor inválido/placeholder
+            if combined_str.lower() in ["whatss", "whats", "nan", ""]:
+                return None, None
+
+            # Tentar parsing como datetime completo
+            try:
+                if isinstance(data_hora_combined, datetime):
+                    dt = data_hora_combined
+                    data_conf = dt.replace(
+                        hour=0, minute=0, second=0, microsecond=0
+                    )
+                    hora_conf = dt.strftime("%H:%M")
+                    return data_conf, hora_conf
+
+                # Tentar parsing de string com vários formatos
+                for fmt in [
+                    "%d/%m/%Y %H:%M",
+                    "%d/%m/%Y %H:%M:%S",
+                    "%Y-%m-%d %H:%M:%S",
+                    "%Y-%m-%d %H:%M",
+                ]:
+                    try:
+                        dt = datetime.strptime(combined_str, fmt)
+                        data_conf = dt.replace(
+                            hour=0, minute=0, second=0, microsecond=0
+                        )
+                        hora_conf = dt.strftime("%H:%M")
+                        return data_conf, hora_conf
+                    except ValueError:
+                        continue
+
+            except Exception:
+                pass
+
+        return None, None
+
     def _decide_status(self, row: pd.Series) -> str:
         """Decide final status based on explicit and confirmation fields."""
-        status_raw = row.get("Status Agendamento")
-        status = self._map_status(status_raw)
+        status_agendamento = self._map_status(row.get("Status Agendamento"))
+        status_confirmacao = self._clean_string(row.get("Status Confirmação"))
 
-        # Se há canal e data/hora de confirmação,
-        # e status não indicar cancelamento,
-        # consideramos Confirmado.
-        canal = self._clean_string(row.get("Canal de Confirmação"))
-        data_conf = row.get("Data da Confirmação")
-        hora_conf = row.get("Hora da Confirmação")
+        # Priorizar "Status Confirmação" se existir
+        if status_confirmacao:
+            if status_confirmacao.lower() == "confirmado":
+                return "Confirmado"
+            elif status_confirmacao.lower() == "não confirmado":
+                # Se não foi confirmado, usar o status do agendamento
+                return status_agendamento
 
-        has_confirmation = (
-            canal is not None
-            or (not pd.isna(data_conf) and data_conf is not None)
-            or (isinstance(hora_conf, str) and hora_conf.strip() != "")
+        # Fallback: verificar campos de confirmação para casos antigos
+        canal = self._clean_string(
+            row.get("Canal Confirmação") or row.get("Canal de Confirmação")
+        )
+        data_hora_conf = row.get("Data/Hora Confirmação")
+
+        has_confirmation = canal is not None or (
+            not pd.isna(data_hora_conf)
+            and data_hora_conf is not None
+            and str(data_hora_conf).strip() != ""
         )
 
-        if has_confirmation and status not in {"Cancelado", "Não Compareceu"}:
+        if has_confirmation and status_agendamento not in {
+            "Cancelado",
+            "Não Compareceu",
+        }:
             return "Confirmado"
 
-        return status
+        return status_agendamento
 
     def get_file_info(self, file_content: BinaryIO, filename: str) -> Dict:
         """

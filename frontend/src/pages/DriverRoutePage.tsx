@@ -135,12 +135,12 @@ export const DriverRoutePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Observações */}
+      {/* Carro */}
       <div className="grid grid-cols-12 gap-6 mt-6">
         <div className="col-span-12 md:col-span-6">
-          <div className="text-xl font-extrabold text-gray-900">Obs. Atendimento</div>
+          <div className="text-xl font-extrabold text-gray-900">Carro</div>
           <div className="border-2 border-gray-800 rounded-md min-h-[150px] p-3 text-gray-800 whitespace-pre-wrap">
-            {ap.observacoes || '-'}
+            {ap.carro || '-'}
           </div>
         </div>
         <div className="col-span-12 md:col-span-6">

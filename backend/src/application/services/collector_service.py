@@ -66,7 +66,7 @@ class CollectorService:
                 data_nascimento=collector_data.data_nascimento,
                 endereco=collector_data.endereco,
                 status=collector_data.status,
-                observacoes=collector_data.observacoes,
+                carro=collector_data.carro,
                 registro_profissional=collector_data.registro_profissional,
                 especializacao=collector_data.especializacao,
             )

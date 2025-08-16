@@ -21,7 +21,9 @@ class CollectorCreateDTO(BaseModel):
     )
     endereco: Optional[str] = Field(None, description="Endereço completo")
     status: str = Field("Ativo", description="Status da coletora")
-    observacoes: Optional[str] = Field(None, description="Observações")
+    carro: Optional[str] = Field(
+        None, description="Informações do carro utilizado"
+    )
     registro_profissional: Optional[str] = Field(
         None, description="Registro profissional"
     )
@@ -71,7 +73,7 @@ class CollectorResponseDTO(BaseModel):
     data_nascimento: Optional[datetime]
     endereco: Optional[str]
     status: str
-    observacoes: Optional[str]
+    carro: Optional[str]
     registro_profissional: Optional[str]
     especializacao: Optional[str]
     created_at: datetime
@@ -88,7 +90,7 @@ class CollectorUpdateDTO(BaseModel):
     data_nascimento: Optional[datetime] = None
     endereco: Optional[str] = None
     status: Optional[str] = None
-    observacoes: Optional[str] = None
+    carro: Optional[str] = None
     registro_profissional: Optional[str] = None
     especializacao: Optional[str] = None
 

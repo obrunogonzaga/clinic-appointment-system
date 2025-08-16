@@ -75,7 +75,7 @@ class TestExcelParserService:
         assert appointment.hora_agendamento == "14:30"
         assert appointment.status == "Confirmado"
         assert appointment.telefone == "11999887766"
-        assert appointment.observacoes == "Primeira consulta"
+        assert appointment.carro == "Primeira consulta"
         assert appointment.tipo_consulta == "Clínico Geral"
 
     def test_parse_excel_with_missing_columns(

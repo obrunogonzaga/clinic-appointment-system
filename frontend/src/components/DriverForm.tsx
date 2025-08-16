@@ -18,7 +18,7 @@ const initialFormData: DriverFormData = {
   data_nascimento: '',
   endereco: '',
   status: 'Ativo',
-  observacoes: '',
+  carro: '',
 };
 
 export const DriverForm: React.FC<DriverFormProps> = ({
@@ -43,7 +43,7 @@ export const DriverForm: React.FC<DriverFormProps> = ({
           new Date(driver.data_nascimento).toISOString().split('T')[0] : '',
         endereco: driver.endereco || '',
         status: driver.status as typeof DRIVER_STATUS[keyof typeof DRIVER_STATUS] || 'Ativo',
-        observacoes: driver.observacoes || '',
+        carro: driver.carro || '',
       });
     } else if (isOpen && !driver) {
       setFormData(initialFormData);
@@ -339,19 +339,19 @@ export const DriverForm: React.FC<DriverFormProps> = ({
             />
           </div>
 
-          {/* Observações */}
+          {/* Carro */}
           <div>
-            <label htmlFor="observacoes" className="block text-sm font-medium text-gray-700 mb-1">
-              Observações
+            <label htmlFor="carro" className="block text-sm font-medium text-gray-700 mb-1">
+              Carro
             </label>
             <textarea
-              id="observacoes"
-              name="observacoes"
-              value={formData.observacoes}
+              id="carro"
+              name="carro"
+              value={formData.carro}
               onChange={handleInputChange}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Observações adicionais"
+              placeholder="Informações do carro utilizado"
             />
           </div>
 

@@ -18,7 +18,7 @@ const initialFormData: CollectorFormData = {
   data_nascimento: '',
   endereco: '',
   status: 'Ativo',
-  observacoes: '',
+  carro: '',
   registro_profissional: '',
   especializacao: '',
 };
@@ -45,7 +45,7 @@ export const CollectorForm: React.FC<CollectorFormProps> = ({
           new Date(collector.data_nascimento).toISOString().split('T')[0] : '',
         endereco: collector.endereco || '',
         status: collector.status as typeof COLLECTOR_STATUS[keyof typeof COLLECTOR_STATUS] || 'Ativo',
-        observacoes: collector.observacoes || '',
+        carro: collector.carro || '',
         registro_profissional: collector.registro_profissional || '',
         especializacao: collector.especializacao || '',
       });
@@ -379,19 +379,19 @@ export const CollectorForm: React.FC<CollectorFormProps> = ({
             />
           </div>
 
-          {/* Observações */}
+          {/* Carro */}
           <div>
-            <label htmlFor="observacoes" className="block text-sm font-medium text-gray-700 mb-1">
-              Observações
+            <label htmlFor="carro" className="block text-sm font-medium text-gray-700 mb-1">
+              Carro
             </label>
             <textarea
-              id="observacoes"
-              name="observacoes"
-              value={formData.observacoes}
+              id="carro"
+              name="carro"
+              value={formData.carro}
               onChange={handleInputChange}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Observações adicionais"
+              placeholder="Informações do carro utilizado"
             />
           </div>
 

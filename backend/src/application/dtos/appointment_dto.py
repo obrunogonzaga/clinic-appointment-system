@@ -20,7 +20,9 @@ class AppointmentCreateDTO(BaseModel):
     tipo_consulta: Optional[str] = Field(None, description="Tipo de Consulta")
     status: str = Field("Confirmado", description="Status do Agendamento")
     telefone: Optional[str] = Field(None, description="Telefone do Paciente")
-    observacoes: Optional[str] = Field(None, description="Observações")
+    carro: Optional[str] = Field(
+        None, description="Informações do carro utilizado"
+    )
     driver_id: Optional[str] = Field(None, description="ID do Motorista")
     collector_id: Optional[str] = Field(None, description="ID da Coletora")
     # Campos de convênio
@@ -52,7 +54,7 @@ class AppointmentResponseDTO(BaseModel):
     tipo_consulta: Optional[str]
     status: str
     telefone: Optional[str]
-    observacoes: Optional[str]
+    carro: Optional[str]
     driver_id: Optional[str]
     collector_id: Optional[str]
     # Campos de convênio
@@ -138,7 +140,7 @@ class AppointmentFullUpdateDTO(BaseModel):
     tipo_consulta: Optional[str] = None
     status: Optional[str] = None
     telefone: Optional[str] = None
-    observacoes: Optional[str] = None
+    carro: Optional[str] = None
     driver_id: Optional[str] = None
     collector_id: Optional[str] = None
     # Campos de convênio

@@ -7,9 +7,10 @@ from uuid import uuid4
 
 import pytest
 from motor.motor_asyncio import AsyncIOMotorClient
-
 from src.domain.entities.appointment import Appointment
-from src.infrastructure.repositories.appointment_repository import AppointmentRepository
+from src.infrastructure.repositories.appointment_repository import (
+    AppointmentRepository,
+)
 
 
 @pytest.fixture
@@ -49,7 +50,7 @@ def sample_appointment():
         tipo_consulta="Clínico Geral",
         status="Confirmado",
         telefone="11999887766",
-        observacoes="Primeira consulta",
+        carro="Honda Civic Prata",
     )
 
 
@@ -57,7 +58,9 @@ class TestAppointmentRepository:
     """Test cases for AppointmentRepository."""
 
     async def test_create_appointment(
-        self, repository: AppointmentRepository, sample_appointment: Appointment
+        self,
+        repository: AppointmentRepository,
+        sample_appointment: Appointment,
     ):
         """Test creating a single appointment."""
         created = await repository.create(sample_appointment)
@@ -71,7 +74,9 @@ class TestAppointmentRepository:
         assert found is not None
         assert found.nome_unidade == "UBS Centro"
 
-    async def test_create_many_appointments(self, repository: AppointmentRepository):
+    async def test_create_many_appointments(
+        self, repository: AppointmentRepository
+    ):
         """Test creating multiple appointments in bulk."""
         appointments = [
             Appointment(
@@ -95,7 +100,9 @@ class TestAppointmentRepository:
         assert count == 3
 
     async def test_find_by_id(
-        self, repository: AppointmentRepository, sample_appointment: Appointment
+        self,
+        repository: AppointmentRepository,
+        sample_appointment: Appointment,
     ):
         """Test finding appointment by ID."""
         await repository.create(sample_appointment)
@@ -109,7 +116,9 @@ class TestAppointmentRepository:
         not_found = await repository.find_by_id(str(uuid4()))
         assert not_found is None
 
-    async def test_find_all_with_pagination(self, repository: AppointmentRepository):
+    async def test_find_all_with_pagination(
+        self, repository: AppointmentRepository
+    ):
         """Test finding all appointments with pagination."""
         # Create multiple appointments
         appointments = [
@@ -222,7 +231,9 @@ class TestAppointmentRepository:
         assert count_filtered == 3
 
     async def test_update_appointment(
-        self, repository: AppointmentRepository, sample_appointment: Appointment
+        self,
+        repository: AppointmentRepository,
+        sample_appointment: Appointment,
     ):
         """Test updating an appointment."""
         await repository.create(sample_appointment)
@@ -230,22 +241,28 @@ class TestAppointmentRepository:
         # Update appointment
         update_data = {
             "status": "Reagendado",
-            "observacoes": "Reagendado pelo paciente",
+            "carro": "Toyota Corolla Azul",
         }
 
-        updated = await repository.update(str(sample_appointment.id), update_data)
+        updated = await repository.update(
+            str(sample_appointment.id), update_data
+        )
 
         assert updated is not None
         assert updated.status == "Reagendado"
-        assert updated.observacoes == "Reagendado pelo paciente"
+        assert updated.carro == "Toyota Corolla Azul"
         assert updated.updated_at is not None
 
         # Test update non-existent appointment
-        not_updated = await repository.update(str(uuid4()), {"status": "Cancelado"})
+        not_updated = await repository.update(
+            str(uuid4()), {"status": "Cancelado"}
+        )
         assert not_updated is None
 
     async def test_delete_appointment(
-        self, repository: AppointmentRepository, sample_appointment: Appointment
+        self,
+        repository: AppointmentRepository,
+        sample_appointment: Appointment,
     ):
         """Test deleting an appointment."""
         await repository.create(sample_appointment)
@@ -266,7 +283,9 @@ class TestAppointmentRepository:
         not_deleted = await repository.delete(str(uuid4()))
         assert not_deleted is False
 
-    async def test_delete_many_appointments(self, repository: AppointmentRepository):
+    async def test_delete_many_appointments(
+        self, repository: AppointmentRepository
+    ):
         """Test deleting multiple appointments."""
         # Create appointments
         appointments = [
@@ -290,7 +309,9 @@ class TestAppointmentRepository:
         remaining = await repository.count()
         assert remaining == 2
 
-    async def test_get_distinct_values(self, repository: AppointmentRepository):
+    async def test_get_distinct_values(
+        self, repository: AppointmentRepository
+    ):
         """Test getting distinct values for fields."""
         # Create appointments with different values
         appointments = [
@@ -330,7 +351,9 @@ class TestAppointmentRepository:
         assert "Clínica A" in brands
         assert "Clínica B" in brands
 
-    async def test_get_appointment_stats(self, repository: AppointmentRepository):
+    async def test_get_appointment_stats(
+        self, repository: AppointmentRepository
+    ):
         """Test getting appointment statistics."""
         # Empty database
         stats = await repository.get_appointment_stats()

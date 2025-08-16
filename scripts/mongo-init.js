@@ -140,9 +140,9 @@ db.createCollection('appointments', {
           bsonType: ['string', 'null'],
           description: 'Telefone de contato do paciente'
         },
-        observacoes: {
+        carro: {
           bsonType: ['string', 'null'],
-          description: 'Observações adicionais'
+          description: 'Informações do carro utilizado'
         },
         created_at: {
           bsonType: 'date',

@@ -36,8 +36,8 @@ class Appointment(Entity):
     telefone: Optional[str] = Field(
         None, description="Telefone de contato do paciente"
     )
-    observacoes: Optional[str] = Field(
-        None, description="Observações adicionais"
+    carro: Optional[str] = Field(
+        None, description="Informações do carro utilizado"
     )
     driver_id: Optional[str] = Field(
         None, description="ID do motorista responsável pela coleta"
@@ -169,7 +169,7 @@ class Appointment(Entity):
                 "tipo_consulta": "Clínico Geral",
                 "status": "Confirmado",
                 "telefone": "11999887766",
-                "observacoes": "Paciente com diabetes",
+                "carro": "Honda Civic Prata",
                 "driver_id": "507f1f77bcf86cd799439012",
                 "created_at": "2025-01-14T10:00:00",
                 "updated_at": "2025-01-14T10:00:00",

@@ -16,10 +16,14 @@ class DriverCreateDTO(BaseModel):
     cnh: str = Field(..., description="Número da CNH")
     telefone: str = Field(..., description="Telefone de contato")
     email: Optional[str] = Field(None, description="Email do motorista")
-    data_nascimento: Optional[datetime] = Field(None, description="Data de nascimento")
+    data_nascimento: Optional[datetime] = Field(
+        None, description="Data de nascimento"
+    )
     endereco: Optional[str] = Field(None, description="Endereço completo")
     status: str = Field("Ativo", description="Status do motorista")
-    observacoes: Optional[str] = Field(None, description="Observações")
+    carro: Optional[str] = Field(
+        None, description="Informações do carro utilizado"
+    )
 
     @field_validator("data_nascimento", mode="before")
     @classmethod
@@ -65,7 +69,7 @@ class DriverResponseDTO(BaseModel):
     data_nascimento: Optional[datetime]
     endereco: Optional[str]
     status: str
-    observacoes: Optional[str]
+    carro: Optional[str]
     created_at: datetime
     updated_at: Optional[datetime]
 
@@ -80,7 +84,7 @@ class DriverUpdateDTO(BaseModel):
     data_nascimento: Optional[datetime] = None
     endereco: Optional[str] = None
     status: Optional[str] = None
-    observacoes: Optional[str] = None
+    carro: Optional[str] = None
 
     @field_validator("data_nascimento", mode="before")
     @classmethod

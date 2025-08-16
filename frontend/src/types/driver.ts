@@ -7,7 +7,7 @@ export interface Driver {
   data_nascimento?: string;
   endereco?: string;
   status: string;
-  observacoes?: string;
+  carro?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -20,7 +20,7 @@ export interface DriverCreateRequest {
   data_nascimento?: string;
   endereco?: string;
   status?: string;
-  observacoes?: string;
+  carro?: string;
 }
 
 export interface DriverUpdateRequest {
@@ -31,7 +31,7 @@ export interface DriverUpdateRequest {
   data_nascimento?: string;
   endereco?: string;
   status?: string;
-  observacoes?: string;
+  carro?: string;
 }
 
 export interface DriverFilter {
@@ -127,7 +127,7 @@ export interface DriverFormData {
   data_nascimento: string;
   endereco: string;
   status: DriverStatus;
-  observacoes: string;
+  carro: string;
 }
 
 // Driver table column types
