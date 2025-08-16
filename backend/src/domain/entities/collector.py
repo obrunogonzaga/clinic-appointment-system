@@ -32,6 +32,9 @@ class Collector(Entity):
     )
     endereco: Optional[str] = Field(None, description="Endereço completo")
     status: Optional[str] = Field("Ativo", description="Status da coletora")
+    carro: Optional[str] = Field(
+        None, description="Informações do carro utilizado"
+    )
     observacoes: Optional[str] = Field(
         None, description="Observações adicionais"
     )
@@ -184,6 +187,7 @@ class Collector(Entity):
                 "data_nascimento": "1990-05-20T00:00:00",
                 "endereco": "Rua das Flores, 456 - São Paulo, SP",
                 "status": "Ativo",
+                "carro": "Honda Civic Prata",
                 "observacoes": "Coletora experiente, especializada em coletas domiciliares",
                 "registro_profissional": "COREN-SP 123456",
                 "especializacao": "Coleta domiciliar",

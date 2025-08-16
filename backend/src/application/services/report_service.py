@@ -17,7 +17,9 @@ from reportlab.pdfbase import pdfmetrics  # type: ignore[import-not-found]
 from reportlab.pdfbase.ttfonts import TTFont  # type: ignore[import-not-found]
 from reportlab.pdfgen import canvas  # type: ignore[import-not-found]
 from src.domain.entities.appointment import Appointment
-from src.infrastructure.repositories.appointment_repository import AppointmentRepository
+from src.infrastructure.repositories.appointment_repository import (
+    AppointmentRepository,
+)
 from src.infrastructure.repositories.driver_repository import DriverRepository
 
 
@@ -143,7 +145,7 @@ class RouteReportService:
             nome = ap.nome_paciente
             telefone = ap.telefone or "-"
             unidade_ou_marca = ap.nome_unidade or ap.nome_marca or "-"
-            obs = ap.observacoes or "-"
+            obs = ap.carro or "-"
             conf_parts: list[str] = []
             if ap.canal_confirmacao:
                 conf_parts.append(ap.canal_confirmacao)

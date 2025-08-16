@@ -18,6 +18,7 @@ const initialFormData: DriverFormData = {
   data_nascimento: '',
   endereco: '',
   status: 'Ativo',
+  carro: '',
   observacoes: '',
 };
 
@@ -43,6 +44,7 @@ export const DriverForm: React.FC<DriverFormProps> = ({
           new Date(driver.data_nascimento).toISOString().split('T')[0] : '',
         endereco: driver.endereco || '',
         status: driver.status as typeof DRIVER_STATUS[keyof typeof DRIVER_STATUS] || 'Ativo',
+        carro: driver.carro || '',
         observacoes: driver.observacoes || '',
       });
     } else if (isOpen && !driver) {
@@ -336,6 +338,22 @@ export const DriverForm: React.FC<DriverFormProps> = ({
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Digite o endereço completo"
+            />
+          </div>
+
+          {/* Carro */}
+          <div>
+            <label htmlFor="carro" className="block text-sm font-medium text-gray-700 mb-1">
+              Carro
+            </label>
+            <textarea
+              id="carro"
+              name="carro"
+              value={formData.carro}
+              onChange={handleInputChange}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Informações do carro utilizado"
             />
           </div>
 

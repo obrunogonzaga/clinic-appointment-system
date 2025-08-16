@@ -20,9 +20,20 @@ class AppointmentCreateDTO(BaseModel):
     tipo_consulta: Optional[str] = Field(None, description="Tipo de Consulta")
     status: str = Field("Confirmado", description="Status do Agendamento")
     telefone: Optional[str] = Field(None, description="Telefone do Paciente")
+    carro: Optional[str] = Field(
+        None, description="Informações do carro utilizado"
+    )
     observacoes: Optional[str] = Field(None, description="Observações")
     driver_id: Optional[str] = Field(None, description="ID do Motorista")
     collector_id: Optional[str] = Field(None, description="ID da Coletora")
+    # Campos de convênio
+    numero_convenio: Optional[str] = Field(
+        None, description="Número do convênio"
+    )
+    nome_convenio: Optional[str] = Field(None, description="Nome do convênio")
+    carteira_convenio: Optional[str] = Field(
+        None, description="Número da carteira do convênio"
+    )
 
 
 class AppointmentUpdateDTO(BaseModel):
@@ -44,9 +55,14 @@ class AppointmentResponseDTO(BaseModel):
     tipo_consulta: Optional[str]
     status: str
     telefone: Optional[str]
+    carro: Optional[str]
     observacoes: Optional[str]
     driver_id: Optional[str]
     collector_id: Optional[str]
+    # Campos de convênio
+    numero_convenio: Optional[str]
+    nome_convenio: Optional[str]
+    carteira_convenio: Optional[str]
     created_at: datetime
     updated_at: Optional[datetime]
 
@@ -115,8 +131,8 @@ class DashboardStatsDTO(BaseModel):
     stats: Dict = {}
 
 
-class AppointmentUpdateDTO(BaseModel):
-    """DTO for updating appointment."""
+class AppointmentFullUpdateDTO(BaseModel):
+    """DTO for full appointment update with all fields."""
 
     nome_marca: Optional[str] = None
     nome_unidade: Optional[str] = None
@@ -126,9 +142,14 @@ class AppointmentUpdateDTO(BaseModel):
     tipo_consulta: Optional[str] = None
     status: Optional[str] = None
     telefone: Optional[str] = None
+    carro: Optional[str] = None
     observacoes: Optional[str] = None
     driver_id: Optional[str] = None
     collector_id: Optional[str] = None
+    # Campos de convênio
+    numero_convenio: Optional[str] = None
+    nome_convenio: Optional[str] = None
+    carteira_convenio: Optional[str] = None
 
 
 class AppointmentDeleteResponseDTO(BaseModel):

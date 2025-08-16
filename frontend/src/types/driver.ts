@@ -7,6 +7,7 @@ export interface Driver {
   data_nascimento?: string;
   endereco?: string;
   status: string;
+  carro?: string;
   observacoes?: string;
   created_at: string;
   updated_at?: string;
@@ -20,6 +21,7 @@ export interface DriverCreateRequest {
   data_nascimento?: string;
   endereco?: string;
   status?: string;
+  carro?: string;
   observacoes?: string;
 }
 
@@ -31,6 +33,7 @@ export interface DriverUpdateRequest {
   data_nascimento?: string;
   endereco?: string;
   status?: string;
+  carro?: string;
   observacoes?: string;
 }
 
@@ -127,6 +130,7 @@ export interface DriverFormData {
   data_nascimento: string;
   endereco: string;
   status: DriverStatus;
+  carro: string;
   observacoes: string;
 }
 

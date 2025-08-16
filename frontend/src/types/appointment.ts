@@ -8,6 +8,7 @@ export interface Appointment {
   tipo_consulta?: string;
   status: string;
   telefone?: string;
+  carro?: string;
   observacoes?: string;
   driver_id?: string;
   collector_id?: string;

@@ -47,7 +47,9 @@ class DriverService:
         """
         try:
             # Check if CNH already exists
-            existing_driver = await self.driver_repository.find_by_cnh(driver_data.cnh)
+            existing_driver = await self.driver_repository.find_by_cnh(
+                driver_data.cnh
+            )
             if existing_driver:
                 return {
                     "success": False,
@@ -64,6 +66,7 @@ class DriverService:
                 data_nascimento=driver_data.data_nascimento,
                 endereco=driver_data.endereco,
                 status=driver_data.status,
+                carro=driver_data.carro,
                 observacoes=driver_data.observacoes,
             )
 
@@ -84,7 +87,9 @@ class DriverService:
                 "message": f"Erro interno ao cadastrar motorista: {str(e)}",
             }
 
-    async def update_driver(self, driver_id: str, driver_data: DriverUpdateDTO) -> Dict:
+    async def update_driver(
+        self, driver_id: str, driver_data: DriverUpdateDTO
+    ) -> Dict:
         """
         Update an existing driver.
 
@@ -97,9 +102,14 @@ class DriverService:
         """
         try:
             # Check if driver exists
-            existing_driver = await self.driver_repository.find_by_id(driver_id)
+            existing_driver = await self.driver_repository.find_by_id(
+                driver_id
+            )
             if not existing_driver:
-                return {"success": False, "message": "Motorista não encontrado"}
+                return {
+                    "success": False,
+                    "message": "Motorista não encontrado",
+                }
 
             # Validate CNH uniqueness if being updated
             cnh_validation = await self._validate_cnh_uniqueness(
@@ -111,10 +121,15 @@ class DriverService:
             # Build update data (only include non-None values)
             update_data = self._build_update_data(driver_data)
             if not update_data:
-                return {"success": False, "message": "Nenhum campo para atualizar"}
+                return {
+                    "success": False,
+                    "message": "Nenhum campo para atualizar",
+                }
 
             # Update driver
-            updated_driver = await self.driver_repository.update(driver_id, update_data)
+            updated_driver = await self.driver_repository.update(
+                driver_id, update_data
+            )
 
             if updated_driver:
                 return {
@@ -123,7 +138,10 @@ class DriverService:
                     "driver": DriverResponseDTO(**updated_driver.model_dump()),
                 }
             else:
-                return {"success": False, "message": "Erro ao atualizar motorista"}
+                return {
+                    "success": False,
+                    "message": "Erro ao atualizar motorista",
+                }
 
         except ValueError as e:
             return {"success": False, "message": str(e), "field": "validation"}
@@ -147,12 +165,21 @@ class DriverService:
             driver = await self.driver_repository.find_by_id(driver_id)
 
             if not driver:
-                return {"success": False, "message": "Motorista não encontrado"}
+                return {
+                    "success": False,
+                    "message": "Motorista não encontrado",
+                }
 
-            return {"success": True, "driver": DriverResponseDTO(**driver.model_dump())}
+            return {
+                "success": True,
+                "driver": DriverResponseDTO(**driver.model_dump()),
+            }
 
         except Exception as e:
-            return {"success": False, "message": f"Erro ao buscar motorista: {str(e)}"}
+            return {
+                "success": False,
+                "message": f"Erro ao buscar motorista: {str(e)}",
+            }
 
     async def get_drivers_with_filters(
         self,
@@ -197,7 +224,10 @@ class DriverService:
             # Get total count for pagination
             filters: Dict[str, Any] = {}
             if nome_completo:
-                filters["nome_completo"] = {"$regex": nome_completo, "$options": "i"}
+                filters["nome_completo"] = {
+                    "$regex": nome_completo,
+                    "$options": "i",
+                }
             if cnh:
                 filters["cnh"] = cnh
             if telefone:
@@ -215,7 +245,8 @@ class DriverService:
             return {
                 "success": True,
                 "drivers": [
-                    DriverResponseDTO(**driver.model_dump()) for driver in drivers
+                    DriverResponseDTO(**driver.model_dump())
+                    for driver in drivers
                 ],
                 "pagination": {
                     "page": page,
@@ -256,7 +287,10 @@ class DriverService:
             # Check if driver exists
             driver = await self.driver_repository.find_by_id(driver_id)
             if not driver:
-                return {"success": False, "message": "Motorista não encontrado"}
+                return {
+                    "success": False,
+                    "message": "Motorista não encontrado",
+                }
 
             # TODO: Check if driver is assigned to any appointments
             # This would require checking the appointment repository
@@ -266,12 +300,21 @@ class DriverService:
             deleted = await self.driver_repository.delete(driver_id)
 
             if deleted:
-                return {"success": True, "message": "Motorista excluído com sucesso"}
+                return {
+                    "success": True,
+                    "message": "Motorista excluído com sucesso",
+                }
             else:
-                return {"success": False, "message": "Erro ao excluir motorista"}
+                return {
+                    "success": False,
+                    "message": "Erro ao excluir motorista",
+                }
 
         except Exception as e:
-            return {"success": False, "message": f"Erro ao excluir motorista: {str(e)}"}
+            return {
+                "success": False,
+                "message": f"Erro ao excluir motorista: {str(e)}",
+            }
 
     async def get_active_drivers(self) -> Dict:
         """
@@ -303,7 +346,9 @@ class DriverService:
                 "drivers": [],
             }
 
-    async def update_driver_status(self, driver_id: str, new_status: str) -> Dict:
+    async def update_driver_status(
+        self, driver_id: str, new_status: str
+    ) -> Dict:
         """
         Update driver status.
 
@@ -335,10 +380,16 @@ class DriverService:
                     "driver": DriverResponseDTO(**updated.model_dump()),
                 }
             else:
-                return {"success": False, "message": "Motorista não encontrado"}
+                return {
+                    "success": False,
+                    "message": "Motorista não encontrado",
+                }
 
         except Exception as e:
-            return {"success": False, "message": f"Erro ao atualizar status: {str(e)}"}
+            return {
+                "success": False,
+                "message": f"Erro ao atualizar status: {str(e)}",
+            }
 
     async def get_driver_stats(self) -> Dict:
         """

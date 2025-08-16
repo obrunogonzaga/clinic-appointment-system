@@ -36,6 +36,9 @@ class Appointment(Entity):
     telefone: Optional[str] = Field(
         None, description="Telefone de contato do paciente"
     )
+    carro: Optional[str] = Field(
+        None, description="Informações do carro utilizado"
+    )
     observacoes: Optional[str] = Field(
         None, description="Observações adicionais"
     )
@@ -45,7 +48,8 @@ class Appointment(Entity):
     collector_id: Optional[str] = Field(
         None, description="ID da coletora responsável pela coleta"
     )
-    # Campos adicionais de endereço/convenio (podem não existir em todas as planilhas)
+    # Campos adicionais de endereço/convenio
+    # (podem não existir em todas as planilhas)
     cep: Optional[str] = Field(None, description="CEP do endereço de coleta")
     endereco_coleta: Optional[str] = Field(
         None, description="Endereço da coleta"
@@ -54,9 +58,12 @@ class Appointment(Entity):
         None, description="Número do convênio"
     )
     nome_convenio: Optional[str] = Field(None, description="Nome do convênio")
+    carteira_convenio: Optional[str] = Field(
+        None, description="Número da carteira do convênio"
+    )
     canal_confirmacao: Optional[str] = Field(
         None,
-        description="Canal utilizado para confirmação (ex.: WhatsApp, Telefone)",
+        description="Canal utilizado para confirmação (ex.: WhatsApp, Tel)",
     )
     data_confirmacao: Optional[datetime] = Field(
         None, description="Data da confirmação do agendamento"
@@ -145,7 +152,8 @@ class Appointment(Entity):
 
         if value not in valid_statuses:
             raise ValueError(
-                f"Status inválido. Valores permitidos: {', '.join(valid_statuses)}"
+                f"Status inválido. Valores permitidos: "
+                f"{', '.join(valid_statuses)}"
             )
 
         return value
@@ -164,6 +172,7 @@ class Appointment(Entity):
                 "tipo_consulta": "Clínico Geral",
                 "status": "Confirmado",
                 "telefone": "11999887766",
+                "carro": "Honda Civic Prata",
                 "observacoes": "Paciente com diabetes",
                 "driver_id": "507f1f77bcf86cd799439012",
                 "created_at": "2025-01-14T10:00:00",

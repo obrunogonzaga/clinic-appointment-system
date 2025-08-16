@@ -7,6 +7,7 @@ export interface Collector {
   data_nascimento?: string;
   endereco?: string;
   status: string;
+  carro?: string;
   observacoes?: string;
   registro_profissional?: string;
   especializacao?: string;
@@ -22,6 +23,7 @@ export interface CollectorCreateRequest {
   data_nascimento?: string;
   endereco?: string;
   status?: string;
+  carro?: string;
   observacoes?: string;
   registro_profissional?: string;
   especializacao?: string;
@@ -35,6 +37,7 @@ export interface CollectorUpdateRequest {
   data_nascimento?: string;
   endereco?: string;
   status?: string;
+  carro?: string;
   observacoes?: string;
   registro_profissional?: string;
   especializacao?: string;
@@ -133,6 +136,7 @@ export interface CollectorFormData {
   data_nascimento: string;
   endereco: string;
   status: CollectorStatus;
+  carro: string;
   observacoes: string;
   registro_profissional: string;
   especializacao: string;
