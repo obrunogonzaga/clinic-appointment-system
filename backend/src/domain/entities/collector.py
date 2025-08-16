@@ -35,6 +35,9 @@ class Collector(Entity):
     carro: Optional[str] = Field(
         None, description="Informações do carro utilizado"
     )
+    observacoes: Optional[str] = Field(
+        None, description="Observações adicionais"
+    )
     registro_profissional: Optional[str] = Field(
         None, description="Registro profissional (CRF, COREN, etc.)"
     )
@@ -185,6 +188,7 @@ class Collector(Entity):
                 "endereco": "Rua das Flores, 456 - São Paulo, SP",
                 "status": "Ativo",
                 "carro": "Honda Civic Prata",
+                "observacoes": "Coletora experiente, especializada em coletas domiciliares",
                 "registro_profissional": "COREN-SP 123456",
                 "especializacao": "Coleta domiciliar",
                 "created_at": "2025-01-14T10:00:00",

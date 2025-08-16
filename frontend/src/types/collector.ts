@@ -8,6 +8,7 @@ export interface Collector {
   endereco?: string;
   status: string;
   carro?: string;
+  observacoes?: string;
   registro_profissional?: string;
   especializacao?: string;
   created_at: string;
@@ -23,6 +24,7 @@ export interface CollectorCreateRequest {
   endereco?: string;
   status?: string;
   carro?: string;
+  observacoes?: string;
   registro_profissional?: string;
   especializacao?: string;
 }
@@ -36,6 +38,7 @@ export interface CollectorUpdateRequest {
   endereco?: string;
   status?: string;
   carro?: string;
+  observacoes?: string;
   registro_profissional?: string;
   especializacao?: string;
 }
@@ -134,6 +137,7 @@ export interface CollectorFormData {
   endereco: string;
   status: CollectorStatus;
   carro: string;
+  observacoes: string;
   registro_profissional: string;
   especializacao: string;
 }

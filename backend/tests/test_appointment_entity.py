@@ -43,12 +43,14 @@ class TestAppointmentEntity:
             status="Reagendado",
             telefone="11999887766",
             carro="Honda Civic Prata",
+            observacoes="Paciente com hipertensão",
         )
 
         assert appointment.tipo_consulta == "Cardiologia"
         assert appointment.status == "Reagendado"
         assert appointment.telefone == "11999887766"
         assert appointment.carro == "Honda Civic Prata"
+        assert appointment.observacoes == "Paciente com hipertensão"
 
     def test_string_validation_strips_whitespace(self):
         """Test that string fields are properly trimmed."""

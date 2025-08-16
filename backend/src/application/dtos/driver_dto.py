@@ -24,6 +24,7 @@ class DriverCreateDTO(BaseModel):
     carro: Optional[str] = Field(
         None, description="Informações do carro utilizado"
     )
+    observacoes: Optional[str] = Field(None, description="Observações")
 
     @field_validator("data_nascimento", mode="before")
     @classmethod
@@ -70,6 +71,7 @@ class DriverResponseDTO(BaseModel):
     endereco: Optional[str]
     status: str
     carro: Optional[str]
+    observacoes: Optional[str]
     created_at: datetime
     updated_at: Optional[datetime]
 
@@ -85,6 +87,7 @@ class DriverUpdateDTO(BaseModel):
     endereco: Optional[str] = None
     status: Optional[str] = None
     carro: Optional[str] = None
+    observacoes: Optional[str] = None
 
     @field_validator("data_nascimento", mode="before")
     @classmethod

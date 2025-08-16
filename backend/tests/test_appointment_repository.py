@@ -51,6 +51,7 @@ def sample_appointment():
         status="Confirmado",
         telefone="11999887766",
         carro="Honda Civic Prata",
+        observacoes="Primeira consulta",
     )
 
 
@@ -242,6 +243,7 @@ class TestAppointmentRepository:
         update_data = {
             "status": "Reagendado",
             "carro": "Toyota Corolla Azul",
+            "observacoes": "Reagendado pelo paciente",
         }
 
         updated = await repository.update(
@@ -251,6 +253,7 @@ class TestAppointmentRepository:
         assert updated is not None
         assert updated.status == "Reagendado"
         assert updated.carro == "Toyota Corolla Azul"
+        assert updated.observacoes == "Reagendado pelo paciente"
         assert updated.updated_at is not None
 
         # Test update non-existent appointment

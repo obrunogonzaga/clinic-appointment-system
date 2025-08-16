@@ -35,6 +35,9 @@ class Driver(Entity):
     carro: Optional[str] = Field(
         None, description="Informações do carro utilizado"
     )
+    observacoes: Optional[str] = Field(
+        None, description="Observações adicionais"
+    )
 
     # Metadata fields (handled by Entity base class)
     # created_at: datetime
@@ -177,6 +180,7 @@ class Driver(Entity):
                 "endereco": "Rua das Flores, 123 - São Paulo, SP",
                 "status": "Ativo",
                 "carro": "Honda Civic Prata",
+                "observacoes": "Motorista experiente, conhece bem a região",
                 "created_at": "2025-01-14T10:00:00",
                 "updated_at": "2025-01-14T10:00:00",
             }

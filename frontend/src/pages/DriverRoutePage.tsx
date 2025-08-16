@@ -148,6 +148,16 @@ export const DriverRoutePage: React.FC = () => {
           <div className="border-2 border-gray-800 rounded-md min-h-[150px] p-3 text-gray-800 whitespace-pre-wrap">{ap.tipo_consulta || '-'}</div>
         </div>
       </div>
+
+      {/* Observações */}
+      <div className="grid grid-cols-12 gap-6 mt-6">
+        <div className="col-span-12">
+          <div className="text-xl font-extrabold text-gray-900">Observações</div>
+          <div className="border-2 border-gray-800 rounded-md min-h-[100px] p-3 text-gray-800 whitespace-pre-wrap">
+            {ap.observacoes || '-'}
+          </div>
+        </div>
+      </div>
     </div>
   );
 

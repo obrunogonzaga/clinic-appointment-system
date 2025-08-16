@@ -39,6 +39,9 @@ class Appointment(Entity):
     carro: Optional[str] = Field(
         None, description="Informações do carro utilizado"
     )
+    observacoes: Optional[str] = Field(
+        None, description="Observações adicionais"
+    )
     driver_id: Optional[str] = Field(
         None, description="ID do motorista responsável pela coleta"
     )
@@ -170,6 +173,7 @@ class Appointment(Entity):
                 "status": "Confirmado",
                 "telefone": "11999887766",
                 "carro": "Honda Civic Prata",
+                "observacoes": "Paciente com diabetes",
                 "driver_id": "507f1f77bcf86cd799439012",
                 "created_at": "2025-01-14T10:00:00",
                 "updated_at": "2025-01-14T10:00:00",

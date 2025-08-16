@@ -8,6 +8,7 @@ export interface Driver {
   endereco?: string;
   status: string;
   carro?: string;
+  observacoes?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -21,6 +22,7 @@ export interface DriverCreateRequest {
   endereco?: string;
   status?: string;
   carro?: string;
+  observacoes?: string;
 }
 
 export interface DriverUpdateRequest {
@@ -32,6 +34,7 @@ export interface DriverUpdateRequest {
   endereco?: string;
   status?: string;
   carro?: string;
+  observacoes?: string;
 }
 
 export interface DriverFilter {
@@ -128,6 +131,7 @@ export interface DriverFormData {
   endereco: string;
   status: DriverStatus;
   carro: string;
+  observacoes: string;
 }
 
 // Driver table column types

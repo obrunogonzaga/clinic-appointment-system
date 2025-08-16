@@ -75,8 +75,79 @@ class TestExcelParserService:
         assert appointment.hora_agendamento == "14:30"
         assert appointment.status == "Confirmado"
         assert appointment.telefone == "11999887766"
-        assert appointment.carro == "Primeira consulta"
+        assert (
+            appointment.carro is None
+        )  # Não há campo "Nome da Sala" neste teste
+        assert (
+            appointment.observacoes == "Primeira consulta"
+        )  # Campo "Observação" da planilha
         assert appointment.tipo_consulta == "Clínico Geral"
+
+    def test_parse_excel_with_observacoes_field(
+        self, parser_service: ExcelParserService
+    ):
+        """Test parsing Excel with both 'Observação' and 'Observações' fields."""
+        data = {
+            "Nome da Marca": ["Clínica A"],
+            "Nome da Unidade": ["UBS Centro"],
+            "Nome do Paciente": ["João Silva"],
+            "Data/Hora Início Agendamento": ["15/01/2025 14:30"],
+            "Status Agendamento": ["Confirmado"],
+            "Contato(s) do Paciente": ["11999887766"],
+            "Observação": ["Carro: Honda Civic"],  # Mapeia para campo 'carro'
+            "Observações": [
+                "Paciente diabético"
+            ],  # Mapeia para campo 'observacoes'
+            "Nomes dos Exames": ["Clínico Geral"],
+        }
+
+        excel_file = self.create_excel_file(data)
+
+        result = parser_service.parse_excel_file(excel_file, "test.xlsx")
+
+        assert result.success is True
+        assert len(result.appointments) == 1
+
+        appointment = result.appointments[0]
+        assert (
+            appointment.carro is None
+        )  # Não há campo "Nome da Sala" neste teste
+        assert (
+            appointment.observacoes == "Paciente diabético"
+        )  # Campo "Observações" tem prioridade
+
+    def test_parse_excel_with_nome_da_sala_field(
+        self, parser_service: ExcelParserService
+    ):
+        """Test parsing Excel with 'Nome da Sala' field containing car info."""
+        data = {
+            "Nome da Marca": ["Clínica A"],
+            "Nome da Unidade": ["UBS Centro"],
+            "Nome do Paciente": ["João Silva"],
+            "Data/Hora Início Agendamento": ["15/01/2025 14:30"],
+            "Status Agendamento": ["Confirmado"],
+            "Contato(s) do Paciente": ["11999887766"],
+            "Observação": ["o exame pede anti-hiv"],  # Vai para observacoes
+            "Nome da Sala": [
+                "AD-SF-FQ-AC-AV CENTER 3 CARRO 1 - UND84"
+            ],  # Extrai carro
+            "Nomes dos Exames": ["Clínico Geral"],
+        }
+
+        excel_file = self.create_excel_file(data)
+
+        result = parser_service.parse_excel_file(excel_file, "test.xlsx")
+
+        assert result.success is True
+        assert len(result.appointments) == 1
+
+        appointment = result.appointments[0]
+        assert (
+            appointment.carro == "CENTER 3 CARRO 1 - UND84"
+        )  # Extraído do Nome da Sala
+        assert (
+            appointment.observacoes == "o exame pede anti-hiv"
+        )  # Do campo Observação
 
     def test_parse_excel_with_missing_columns(
         self, parser_service: ExcelParserService

@@ -67,6 +67,7 @@ class DriverService:
                 endereco=driver_data.endereco,
                 status=driver_data.status,
                 carro=driver_data.carro,
+                observacoes=driver_data.observacoes,
             )
 
             # Save to database

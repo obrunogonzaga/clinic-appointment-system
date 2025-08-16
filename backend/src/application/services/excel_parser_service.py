@@ -46,7 +46,8 @@ class ExcelParserService:
         "Data/Hora Início Agendamento": "data_hora_agendamento",
         "Status Agendamento": "status_agendamento",
         "Contato(s) do Paciente": "telefone",
-        "Observação": "carro",
+        "Observação": "observacoes",
+        "Observações": "observacoes",  # Campo específico de observações
         "Nomes dos Exames": "tipo_consulta",
         # Campos de confirmação
         "Canal Confirmação": "canal_confirmacao",
@@ -251,22 +252,21 @@ class ExcelParserService:
             # Parse optional fields
             status = self._decide_status(row)
             telefone = self._clean_phone(row.get("Contato(s) do Paciente"))
-            carro = self._clean_string(row.get("Observação"))
-            # Extrai info de sala/carro do campo "Nome da Sala" (se existir)
+            # Observações vêm do campo "Observação" da planilha
+            observacoes = self._clean_string(row.get("Observação"))
+            # Se há campo "Observações" separado, prioriza ele
+            if row.get("Observações"):
+                observacoes = self._clean_string(row.get("Observações"))
+
+            # Carro vem da extração do campo "Nome da Sala"
+            carro = None
             sala_val = self._clean_string(row.get("Nome da Sala"))
             if sala_val:
                 m = self.SALA_EXTRACT_PATTERN.match(sala_val)
                 if m:
-                    sala_code = m.group("sala")
                     carro_info = m.group("carro")
-                    # Anexa às informações do carro para preservarmos as informações
-                    parts: list[str] = []
-                    if carro:
-                        parts.append(carro)
-                    parts.append(f"Sala: {sala_code}")
                     if carro_info:
-                        parts.append(f"Carro: {carro_info}")
-                    carro = " | ".join(parts)
+                        carro = carro_info  # Apenas a informação do carro, sem misturar
             tipo_consulta = self._clean_string(row.get("Nomes dos Exames"))
             cep = self._clean_string(row.get("CEP"))
             endereco_coleta = self._clean_string(row.get("Endereço Coleta"))
@@ -306,6 +306,7 @@ class ExcelParserService:
                 status=status,
                 telefone=telefone,
                 carro=carro,
+                observacoes=observacoes,
                 tipo_consulta=tipo_consulta,
                 canal_confirmacao=canal_confirmacao,
                 data_confirmacao=data_conf,

@@ -9,6 +9,7 @@ export interface Appointment {
   status: string;
   telefone?: string;
   carro?: string;
+  observacoes?: string;
   driver_id?: string;
   collector_id?: string;
   // Campos opcionais que podem vir a existir no backend
