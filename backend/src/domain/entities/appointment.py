@@ -45,7 +45,8 @@ class Appointment(Entity):
     collector_id: Optional[str] = Field(
         None, description="ID da coletora responsável pela coleta"
     )
-    # Campos adicionais de endereço/convenio (podem não existir em todas as planilhas)
+    # Campos adicionais de endereço/convenio
+    # (podem não existir em todas as planilhas)
     cep: Optional[str] = Field(None, description="CEP do endereço de coleta")
     endereco_coleta: Optional[str] = Field(
         None, description="Endereço da coleta"
@@ -54,9 +55,12 @@ class Appointment(Entity):
         None, description="Número do convênio"
     )
     nome_convenio: Optional[str] = Field(None, description="Nome do convênio")
+    carteira_convenio: Optional[str] = Field(
+        None, description="Número da carteira do convênio"
+    )
     canal_confirmacao: Optional[str] = Field(
         None,
-        description="Canal utilizado para confirmação (ex.: WhatsApp, Telefone)",
+        description="Canal utilizado para confirmação (ex.: WhatsApp, Tel)",
     )
     data_confirmacao: Optional[datetime] = Field(
         None, description="Data da confirmação do agendamento"
@@ -145,7 +149,8 @@ class Appointment(Entity):
 
         if value not in valid_statuses:
             raise ValueError(
-                f"Status inválido. Valores permitidos: {', '.join(valid_statuses)}"
+                f"Status inválido. Valores permitidos: "
+                f"{', '.join(valid_statuses)}"
             )
 
         return value

@@ -55,10 +55,15 @@ class ExcelParserService:
         # Campos extras tentativos (se existirem nas planilhas)
         "CEP": "cep",
         "Endereço Coleta": "endereco_coleta",
+        "Convênio": "numero_convenio",
         "Numero Convenio": "numero_convenio",
         "Número Convênio": "numero_convenio",
+        "Nome do Convênio": "nome_convenio",
         "Nome Convenio": "nome_convenio",
         "Nome Convênio": "nome_convenio",
+        "Nr. Carteira": "carteira_convenio",
+        "Nr Carteira": "carteira_convenio",
+        "Carteira": "carteira_convenio",
     }
 
     # Status mapping from Excel to our domain model
@@ -264,10 +269,19 @@ class ExcelParserService:
             cep = self._clean_string(row.get("CEP"))
             endereco_coleta = self._clean_string(row.get("Endereço Coleta"))
             numero_convenio = self._clean_string(
-                row.get("Numero Convenio") or row.get("Número Convênio")
+                row.get("Convênio")
+                or row.get("Numero Convenio")
+                or row.get("Número Convênio")
             )
             nome_convenio = self._clean_string(
-                row.get("Nome Convenio") or row.get("Nome Convênio")
+                row.get("Nome do Convênio")
+                or row.get("Nome Convenio")
+                or row.get("Nome Convênio")
+            )
+            carteira_convenio = self._clean_string(
+                row.get("Nr. Carteira")
+                or row.get("Nr Carteira")
+                or row.get("Carteira")
             )
             canal_confirmacao = self._clean_string(
                 row.get("Canal de Confirmação")
@@ -298,6 +312,7 @@ class ExcelParserService:
                 endereco_coleta=endereco_coleta,
                 numero_convenio=numero_convenio,
                 nome_convenio=nome_convenio,
+                carteira_convenio=carteira_convenio,
             )
 
             return appointment
