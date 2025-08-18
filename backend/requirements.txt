@@ -25,7 +25,7 @@ openpyxl==3.1.2
 xlrd==2.0.1
 
 # PDF Generation
-reportlab==4.0.8
+reportlab==4.4.3
 # PyPDF2==3.0.1  # Vulnerable - replaced with pypdf
 pypdf>=4.0.0
 
