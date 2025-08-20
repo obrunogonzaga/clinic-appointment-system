@@ -158,7 +158,7 @@ export const DriversPage: React.FC = () => {
         ? selectedDriver
         : (driversData.drivers.find(d => d.id === reportDriverId) || driversData.drivers[0]);
       const date = reportDate || new Date().toISOString().slice(0, 10);
-      const url = `/routes/driver?driverId=${encodeURIComponent(driver.id)}&date=${encodeURIComponent(date)}`;
+      const url = `/#/routes/driver?driverId=${encodeURIComponent(driver.id)}&date=${encodeURIComponent(date)}`;
       window.open(url, '_blank');
     } catch (err: any) {
       alert('Erro ao abrir página de rota');
