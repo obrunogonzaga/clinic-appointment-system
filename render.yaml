@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: clinic-appointment-frontend
+    env: static
+    buildCommand: cd frontend && npm ci && npm run build && cp public/_redirects dist/_redirects
+    staticPublishPath: ./frontend/dist
+    headers:
+      - source: "/*"
+        headers:
+          - key: "X-Robots-Tag"
+            value: "noindex"
+    routes:
+      - type: rewrite
+        source: "/*"
+        destination: "/index.html"
