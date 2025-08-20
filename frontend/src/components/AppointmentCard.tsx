@@ -104,22 +104,28 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
           </span>
         </div>
 
-        {/* Unit */}
+        {/* Address */}
         <div className="flex items-center">
           <BuildingOfficeIcon className="w-4 h-4 mr-2 flex-shrink-0" />
-          <span className="truncate">{appointment.nome_unidade}</span>
+          <span className="truncate">
+            {(() => {
+              const street = appointment.endereco_normalizado?.rua || appointment.endereco_coleta;
+              const number = appointment.endereco_normalizado?.numero;
+              
+              if (street) {
+                return number ? `${street}, ${number}` : street;
+              }
+              
+              return appointment.nome_unidade;
+            })()}
+          </span>
         </div>
 
-        {/* Brand and Car */}
+        {/* Car */}
         <div className="flex items-center">
           <TruckIcon className="w-4 h-4 mr-2 flex-shrink-0" />
           <span className="truncate">
-            {appointment.nome_marca}
-            {!compact && (
-              <span className="text-gray-500 ml-1">
-                • {getCarInfo(appointment.carro)}
-              </span>
-            )}
+            {getCarInfo(appointment.carro)}
           </span>
         </div>
 
