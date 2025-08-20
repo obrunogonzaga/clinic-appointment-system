@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { HashRouter, Route, Routes } from 'react-router-dom';
 import { Navigation } from './components/Navigation';
 import { AppointmentsPage } from './pages/AppointmentsPage';
 import { CollectorsPage } from './pages/CollectorsPage';
@@ -45,12 +45,12 @@ function Shell() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <HashRouter>
         <Routes>
           <Route path="/routes/driver" element={<DriverRoutePage />} />
           <Route path="*" element={<Shell />} />
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </QueryClientProvider>
   );
 }
