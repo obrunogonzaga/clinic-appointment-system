@@ -34,6 +34,9 @@ python-dateutil==2.8.2
 pytz==2023.3
 httpx==0.26.0
 
+# AI/ML Services
+openai>=1.0.0
+
 # Development & Testing
 pytest>=8.0.0
 pytest-asyncio>=0.24.0

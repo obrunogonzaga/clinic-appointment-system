@@ -72,6 +72,7 @@ export const appointmentAPI = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        timeout: 180000, // 3 minutes timeout for Excel upload with address normalization
       }
     );
     

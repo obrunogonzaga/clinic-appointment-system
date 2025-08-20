@@ -156,6 +156,30 @@ class Settings(BaseSettings):
         description="Email remetente padrão",
     )
 
+    # OpenRouter API settings (for address normalization)
+    openrouter_api_key: Optional[str] = Field(
+        default=None,
+        description="OpenRouter API key para normalização de endereços",
+    )
+    openrouter_base_url: str = Field(
+        default="https://openrouter.ai/api/v1",
+        description="Base URL da API do OpenRouter",
+    )
+    openrouter_model: str = Field(
+        default="openai/gpt-oss-20b:free",
+        description="Modelo do OpenRouter para normalização",
+    )
+
+    # Address normalization settings
+    address_normalization_enabled: bool = Field(
+        default=True,
+        description="Habilitar normalização automática de endereços",
+    )
+    address_normalization_batch_size: int = Field(
+        default=10,
+        description="Tamanho do lote para normalização de endereços",
+    )
+
     @field_validator("allowed_origins", mode="before")
     @classmethod
     def validate_allowed_origins(cls, v) -> List[str]:
@@ -229,6 +253,7 @@ class Settings(BaseSettings):
             "mongodb_url",
             "smtp_password",
             "smtp_username",
+            "openrouter_api_key",
         ]
         for field in sensitive_fields:
             if field in data:

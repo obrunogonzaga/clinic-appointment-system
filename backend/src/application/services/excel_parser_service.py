@@ -8,7 +8,12 @@ from typing import Any, BinaryIO, Dict, List, Optional, Tuple
 
 import pandas as pd
 from pydantic import BaseModel, ValidationError
+
+from src.application.services.address_normalization_service import (
+    AddressNormalizationService,
+)
 from src.domain.entities.appointment import Appointment
+from src.infrastructure.config import get_settings
 
 
 class ExcelParseResult(BaseModel):
@@ -58,6 +63,7 @@ class ExcelParserService:
         # Campos extras tentativos (se existirem nas planilhas)
         "CEP": "cep",
         "Endereço Coleta": "endereco_coleta",
+        "Endereço Completo": "endereco_completo",
         "Convênio": "numero_convenio",
         "Numero Convenio": "numero_convenio",
         "Número Convênio": "numero_convenio",
@@ -80,9 +86,12 @@ class ExcelParserService:
         "Efetivado": "Confirmado",
     }
 
-    def __init__(self) -> None:
+    def __init__(
+        self, address_service: Optional[AddressNormalizationService] = None
+    ) -> None:
         """Initialize the parser service."""
         self.supported_formats = [".xlsx", ".xls", ".csv"]
+        self.address_service = address_service
         # Importar somente quando "Nome da Sala" iniciar com o padrão
         # AA-AA-AA-AA-AA (ex.: AD-SF-FQ-AC-AV). Texto extra à direita
         # (ex.: "CENTER 3 CARRO 1 - UND84") será preservado.
@@ -91,7 +100,7 @@ class ExcelParserService:
             r"^(?P<sala>[A-Z]{2}(?:-[A-Z]{2}){4})(?:\s+(?P<carro>.+))?$"
         )
 
-    def parse_excel_file(
+    async def parse_excel_file(
         self, file_content: BinaryIO, filename: str
     ) -> ExcelParseResult:
         """
@@ -109,7 +118,7 @@ class ExcelParserService:
             df = self._read_excel_file(file_content, filename)
 
             # Parse appointments
-            return self._parse_dataframe(df)
+            return await self._parse_dataframe(df)
 
         except Exception as e:
             return ExcelParseResult(
@@ -173,7 +182,7 @@ class ExcelParserService:
 
         return df
 
-    def _parse_dataframe(self, df: pd.DataFrame) -> ExcelParseResult:
+    async def _parse_dataframe(self, df: pd.DataFrame) -> ExcelParseResult:
         """
         Parse DataFrame into Appointment entities.
 
@@ -211,6 +220,13 @@ class ExcelParserService:
 
             except Exception as e:
                 errors.append(f"Linha {index + 1}: {str(e)}")
+
+        # Normalizar endereços se o serviço estiver disponível E habilitado
+        settings = get_settings()
+        if (self.address_service and 
+            appointments and 
+            settings.address_normalization_enabled):
+            appointments = await self._normalize_addresses_batch(appointments)
 
         return ExcelParseResult(
             success=len(errors) == 0,
@@ -270,6 +286,13 @@ class ExcelParserService:
             tipo_consulta = self._clean_string(row.get("Nomes dos Exames"))
             cep = self._clean_string(row.get("CEP"))
             endereco_coleta = self._clean_string(row.get("Endereço Coleta"))
+            endereco_completo = self._clean_string(
+                row.get("Endereço Completo")
+            )
+
+            # Se endereco_completo não existe, usar endereco_coleta como fallback
+            if not endereco_completo and endereco_coleta:
+                endereco_completo = endereco_coleta
             numero_convenio = self._clean_string(
                 row.get("Convênio")
                 or row.get("Numero Convenio")
@@ -296,6 +319,18 @@ class ExcelParserService:
                 row.get("Hora da Confirmação"),
             )
 
+            # Normalizar endereço se o serviço estiver disponível
+            endereco_normalizado = None
+            if endereco_completo and self.address_service:
+                try:
+                    # Note: Este é um parse síncrono, mas a normalização é assíncrona
+                    # Para este contexto, vamos pular a normalização durante o parse
+                    # e fazer em um passo separado após a criação
+                    pass
+                except Exception as e:
+                    # Log do erro, mas não falha o parse
+                    print(f"Erro na normalização de endereço: {e}")
+
             # Create appointment entity
             appointment = Appointment(
                 nome_marca=nome_marca,
@@ -314,6 +349,8 @@ class ExcelParserService:
                 driver_id=None,
                 cep=cep,
                 endereco_coleta=endereco_coleta,
+                endereco_completo=endereco_completo,
+                endereco_normalizado=endereco_normalizado,
                 numero_convenio=numero_convenio,
                 nome_convenio=nome_convenio,
                 carteira_convenio=carteira_convenio,
@@ -537,6 +574,49 @@ class ExcelParserService:
                 pass
 
         return None, None
+
+    async def _normalize_addresses_batch(
+        self, appointments: List[Appointment]
+    ) -> List[Appointment]:
+        """
+        Normalize addresses for a batch of appointments.
+
+        Args:
+            appointments: List of appointments to normalize
+
+        Returns:
+            List of appointments with normalized addresses
+        """
+        normalized_appointments = []
+
+        for appointment in appointments:
+            if (
+                appointment.endereco_completo
+                and not appointment.endereco_normalizado
+            ):
+                try:
+                    normalized = await self.address_service.normalize_address(
+                        appointment.endereco_completo
+                    )
+                    if normalized:
+                        # Create a new appointment with normalized address
+                        appointment_dict = appointment.model_dump()
+                        appointment_dict["endereco_normalizado"] = normalized
+                        normalized_appointments.append(
+                            Appointment(**appointment_dict)
+                        )
+                    else:
+                        normalized_appointments.append(appointment)
+                except Exception as e:
+                    # Log error but don't fail the whole batch
+                    print(
+                        f"Erro na normalização para '{appointment.endereco_completo}': {e}"
+                    )
+                    normalized_appointments.append(appointment)
+            else:
+                normalized_appointments.append(appointment)
+
+        return normalized_appointments
 
     def _decide_status(self, row: pd.Series) -> str:
         """Decide final status based on explicit and confirmation fields."""

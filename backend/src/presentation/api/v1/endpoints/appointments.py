@@ -8,6 +8,7 @@ from typing import Dict, List
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import JSONResponse
+
 from src.application.dtos.appointment_dto import (
     AppointmentFilterDTO,
     AppointmentListResponseDTO,
@@ -17,8 +18,12 @@ from src.application.dtos.appointment_dto import (
     ExcelUploadResponseDTO,
     FilterOptionsDTO,
 )
+from src.application.services.address_normalization_service import (
+    AddressNormalizationService,
+)
 from src.application.services.appointment_service import AppointmentService
 from src.application.services.excel_parser_service import ExcelParserService
+from src.infrastructure.config import Settings, get_settings
 from src.infrastructure.container import get_appointment_repository
 from src.infrastructure.repositories.appointment_repository import (
     AppointmentRepository,
@@ -37,9 +42,20 @@ async def get_appointment_service(
     appointment_repository: AppointmentRepository = Depends(
         get_appointment_repository
     ),
+    settings: Settings = Depends(get_settings),
 ) -> AppointmentService:
     """Get appointment service instance."""
-    excel_parser = ExcelParserService()
+    try:
+        # Use settings to get the correct model and API key
+        address_service = AddressNormalizationService(
+            api_key=settings.openrouter_api_key,
+            model=settings.openrouter_model,
+            base_url=settings.openrouter_base_url
+        )
+        excel_parser = ExcelParserService(address_service)
+    except ValueError:
+        # OpenRouter not configured, continue without address normalization
+        excel_parser = ExcelParserService()
     return AppointmentService(appointment_repository, excel_parser)
 
 
@@ -478,6 +494,112 @@ async def update_appointment_collector(
             message=result["message"],
             data=AppointmentResponseDTO(**result["appointment"]),
         )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Erro interno do servidor: {str(e)}"
+        )
+
+
+@router.post(
+    "/normalize-addresses",
+    response_model=BaseResponse,
+    summary="Normalize addresses",
+    description="Re-normalize addresses for appointments using OpenRouter AI",
+)
+async def normalize_addresses(
+    appointment_ids: List[str] = Query(
+        None, description="Lista de IDs específicos para normalizar (opcional)"
+    ),
+    service: AppointmentService = Depends(get_appointment_service),
+    settings: Settings = Depends(get_settings),
+) -> BaseResponse:
+    """
+    Normalize addresses for existing appointments.
+
+    Args:
+        appointment_ids: Optional list of specific appointment IDs to normalize.
+                        If not provided, will process all appointments with endereco_completo.
+        service: Appointment service instance
+
+    Returns:
+        BaseResponse: Normalization result with summary
+    """
+    try:
+        # Check if OpenRouter is configured
+        try:
+            address_service = AddressNormalizationService(
+                api_key=settings.openrouter_api_key,
+                model=settings.openrouter_model,
+                base_url=settings.openrouter_base_url
+            )
+        except ValueError:
+            raise HTTPException(
+                status_code=503,
+                detail="Serviço de normalização não configurado. Configure a variável OPENROUTER_API_KEY.",
+            )
+
+        # Get appointments to normalize
+        repo = await get_appointment_repository()
+
+        if appointment_ids:
+            # Normalize specific appointments
+            appointments = []
+            for app_id in appointment_ids:
+                appointment = await repo.find_by_id(app_id)
+                if appointment:
+                    appointments.append(appointment)
+        else:
+            # Normalize all appointments with endereco_completo but no endereco_normalizado
+            all_appointments = await repo.find_by_filters(skip=0, limit=10000)
+            appointments = [
+                app
+                for app in all_appointments
+                if app.endereco_completo and not app.endereco_normalizado
+            ]
+
+        if not appointments:
+            return BaseResponse(
+                success=True,
+                message="Nenhum agendamento encontrado para normalização",
+            )
+
+        # Normalize addresses
+        normalized_count = 0
+        error_count = 0
+
+        for appointment in appointments:
+            try:
+                if appointment.endereco_completo:
+                    normalized = await address_service.normalize_address(
+                        appointment.endereco_completo
+                    )
+
+                    if normalized:
+                        # Update the appointment with normalized address
+                        updated_appointment = appointment.model_copy(
+                            update={"endereco_normalizado": normalized}
+                        )
+
+                        # Save to database
+                        await repo.update(appointment.id, updated_appointment)
+                        normalized_count += 1
+                    else:
+                        error_count += 1
+
+            except Exception as e:
+                print(
+                    f"Erro normalizando endereço do agendamento {appointment.id}: {e}"
+                )
+                error_count += 1
+
+        message = f"Normalização concluída. {normalized_count} endereços normalizados"
+        if error_count > 0:
+            message += f", {error_count} erros encontrados"
+
+        return BaseResponse(success=True, message=message)
 
     except HTTPException:
         raise

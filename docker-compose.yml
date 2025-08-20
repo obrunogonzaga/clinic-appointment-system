@@ -50,6 +50,8 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
+    env_file:
+      - ./.env
     environment:
       - MONGODB_URL=mongodb://${MONGO_INITDB_ROOT_USERNAME:-admin}:${MONGO_INITDB_ROOT_PASSWORD:-changeme}@mongodb:27017/
       - DATABASE_NAME=${MONGO_INITDB_DATABASE:-clinic_db}
