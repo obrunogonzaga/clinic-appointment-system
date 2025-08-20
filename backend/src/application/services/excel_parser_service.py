@@ -223,9 +223,11 @@ class ExcelParserService:
 
         # Normalizar endereços se o serviço estiver disponível E habilitado
         settings = get_settings()
-        if (self.address_service and 
-            appointments and 
-            settings.address_normalization_enabled):
+        if (
+            self.address_service
+            and appointments
+            and settings.address_normalization_enabled
+        ):
             appointments = await self._normalize_addresses_batch(appointments)
 
         return ExcelParseResult(

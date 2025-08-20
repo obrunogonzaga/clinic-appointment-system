@@ -97,19 +97,27 @@ export const DriverRoutePage: React.FC = () => {
       <div className="grid grid-cols-12 gap-6 items-end mt-6">
         <div className="col-span-12 md:col-span-3">
           <div className="text-xl font-extrabold text-gray-900">CEP:</div>
-          <div className="border-b-2 border-gray-800 text-lg py-2 min-h-[2.25rem]">{ap.cep || '-'}</div>
+          <div className="border-b-2 border-gray-800 text-lg py-2 min-h-[2.25rem]">
+            {ap.endereco_normalizado?.cep || ap.cep || '-'}
+          </div>
         </div>
         <div className="col-span-12 md:col-span-5">
           <div className="text-xl font-extrabold text-gray-900">Rua:</div>
-          <div className="border-b-2 border-gray-800 text-lg py-2 min-h-[2.25rem]">{ap.endereco_coleta || '-'}</div>
+          <div className="border-b-2 border-gray-800 text-lg py-2 min-h-[2.25rem]">
+            {ap.endereco_normalizado?.rua || ap.endereco_coleta || '-'}
+          </div>
         </div>
         <div className="col-span-6 md:col-span-2">
           <div className="text-xl font-extrabold text-gray-900">Nº:</div>
-          <div className="border-b-2 border-gray-800 text-lg py-2 min-h-[2.25rem]">&nbsp;</div>
+          <div className="border-b-2 border-gray-800 text-lg py-2 min-h-[2.25rem]">
+            {ap.endereco_normalizado?.numero || '-'}
+          </div>
         </div>
         <div className="col-span-6 md:col-span-2">
           <div className="text-xl font-extrabold text-gray-900">Complemento:</div>
-          <div className="border-b-2 border-gray-800 text-lg py-2 min-h-[2.25rem]">&nbsp;</div>
+          <div className="border-b-2 border-gray-800 text-lg py-2 min-h-[2.25rem]">
+            {ap.endereco_normalizado?.complemento || '-'}
+          </div>
         </div>
       </div>
 

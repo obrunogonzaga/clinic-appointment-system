@@ -108,7 +108,9 @@ def test_invalid_endpoint_returns_404(client: TestClient) -> None:
     )
 
 
-def test_health_check_mongodb_unhealthy(client: TestClient, mock_container) -> None:
+def test_health_check_mongodb_unhealthy(
+    client: TestClient, mock_container
+) -> None:
     """Test health check when MongoDB is unavailable."""
     # Mock MongoDB client to simulate connection failure
     mock_admin = MagicMock()

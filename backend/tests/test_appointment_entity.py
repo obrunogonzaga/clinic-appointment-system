@@ -6,6 +6,7 @@ from datetime import datetime
 
 import pytest
 from pydantic import ValidationError
+
 from src.domain.entities.appointment import Appointment
 
 

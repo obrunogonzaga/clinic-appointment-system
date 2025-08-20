@@ -7,6 +7,7 @@ from uuid import uuid4
 
 import pytest
 from motor.motor_asyncio import AsyncIOMotorClient
+
 from src.domain.entities.appointment import Appointment
 from src.infrastructure.repositories.appointment_repository import (
     AppointmentRepository,

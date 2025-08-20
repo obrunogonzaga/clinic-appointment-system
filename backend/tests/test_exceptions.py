@@ -38,7 +38,9 @@ async def test_domain_exception_handler():
 @pytest.mark.asyncio
 async def test_http_exception_handler():
     """Test HTTP exception handler."""
-    exception = StarletteHTTPException(status_code=404, detail="Resource not found")
+    exception = StarletteHTTPException(
+        status_code=404, detail="Resource not found"
+    )
     request = Request({"type": "http", "headers": {}}, receive=None, send=None)
 
     response = await http_exception_handler(request, exception)

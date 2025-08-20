@@ -50,7 +50,7 @@ async def get_appointment_service(
         address_service = AddressNormalizationService(
             api_key=settings.openrouter_api_key,
             model=settings.openrouter_model,
-            base_url=settings.openrouter_base_url
+            base_url=settings.openrouter_base_url,
         )
         excel_parser = ExcelParserService(address_service)
     except ValueError:
@@ -533,7 +533,7 @@ async def normalize_addresses(
             address_service = AddressNormalizationService(
                 api_key=settings.openrouter_api_key,
                 model=settings.openrouter_model,
-                base_url=settings.openrouter_base_url
+                base_url=settings.openrouter_base_url,
             )
         except ValueError:
             raise HTTPException(

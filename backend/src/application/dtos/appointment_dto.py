@@ -59,6 +59,17 @@ class AppointmentResponseDTO(BaseModel):
     observacoes: Optional[str]
     driver_id: Optional[str]
     collector_id: Optional[str]
+    # Campos de endereço
+    cep: Optional[str] = Field(None, description="CEP do endereço de coleta")
+    endereco_coleta: Optional[str] = Field(
+        None, description="Endereço da coleta"
+    )
+    endereco_completo: Optional[str] = Field(
+        None, description="Endereço completo não normalizado"
+    )
+    endereco_normalizado: Optional[Dict[str, Optional[str]]] = Field(
+        None, description="Endereço normalizado em campos estruturados"
+    )
     # Campos de convênio
     numero_convenio: Optional[str]
     nome_convenio: Optional[str]

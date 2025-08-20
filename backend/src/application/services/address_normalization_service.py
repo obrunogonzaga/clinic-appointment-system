@@ -9,6 +9,7 @@ from typing import Dict, Optional
 
 from openai import OpenAI
 from pydantic import BaseModel
+
 from src.infrastructure.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,12 @@ class AddressNormalizationService:
     into structured components using the "openai/gpt-oss-20b:free" model.
     """
 
-    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None, base_url: Optional[str] = None):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model: Optional[str] = None,
+        base_url: Optional[str] = None,
+    ):
         """
         Initialize the service with OpenRouter credentials.
 
@@ -50,12 +56,13 @@ class AddressNormalizationService:
                 "or pass api_key parameter."
             )
 
-        self.base_url = base_url or os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
-        self.client = OpenAI(
-            api_key=self.api_key,
-            base_url=self.base_url
+        self.base_url = base_url or os.getenv(
+            "OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"
         )
-        self.model = model or os.getenv("OPENROUTER_MODEL", "openai/gpt-oss-20b:free")
+        self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+        self.model = model or os.getenv(
+            "OPENROUTER_MODEL", "openai/gpt-oss-20b:free"
+        )
 
     async def normalize_address(
         self, endereco_completo: str
@@ -74,7 +81,7 @@ class AddressNormalizationService:
         if not settings.address_normalization_enabled:
             logger.info("Address normalization is disabled, skipping...")
             return None
-            
+
         if not endereco_completo or not endereco_completo.strip():
             return None
 

@@ -15,6 +15,16 @@ export interface Appointment {
   // Campos opcionais que podem vir a existir no backend
   cep?: string;
   endereco_coleta?: string;
+  endereco_completo?: string;
+  endereco_normalizado?: {
+    rua?: string | null;
+    numero?: string | null;
+    complemento?: string | null;
+    bairro?: string | null;
+    cidade?: string | null;
+    estado?: string | null;
+    cep?: string | null;
+  } | null;
   numero_convenio?: string;
   nome_convenio?: string;
   created_at: string;

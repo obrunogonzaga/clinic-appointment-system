@@ -7,6 +7,7 @@ from datetime import datetime
 
 import pandas as pd
 import pytest
+
 from src.application.services.excel_parser_service import ExcelParserService
 
 
@@ -203,7 +204,9 @@ class TestExcelParserService:
         assert "Linha 2" in result.errors[0]
 
     @pytest.mark.asyncio
-    async def test_clean_string_method(self, parser_service: ExcelParserService):
+    async def test_clean_string_method(
+        self, parser_service: ExcelParserService
+    ):
         """Test string cleaning method."""
         # Test normal string
         assert (
@@ -222,7 +225,9 @@ class TestExcelParserService:
         assert parser_service._clean_string(np.nan) is None
 
     @pytest.mark.asyncio
-    async def test_clean_phone_method(self, parser_service: ExcelParserService):
+    async def test_clean_phone_method(
+        self, parser_service: ExcelParserService
+    ):
         """Test phone cleaning method."""
         # Test various phone formats
         assert parser_service._clean_phone("(11) 9 9988-7766") == "11999887766"
@@ -243,7 +248,9 @@ class TestExcelParserService:
         assert parser_service._clean_phone(None) is None
 
     @pytest.mark.asyncio
-    async def test_parse_datetime_method(self, parser_service: ExcelParserService):
+    async def test_parse_datetime_method(
+        self, parser_service: ExcelParserService
+    ):
         """Test datetime parsing method."""
         # Test string format
         date, time = parser_service._parse_datetime("15/01/2025 14:30")
@@ -298,7 +305,9 @@ class TestExcelParserService:
         assert "Nome do Paciente" in info["columns"]
 
     @pytest.mark.asyncio
-    async def test_parse_empty_excel_file(self, parser_service: ExcelParserService):
+    async def test_parse_empty_excel_file(
+        self, parser_service: ExcelParserService
+    ):
         """Test parsing empty Excel file."""
         # Create empty DataFrame
         df = pd.DataFrame()
