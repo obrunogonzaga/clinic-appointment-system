@@ -3,9 +3,10 @@ Appointment entity representing a medical appointment.
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Dict, Optional
 
 from pydantic import Field, field_validator
+
 from src.domain.base import Entity
 
 
@@ -53,6 +54,12 @@ class Appointment(Entity):
     cep: Optional[str] = Field(None, description="CEP do endereço de coleta")
     endereco_coleta: Optional[str] = Field(
         None, description="Endereço da coleta"
+    )
+    endereco_completo: Optional[str] = Field(
+        None, description="Endereço completo não normalizado da planilha"
+    )
+    endereco_normalizado: Optional[Dict[str, Optional[str]]] = Field(
+        None, description="Endereço normalizado em campos estruturados"
     )
     numero_convenio: Optional[str] = Field(
         None, description="Número do convênio"
@@ -175,6 +182,16 @@ class Appointment(Entity):
                 "carro": "Honda Civic Prata",
                 "observacoes": "Paciente com diabetes",
                 "driver_id": "507f1f77bcf86cd799439012",
+                "endereco_completo": "rua maurício da costa faria,52,recreio dos bandeirantes,rio de janeiro,RJ,22790-285",
+                "endereco_normalizado": {
+                    "rua": "Rua Maurício da Costa Faria",
+                    "numero": "52",
+                    "complemento": None,
+                    "bairro": "Recreio dos Bandeirantes",
+                    "cidade": "Rio de Janeiro",
+                    "estado": "RJ",
+                    "cep": "22790-285",
+                },
                 "created_at": "2025-01-14T10:00:00",
                 "updated_at": "2025-01-14T10:00:00",
             }

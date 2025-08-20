@@ -57,7 +57,10 @@ class DriverRepositoryInterface(ABC):
 
     @abstractmethod
     async def find_all(
-        self, filters: Optional[Dict[str, Any]] = None, skip: int = 0, limit: int = 100
+        self,
+        filters: Optional[Dict[str, Any]] = None,
+        skip: int = 0,
+        limit: int = 100,
     ) -> List[Driver]:
         """
         Find all drivers with optional filters.
@@ -153,7 +156,9 @@ class DriverRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    async def exists_by_cnh(self, cnh: str, exclude_id: Optional[str] = None) -> bool:
+    async def exists_by_cnh(
+        self, cnh: str, exclude_id: Optional[str] = None
+    ) -> bool:
         """
         Check if a driver with the given CNH already exists.
 

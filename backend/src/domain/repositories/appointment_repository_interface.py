@@ -31,7 +31,9 @@ class AppointmentRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    async def create_many(self, appointments: List[Appointment]) -> List[Appointment]:
+    async def create_many(
+        self, appointments: List[Appointment]
+    ) -> List[Appointment]:
         """
         Create multiple appointments in bulk.
 
@@ -58,7 +60,10 @@ class AppointmentRepositoryInterface(ABC):
 
     @abstractmethod
     async def find_all(
-        self, filters: Optional[Dict[str, Any]] = None, skip: int = 0, limit: int = 100
+        self,
+        filters: Optional[Dict[str, Any]] = None,
+        skip: int = 0,
+        limit: int = 100,
     ) -> List[Appointment]:
         """
         Find all appointments with optional filters.

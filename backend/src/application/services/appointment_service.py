@@ -53,7 +53,7 @@ class AppointmentService:
         """
         try:
             # Parse Excel file
-            parse_result = self.excel_parser.parse_excel_file(
+            parse_result = await self.excel_parser.parse_excel_file(
                 file_content, filename
             )
 

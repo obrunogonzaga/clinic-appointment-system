@@ -6,6 +6,7 @@ from typing import Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import JSONResponse
+
 from src.application.dtos.collector_dto import (
     ActiveCollectorListResponseDTO,
     CollectorCreateDTO,

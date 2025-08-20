@@ -12,9 +12,13 @@ T = TypeVar("T")
 class BaseResponse(BaseModel):
     """Base response model for all API responses."""
 
-    success: bool = Field(True, description="Indica se a operação foi bem-sucedida")
+    success: bool = Field(
+        True, description="Indica se a operação foi bem-sucedida"
+    )
     message: Optional[str] = Field(None, description="Mensagem opcional")
-    request_id: Optional[str] = Field(None, description="ID único da requisição")
+    request_id: Optional[str] = Field(
+        None, description="ID único da requisição"
+    )
 
 
 class DataResponse(BaseResponse, Generic[T]):
@@ -57,8 +61,12 @@ class HealthResponse(BaseResponse):
     service: str = Field(..., description="Nome do serviço")
     version: str = Field(..., description="Versão do serviço")
     environment: str = Field(..., description="Ambiente de execução")
-    details: Optional[Dict[str, Any]] = Field(None, description="Detalhes adicionais")
-    success: bool = Field(True, description="Indica se a operação foi bem-sucedida")
+    details: Optional[Dict[str, Any]] = Field(
+        None, description="Detalhes adicionais"
+    )
+    success: bool = Field(
+        True, description="Indica se a operação foi bem-sucedida"
+    )
     message: Optional[str] = Field(None, description="Mensagem opcional")
 
 
@@ -66,14 +74,18 @@ class CreatedResponse(BaseResponse):
     """Response for resource creation."""
 
     id: str = Field(..., description="ID do recurso criado")
-    data: Optional[Dict[str, Any]] = Field(None, description="Dados do recurso criado")
+    data: Optional[Dict[str, Any]] = Field(
+        None, description="Dados do recurso criado"
+    )
 
 
 class UpdatedResponse(BaseResponse):
     """Response for resource update."""
 
     id: str = Field(..., description="ID do recurso atualizado")
-    data: Optional[Dict[str, Any]] = Field(None, description="Dados atualizados")
+    data: Optional[Dict[str, Any]] = Field(
+        None, description="Dados atualizados"
+    )
 
 
 class DeletedResponse(BaseResponse):

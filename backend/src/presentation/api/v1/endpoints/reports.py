@@ -5,8 +5,11 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
+
 from src.application.services.report_service import RouteReportService
-from src.infrastructure.repositories.appointment_repository import AppointmentRepository
+from src.infrastructure.repositories.appointment_repository import (
+    AppointmentRepository,
+)
 from src.infrastructure.repositories.driver_repository import DriverRepository
 
 router = APIRouter()
@@ -22,7 +25,9 @@ async def get_report_service() -> RouteReportService:
 
 
 @router.get(
-    "/route", summary="Gera relatório de Rota Domiciliar", response_class=Response
+    "/route",
+    summary="Gera relatório de Rota Domiciliar",
+    response_class=Response,
 )
 async def generate_route_report(
     driver_id: str = Query(..., description="ID do motorista"),
@@ -35,7 +40,9 @@ async def generate_route_report(
     try:
         dt = datetime.fromisoformat(date)
     except Exception:
-        raise HTTPException(status_code=400, detail="Data inválida. Use YYYY-MM-DD")
+        raise HTTPException(
+            status_code=400, detail="Data inválida. Use YYYY-MM-DD"
+        )
 
     try:
         pdf_bytes = await service.generate_driver_day_report(
@@ -55,4 +62,6 @@ async def generate_route_report(
     headers = {
         "Content-Disposition": f"attachment; filename=rota_{driver_id}_{dt.strftime('%Y%m%d')}.pdf"
     }
-    return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
+    return Response(
+        content=pdf_bytes, media_type="application/pdf", headers=headers
+    )

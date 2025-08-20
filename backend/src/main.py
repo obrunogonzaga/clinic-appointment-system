@@ -127,7 +127,9 @@ async def health_check(request: Request) -> HealthResponse:
 
 # Middleware for request ID injection
 @app.middleware("http")
-async def add_request_id(request: Request, call_next: Callable[[Request], Any]) -> Any:
+async def add_request_id(
+    request: Request, call_next: Callable[[Request], Any]
+) -> Any:
     """Add unique request ID to each request."""
     import uuid
 

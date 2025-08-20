@@ -49,7 +49,8 @@ async def get_driver_service(
     description="Register a new driver in the system",
 )
 async def create_driver(
-    driver_data: DriverCreateDTO, service: DriverService = Depends(get_driver_service)
+    driver_data: DriverCreateDTO,
+    service: DriverService = Depends(get_driver_service),
 ) -> DataResponse[DriverResponseDTO]:
     """
     Create a new driver.
@@ -69,7 +70,9 @@ async def create_driver(
             if "CNH já cadastrada" in result["message"]:
                 status_code = 409  # Conflict
 
-            raise HTTPException(status_code=status_code, detail=result["message"])
+            raise HTTPException(
+                status_code=status_code, detail=result["message"]
+            )
 
         return DataResponse(
             success=True, message=result["message"], data=result["driver"]
@@ -307,7 +310,9 @@ async def update_driver(
             elif "CNH já cadastrada" in result["message"]:
                 status_code = 409
 
-            raise HTTPException(status_code=status_code, detail=result["message"])
+            raise HTTPException(
+                status_code=status_code, detail=result["message"]
+            )
 
         return DataResponse(
             success=True, message=result["message"], data=result["driver"]
@@ -348,7 +353,9 @@ async def update_driver_status(
 
         if not result["success"]:
             raise HTTPException(
-                status_code=400 if "não encontrado" not in result["message"] else 404,
+                status_code=(
+                    400 if "não encontrado" not in result["message"] else 404
+                ),
                 detail=result["message"],
             )
 
@@ -388,7 +395,9 @@ async def delete_driver(
 
         if not result["success"]:
             raise HTTPException(
-                status_code=404 if "não encontrado" in result["message"] else 400,
+                status_code=(
+                    404 if "não encontrado" in result["message"] else 400
+                ),
                 detail=result["message"],
             )
 

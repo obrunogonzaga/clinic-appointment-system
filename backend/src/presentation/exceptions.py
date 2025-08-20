@@ -28,7 +28,9 @@ class ErrorDetail(BaseModel):
 class ErrorResponse(BaseModel):
     """Standard error response model."""
 
-    success: bool = Field(False, description="Indica se a operação foi bem-sucedida")
+    success: bool = Field(
+        False, description="Indica se a operação foi bem-sucedida"
+    )
     message: str = Field(..., description="Mensagem de erro principal")
     errors: Optional[List[ErrorDetail]] = Field(
         None,
@@ -151,7 +153,9 @@ async def validation_exception_handler(
     validation_exc = cast(RequestValidationError, exc)
     errors = []
     for error in validation_exc.errors():
-        field_path = ".".join(str(loc) for loc in error["loc"][1:])  # Skip 'body'
+        field_path = ".".join(
+            str(loc) for loc in error["loc"][1:]
+        )  # Skip 'body'
         errors.append(
             ErrorDetail(
                 field=field_path or None,
@@ -213,7 +217,9 @@ class APIException(HTTPException):
             errors: List of detailed errors
             headers: Optional HTTP headers
         """
-        super().__init__(status_code=status_code, detail=message, headers=headers)
+        super().__init__(
+            status_code=status_code, detail=message, headers=headers
+        )
         self.errors = errors
 
 

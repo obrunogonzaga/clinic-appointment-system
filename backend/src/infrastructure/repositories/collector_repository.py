@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import ASCENDING
+
 from src.domain.entities.collector import Collector
 from src.domain.repositories.collector_repository_interface import (
     CollectorRepositoryInterface,

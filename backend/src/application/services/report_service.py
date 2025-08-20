@@ -16,6 +16,7 @@ from reportlab.lib.units import mm  # type: ignore[import-not-found]
 from reportlab.pdfbase import pdfmetrics  # type: ignore[import-not-found]
 from reportlab.pdfbase.ttfonts import TTFont  # type: ignore[import-not-found]
 from reportlab.pdfgen import canvas  # type: ignore[import-not-found]
+
 from src.domain.entities.appointment import Appointment
 from src.infrastructure.repositories.appointment_repository import (
     AppointmentRepository,
@@ -167,12 +168,23 @@ class RouteReportService:
                 _truncate(c, unidade_ou_marca, 150 * mm),
             )
 
+            # Endereço normalizado (se disponível)
+            endereco_linha = self._format_address(ap)
+            if endereco_linha:
+                c.setFont(self.font_main, 14)
+                c.drawString(26 * mm, 130 * mm, "Endereço:")
+                c.setFont(self.font_main, 12)
+                c.drawString(
+                    26 * mm, 120 * mm, _truncate(c, endereco_linha, 160 * mm)
+                )
+
             # Observações (menor, discretas) — ficam mais abaixo
             c.setFont(self.font_main, 12)
-            c.drawString(26 * mm, 148 * mm, _truncate(c, obs, 120 * mm))
+            obs_y = 105 * mm if endereco_linha else 148 * mm
+            c.drawString(26 * mm, obs_y, _truncate(c, obs, 120 * mm))
             c.drawRightString(
                 193 * mm,
-                148 * mm,
+                obs_y,
                 _truncate(c, obs_coleta, 60 * mm),
             )
 
@@ -256,6 +268,49 @@ class RouteReportService:
 
         writer.write(result_pdf)
         return result_pdf.getvalue()
+
+    def _format_address(self, appointment: Appointment) -> Optional[str]:
+        """
+        Format address for display on route report.
+
+        Prioritizes normalized address components, falls back to complete address.
+        """
+        if appointment.endereco_normalizado:
+            addr = appointment.endereco_normalizado
+            parts = []
+
+            # Rua e número
+            if addr.get("rua") and addr.get("numero"):
+                parts.append(f"{addr['rua']}, {addr['numero']}")
+            elif addr.get("rua"):
+                parts.append(addr["rua"])
+
+            # Complemento
+            if addr.get("complemento"):
+                parts.append(addr["complemento"])
+
+            # Bairro
+            if addr.get("bairro"):
+                parts.append(addr["bairro"])
+
+            # Cidade e estado
+            cidade_estado = []
+            if addr.get("cidade"):
+                cidade_estado.append(addr["cidade"])
+            if addr.get("estado"):
+                cidade_estado.append(addr["estado"])
+            if cidade_estado:
+                parts.append(" - ".join(cidade_estado))
+
+            # CEP
+            if addr.get("cep"):
+                parts.append(f"CEP: {addr['cep']}")
+
+            if parts:
+                return " | ".join(parts)
+
+        # Fallback para endereço completo ou endereço de coleta
+        return appointment.endereco_completo or appointment.endereco_coleta
 
 
 def _truncate(c: canvas.Canvas, text: str, max_width: float) -> str:

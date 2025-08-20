@@ -8,6 +8,7 @@ from uuid import UUID
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import ASCENDING, DESCENDING
+
 from src.domain.entities.appointment import Appointment
 from src.domain.repositories.appointment_repository_interface import (
     AppointmentRepositoryInterface,
@@ -54,7 +55,9 @@ class AppointmentRepository(AppointmentRepositoryInterface):
         # MongoDB generates _id, but we use our own UUID
         return appointment
 
-    async def create_many(self, appointments: List[Appointment]) -> List[Appointment]:
+    async def create_many(
+        self, appointments: List[Appointment]
+    ) -> List[Appointment]:
         """
         Create multiple appointments in bulk.
 
@@ -100,7 +103,10 @@ class AppointmentRepository(AppointmentRepositoryInterface):
         return Appointment(**doc)
 
     async def find_all(
-        self, filters: Optional[Dict[str, any]] = None, skip: int = 0, limit: int = 100
+        self,
+        filters: Optional[Dict[str, any]] = None,
+        skip: int = 0,
+        limit: int = 100,
     ) -> List[Appointment]:
         """
         Find all appointments with optional filters.
@@ -278,7 +284,9 @@ class AppointmentRepository(AppointmentRepositoryInterface):
         values = await self.collection.distinct(field)
 
         # Filter out None and empty strings, sort alphabetically
-        filtered_values = [v for v in values if v is not None and str(v).strip()]
+        filtered_values = [
+            v for v in values if v is not None and str(v).strip()
+        ]
         return sorted(filtered_values)
 
     async def create_indexes(self) -> None:
@@ -309,14 +317,19 @@ class AppointmentRepository(AppointmentRepositoryInterface):
                     "idx_data_status",
                 ),
                 (
-                    [("nome_unidade", ASCENDING), ("data_agendamento", ASCENDING)],
+                    [
+                        ("nome_unidade", ASCENDING),
+                        ("data_agendamento", ASCENDING),
+                    ],
                     "idx_unidade_data",
                 ),
             ]
 
             for index_spec, index_name in indexes:
                 if index_name not in existing_indexes:
-                    await self.collection.create_index(index_spec, name=index_name)
+                    await self.collection.create_index(
+                        index_spec, name=index_name
+                    )
 
         except Exception as e:
             # Log error but don't fail startup
@@ -335,10 +348,14 @@ class AppointmentRepository(AppointmentRepositoryInterface):
                     "_id": None,
                     "total_appointments": {"$sum": 1},
                     "confirmed_appointments": {
-                        "$sum": {"$cond": [{"$eq": ["$status", "Confirmado"]}, 1, 0]}
+                        "$sum": {
+                            "$cond": [{"$eq": ["$status", "Confirmado"]}, 1, 0]
+                        }
                     },
                     "cancelled_appointments": {
-                        "$sum": {"$cond": [{"$eq": ["$status", "Cancelado"]}, 1, 0]}
+                        "$sum": {
+                            "$cond": [{"$eq": ["$status", "Cancelado"]}, 1, 0]
+                        }
                     },
                     "units": {"$addToSet": "$nome_unidade"},
                     "brands": {"$addToSet": "$nome_marca"},

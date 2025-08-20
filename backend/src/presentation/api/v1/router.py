@@ -5,6 +5,7 @@ Main router for API v1 endpoints.
 from typing import Any
 
 from fastapi import APIRouter
+
 from src.infrastructure.config import get_settings
 
 # Import and include routers

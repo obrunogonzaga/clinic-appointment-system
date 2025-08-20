@@ -95,7 +95,10 @@ class DriverRepository(DriverRepositoryInterface):
         return Driver(**doc)
 
     async def find_all(
-        self, filters: Optional[Dict[str, Any]] = None, skip: int = 0, limit: int = 100
+        self,
+        filters: Optional[Dict[str, Any]] = None,
+        skip: int = 0,
+        limit: int = 100,
     ) -> List[Driver]:
         """
         Find all drivers with optional filters.
@@ -255,7 +258,9 @@ class DriverRepository(DriverRepositoryInterface):
 
         return drivers
 
-    async def exists_by_cnh(self, cnh: str, exclude_id: Optional[str] = None) -> bool:
+    async def exists_by_cnh(
+        self, cnh: str, exclude_id: Optional[str] = None
+    ) -> bool:
         """
         Check if a driver with the given CNH already exists.
 
@@ -290,7 +295,9 @@ class DriverRepository(DriverRepositoryInterface):
         values = await self.collection.distinct(field)
 
         # Filter out None and empty strings, sort alphabetically
-        filtered_values = [v for v in values if v is not None and str(v).strip()]
+        filtered_values = [
+            v for v in values if v is not None and str(v).strip()
+        ]
         return sorted(filtered_values)
 
     async def create_indexes(self) -> None:
@@ -317,12 +324,17 @@ class DriverRepository(DriverRepositoryInterface):
                     [("status", ASCENDING), ("nome_completo", ASCENDING)],
                     "idx_status_nome",
                 ),
-                ([("nome_completo", ASCENDING), ("cnh", ASCENDING)], "idx_nome_cnh"),
+                (
+                    [("nome_completo", ASCENDING), ("cnh", ASCENDING)],
+                    "idx_nome_cnh",
+                ),
             ]
 
             for index_spec, index_name in indexes:
                 if index_name not in existing_indexes:
-                    await self.collection.create_index(index_spec, name=index_name)
+                    await self.collection.create_index(
+                        index_spec, name=index_name
+                    )
 
             # Create unique index for CNH
             unique_indexes = [
@@ -352,13 +364,19 @@ class DriverRepository(DriverRepositoryInterface):
                     "_id": None,
                     "total_drivers": {"$sum": 1},
                     "active_drivers": {
-                        "$sum": {"$cond": [{"$eq": ["$status", "Ativo"]}, 1, 0]}
+                        "$sum": {
+                            "$cond": [{"$eq": ["$status", "Ativo"]}, 1, 0]
+                        }
                     },
                     "inactive_drivers": {
-                        "$sum": {"$cond": [{"$eq": ["$status", "Inativo"]}, 1, 0]}
+                        "$sum": {
+                            "$cond": [{"$eq": ["$status", "Inativo"]}, 1, 0]
+                        }
                     },
                     "suspended_drivers": {
-                        "$sum": {"$cond": [{"$eq": ["$status", "Suspenso"]}, 1, 0]}
+                        "$sum": {
+                            "$cond": [{"$eq": ["$status", "Suspenso"]}, 1, 0]
+                        }
                     },
                 }
             }
