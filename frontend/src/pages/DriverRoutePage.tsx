@@ -3,6 +3,8 @@ import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { appointmentAPI, driverAPI } from '../services/api';
 import type { Appointment } from '../types/appointment';
+import { NavigationBar } from '../components/NavigationBar';
+import { buildGoogleMapsNavTo, buildWazeNavTo, formatAddressForNavigation } from '../utils/navigationHelpers';
 
 export const DriverRoutePage: React.FC = () => {
   const [params] = useSearchParams();
@@ -48,33 +50,57 @@ export const DriverRoutePage: React.FC = () => {
     return <div className="p-8">Parâmetro driverId ausente.</div>;
   }
 
-  const renderCard = (ap: Appointment) => (
-    <div key={ap.id} className="card relative bg-white border-2 border-gray-800 rounded-2xl p-6 shadow-sm overflow-hidden">
-      {/* Faixa lateral */}
-      <div className="absolute left-0 top-0 h-full w-3 bg-gray-900 rounded-l-2xl" />
+  const renderCard = (ap: Appointment) => {
+    const addressForNav = formatAddressForNavigation(ap);
+    
+    return (
+      <div key={ap.id} className="card relative bg-white border-2 border-gray-800 rounded-2xl p-6 shadow-sm overflow-hidden">
+        {/* Faixa lateral */}
+        <div className="absolute left-0 top-0 h-full w-3 bg-gray-900 rounded-l-2xl" />
 
-      {/* Cabeçalho */}
-      <div className="grid grid-cols-12 items-center gap-4">
-        <div className="col-span-12 md:col-span-6 flex items-center gap-4">
-          <div className="text-6xl md:text-7xl font-black text-gray-900 tabular-nums">
-            {(ap.hora_agendamento || '').padStart(5, '0')}
+        {/* Cabeçalho */}
+        <div className="grid grid-cols-12 items-center gap-4">
+          <div className="col-span-12 md:col-span-6 flex items-center gap-4">
+            <div className="text-6xl md:text-7xl font-black text-gray-900 tabular-nums">
+              {(ap.hora_agendamento || '').padStart(5, '0')}
+            </div>
+            <div className="hidden md:block h-10 w-px bg-gray-800" />
+            <div className="flex flex-wrap gap-8 text-lg font-bold text-gray-900">
+              <span>Previsão:</span>
+              <span>Chegada:</span>
+              <span>Saída:</span>
+            </div>
           </div>
-          <div className="hidden md:block h-10 w-px bg-gray-800" />
-          <div className="flex flex-wrap gap-8 text-lg font-bold text-gray-900">
-            <span>Previsão:</span>
-            <span>Chegada:</span>
-            <span>Saída:</span>
+          <div className="col-span-12 md:col-span-6 flex justify-between items-center">
+            <div className="flex gap-6 text-xl font-semibold text-gray-900">
+              <label className="inline-flex items-center gap-2">
+                <span className={`inline-block w-6 h-6 border-2 rounded-sm ${isNac(ap) ? 'bg-gray-900 border-gray-900' : 'border-gray-800'}`} /> NAC
+              </label>
+              <label className="inline-flex items-center gap-2">
+                <span className={`inline-block w-6 h-6 border-2 rounded-sm ${!isNac(ap) ? 'bg-gray-900 border-gray-900' : 'border-gray-800'}`} /> Unidade
+              </label>
+            </div>
+            {/* Mini-links de navegação */}
+            <div className="flex gap-2 no-print">
+              <a
+                href={buildGoogleMapsNavTo(addressForNav)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2 py-1 text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+              >
+                Maps
+              </a>
+              <a
+                href={buildWazeNavTo(addressForNav)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2 py-1 text-xs font-medium rounded text-white bg-purple-600 hover:bg-purple-700 transition-colors"
+              >
+                Waze
+              </a>
+            </div>
           </div>
         </div>
-        <div className="col-span-12 md:col-span-6 flex justify-end gap-6 text-xl font-semibold text-gray-900">
-          <label className="inline-flex items-center gap-2">
-            <span className={`inline-block w-6 h-6 border-2 rounded-sm ${isNac(ap) ? 'bg-gray-900 border-gray-900' : 'border-gray-800'}`} /> NAC
-          </label>
-          <label className="inline-flex items-center gap-2">
-            <span className={`inline-block w-6 h-6 border-2 rounded-sm ${!isNac(ap) ? 'bg-gray-900 border-gray-900' : 'border-gray-800'}`} /> Unidade
-          </label>
-        </div>
-      </div>
       <div className="my-4 border-b-2 border-gray-800" />
 
       {/* Linha: Nome / CIP / Telefones */}
@@ -167,7 +193,8 @@ export const DriverRoutePage: React.FC = () => {
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   // ordena horário
   const ordered = (appts || []).slice().sort((a, b) => {
@@ -178,6 +205,7 @@ export const DriverRoutePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <NavigationBar appointments={ordered} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-start justify-between">
           <div>
