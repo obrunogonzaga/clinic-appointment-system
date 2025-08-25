@@ -37,8 +37,7 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
   const hasActiveFilters = Boolean(
     filters.nome_unidade || 
     filters.nome_marca || 
-    filters.data_inicio || 
-    filters.data_fim || 
+    filters.data || 
     filters.status
   );
 
@@ -61,7 +60,7 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {/* Unit Filter */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -122,29 +121,15 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
           </select>
         </div>
 
-        {/* Start Date Filter */}
+        {/* Date Filter */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Data início
+            Data
           </label>
           <input
             type="date"
-            value={filters.data_inicio || ''}
-            onChange={(e) => handleFilterChange('data_inicio', e.target.value)}
-            disabled={isLoading}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
-          />
-        </div>
-
-        {/* End Date Filter */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Data fim
-          </label>
-          <input
-            type="date"
-            value={filters.data_fim || ''}
-            onChange={(e) => handleFilterChange('data_fim', e.target.value)}
+            value={filters.data || ''}
+            onChange={(e) => handleFilterChange('data', e.target.value)}
             disabled={isLoading}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
           />
@@ -193,24 +178,12 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
               </span>
             )}
             
-            {filters.data_inicio && (
+            {filters.data && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                De: {new Date(filters.data_inicio).toLocaleDateString('pt-BR')}
+                Data: {new Date(filters.data).toLocaleDateString('pt-BR')}
                 <button
-                  onClick={() => handleFilterChange('data_inicio', '')}
+                  onClick={() => handleFilterChange('data', '')}
                   className="ml-1 text-purple-600 hover:text-purple-800"
-                >
-                  <XMarkIcon className="w-3 h-3" />
-                </button>
-              </span>
-            )}
-            
-            {filters.data_fim && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                Até: {new Date(filters.data_fim).toLocaleDateString('pt-BR')}
-                <button
-                  onClick={() => handleFilterChange('data_fim', '')}
-                  className="ml-1 text-indigo-600 hover:text-indigo-800"
                 >
                   <XMarkIcon className="w-3 h-3" />
                 </button>

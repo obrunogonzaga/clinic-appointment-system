@@ -34,8 +34,7 @@ export interface Appointment {
 export interface AppointmentFilter {
   nome_unidade?: string;
   nome_marca?: string;
-  data_inicio?: string;
-  data_fim?: string;
+  data?: string;
   status?: string;
   driver_id?: string;
   page?: number;

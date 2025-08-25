@@ -148,8 +148,7 @@ async def upload_excel_file(
 async def get_appointments(
     nome_unidade: str = Query(None, description="Filtrar por nome da unidade"),
     nome_marca: str = Query(None, description="Filtrar por nome da marca"),
-    data_inicio: str = Query(None, description="Data de início (YYYY-MM-DD)"),
-    data_fim: str = Query(None, description="Data de fim (YYYY-MM-DD)"),
+    data: str = Query(None, description="Data específica (YYYY-MM-DD)"),
     status: str = Query(None, description="Filtrar por status"),
     driver_id: str = Query(None, description="Filtrar por ID do motorista"),
     page: int = Query(1, ge=1, description="Número da página"),
@@ -162,9 +161,9 @@ async def get_appointments(
     Args:
         nome_unidade: Filter by unit name
         nome_marca: Filter by brand name
-        data_inicio: Start date filter
-        data_fim: End date filter
+        data: Specific date filter
         status: Status filter
+        driver_id: Driver ID filter
         page: Page number
         page_size: Items per page
         service: Appointment service instance
@@ -176,8 +175,7 @@ async def get_appointments(
         result = await service.get_appointments_with_filters(
             nome_unidade=nome_unidade,
             nome_marca=nome_marca,
-            data_inicio=data_inicio,
-            data_fim=data_fim,
+            data=data,
             status=status,
             driver_id=driver_id,
             page=page,

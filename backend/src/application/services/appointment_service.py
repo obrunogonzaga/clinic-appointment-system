@@ -120,8 +120,7 @@ class AppointmentService:
         self,
         nome_unidade: Optional[str] = None,
         nome_marca: Optional[str] = None,
-        data_inicio: Optional[str] = None,
-        data_fim: Optional[str] = None,
+        data: Optional[str] = None,
         status: Optional[str] = None,
         driver_id: Optional[str] = None,
         page: int = 1,
@@ -133,9 +132,9 @@ class AppointmentService:
         Args:
             nome_unidade: Filter by unit name
             nome_marca: Filter by brand name
-            data_inicio: Filter by start date (YYYY-MM-DD)
-            data_fim: Filter by end date (YYYY-MM-DD)
+            data: Filter by specific date (YYYY-MM-DD)
             status: Filter by status
+            driver_id: Filter by driver ID
             page: Page number (1-based)
             page_size: Number of items per page
 
@@ -146,8 +145,8 @@ class AppointmentService:
             # Calculate pagination
             skip = (page - 1) * page_size
 
-            # Parse dates if provided
-            parsed_dates = self._parse_filter_dates(data_inicio, data_fim)
+            # Parse date if provided
+            parsed_dates = self._parse_filter_date(data)
 
             # Get appointments
             appointments = await self.appointment_repository.find_by_filters(
@@ -452,38 +451,27 @@ class AppointmentService:
                 "message": f"Erro ao atualizar coletora: {str(e)}",
             }
 
-    def _parse_filter_dates(
-        self, data_inicio: Optional[str], data_fim: Optional[str]
+    def _parse_filter_date(
+        self, data: Optional[str]
     ) -> tuple[Optional[datetime], Optional[datetime]]:
-        """Parse filter dates (YYYY-MM-DD) and normalize to full-day range.
+        """Parse filter date (YYYY-MM-DD) and normalize to full-day range.
 
-        - If only ``data_inicio`` is provided, returns [start_of_day, end_of_day].
-        - If both are provided and equal, expands ``data_fim`` to end_of_day.
-        - If both are provided and different, returns the two midnights as-is
-          (inclusive range will be built downstream with $gte/$lte).
+        Args:
+            data: Date string in YYYY-MM-DD format
+
+        Returns:
+            Tuple of (start_of_day, end_of_day) for the specified date
         """
 
-        parsed_data_inicio: Optional[datetime] = None
-        parsed_data_fim: Optional[datetime] = None
+        if not data:
+            return None, None
 
-        if data_inicio:
-            parsed_data_inicio = datetime.strptime(data_inicio, "%Y-%m-%d")
-        if data_fim:
-            parsed_data_fim = datetime.strptime(data_fim, "%Y-%m-%d")
+        parsed_date = datetime.strptime(data, "%Y-%m-%d")
+        # Return start of day and start of next day (exclusive end)
+        start_of_day = parsed_date
+        end_of_day = parsed_date + timedelta(days=1)
 
-        # Normalize to full day when appropriate
-        if parsed_data_inicio and not parsed_data_fim:
-            # single-day filter → end of day
-            parsed_data_fim = parsed_data_inicio + timedelta(days=1)
-        if (
-            parsed_data_inicio
-            and parsed_data_fim
-            and parsed_data_inicio.date() == parsed_data_fim.date()
-        ):
-            # same day → set end to next midnight
-            parsed_data_fim = parsed_data_inicio + timedelta(days=1)
-
-        return parsed_data_inicio, parsed_data_fim
+        return start_of_day, end_of_day
 
     def _build_pagination_filters(
         self,

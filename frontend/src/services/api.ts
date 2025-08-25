@@ -85,8 +85,7 @@ export const appointmentAPI = {
     
     if (filters.nome_unidade) params.append('nome_unidade', filters.nome_unidade);
     if (filters.nome_marca) params.append('nome_marca', filters.nome_marca);
-    if (filters.data_inicio) params.append('data_inicio', filters.data_inicio);
-    if (filters.data_fim) params.append('data_fim', filters.data_fim);
+    if (filters.data) params.append('data', filters.data);
     if (filters.status) params.append('status', filters.status);
     if (filters.driver_id) params.append('driver_id', filters.driver_id);
     if (filters.page) params.append('page', filters.page.toString());

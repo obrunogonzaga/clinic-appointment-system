@@ -178,7 +178,7 @@ class AppointmentRepository(AppointmentRepositoryInterface):
             if data_inicio:
                 date_filter["$gte"] = data_inicio
             if data_fim:
-                date_filter["$lte"] = data_fim
+                date_filter["$lt"] = data_fim
             query["data_agendamento"] = date_filter
 
         if status:
