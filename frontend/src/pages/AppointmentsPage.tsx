@@ -6,6 +6,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { AppointmentCardList } from '../components/AppointmentCardList';
+import { AppointmentCalendarView } from '../components/AppointmentCalendarView';
 import { AppointmentFilters } from '../components/AppointmentFilters';
 import { FileUpload } from '../components/FileUpload';
 import { ViewModeToggle, type ViewMode } from '../components/ViewModeToggle';
@@ -22,6 +23,8 @@ export const AppointmentsPage: React.FC = () => {
   const [uploadResult, setUploadResult] = useState<ExcelUploadResponse | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
+  const [currentCalendarDate, setCurrentCalendarDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
   // Fetch appointments
   const { 
@@ -253,18 +256,24 @@ export const AppointmentsPage: React.FC = () => {
           )}
 
           {viewMode === 'calendar' && (
-            <div className="text-center py-12">
-              <div className="text-gray-500 text-lg mb-2">
-                📅 Visualização em Calendário
-              </div>
-              <div className="text-gray-400 text-sm">
-                Em desenvolvimento - será implementado na Fase 2
-              </div>
-            </div>
+            <AppointmentCalendarView
+              appointments={appointmentsData?.appointments || []}
+              currentDate={currentCalendarDate}
+              selectedDate={selectedDate}
+              onDateSelect={setSelectedDate}
+              onMonthChange={setCurrentCalendarDate}
+              onAppointmentStatusChange={handleStatusChange}
+              onAppointmentDriverChange={handleDriverChange}
+              onAppointmentCollectorChange={handleCollectorChange}
+              onAppointmentDelete={handleDelete}
+              drivers={driversData?.drivers || []}
+              collectors={collectorsData?.collectors || []}
+              isLoading={isLoadingAppointments}
+            />
           )}
 
-          {/* Pagination */}
-          {appointmentsData?.pagination && appointmentsData.pagination.total_pages > 1 && (
+          {/* Pagination - only show for cards view */}
+          {viewMode === 'cards' && appointmentsData?.pagination && appointmentsData.pagination.total_pages > 1 && (
             <div className="flex items-center justify-between mt-6">
               <div className="text-sm text-gray-500">
                 Página {appointmentsData.pagination.page} de {appointmentsData.pagination.total_pages}
