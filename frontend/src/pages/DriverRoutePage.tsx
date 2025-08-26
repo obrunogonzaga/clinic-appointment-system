@@ -22,8 +22,7 @@ export const DriverRoutePage: React.FC = () => {
     queryFn: async () => {
       // 1) Busca do dia PARA o motorista
       const withDriver = await appointmentAPI.getAppointments({
-        data_inicio: date,
-        data_fim: date,
+        data: date,
         driver_id: driverId,
         page: 1,
         page_size: 100,
@@ -33,8 +32,7 @@ export const DriverRoutePage: React.FC = () => {
       }
       // 2) Fallback: se não houver vinculação, busca todos do dia
       const anyDriver = await appointmentAPI.getAppointments({
-        data_inicio: date,
-        data_fim: date,
+        data: date,
         page: 1,
         page_size: 100,
       });
