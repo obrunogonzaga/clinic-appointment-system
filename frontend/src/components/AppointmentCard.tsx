@@ -2,6 +2,7 @@ import {
     BuildingOfficeIcon,
     CalendarIcon,
     ClockIcon,
+    CreditCardIcon,
     PhoneIcon,
     TrashIcon,
     TruckIcon,
@@ -128,6 +129,21 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
             {getCarInfo(appointment.carro)}
           </span>
         </div>
+
+        {/* Convênio */}
+        {(appointment.nome_convenio || appointment.numero_convenio) && (
+          <div className="flex items-center">
+            <CreditCardIcon className="w-4 h-4 mr-2 flex-shrink-0" />
+            <span className="truncate">
+              {(() => {
+                if (appointment.nome_convenio && appointment.numero_convenio) {
+                  return `${appointment.nome_convenio} - ${appointment.numero_convenio}`;
+                }
+                return appointment.nome_convenio || appointment.numero_convenio;
+              })()}
+            </span>
+          </div>
+        )}
 
         {/* Phone (only show if not compact and exists) */}
         {!compact && appointment.telefone && (
