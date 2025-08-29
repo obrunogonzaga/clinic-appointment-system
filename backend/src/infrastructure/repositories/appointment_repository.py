@@ -268,6 +268,45 @@ class AppointmentRepository(AppointmentRepositoryInterface):
         result = await self.collection.delete_many(filters)
         return result.deleted_count
 
+    async def find_duplicates(
+        self, appointments: List[Appointment]
+    ) -> List[str]:
+        """
+        Find duplicate appointments based on key fields.
+
+        An appointment is considered duplicate if another appointment exists with:
+        - Same patient name
+        - Same appointment date
+        - Same appointment time
+        - Same unit name
+
+        Args:
+            appointments: List of appointments to check for duplicates
+
+        Returns:
+            List[str]: List of appointment IDs that are duplicates
+        """
+        if not appointments:
+            return []
+
+        duplicate_ids = []
+
+        for appointment in appointments:
+            # Build query for potential duplicates
+            query = {
+                "nome_paciente": appointment.nome_paciente,
+                "data_agendamento": appointment.data_agendamento,
+                "hora_agendamento": appointment.hora_agendamento,
+                "nome_unidade": appointment.nome_unidade,
+            }
+
+            # Check if appointment with these key fields already exists
+            existing = await self.collection.find_one(query)
+            if existing:
+                duplicate_ids.append(str(appointment.id))
+
+        return duplicate_ids
+
     async def get_distinct_values(self, field: str) -> List[str]:
         """
         Get distinct values for a specific field.

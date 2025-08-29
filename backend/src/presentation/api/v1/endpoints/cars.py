@@ -269,9 +269,7 @@ async def delete_car(
                 status_code=status_code, detail=result["message"]
             )
 
-        return CarDeleteResponseDTO(
-            success=True, message=result["message"]
-        )
+        return CarDeleteResponseDTO(success=True, message=result["message"])
 
     except HTTPException:
         raise
@@ -397,7 +395,7 @@ async def find_or_create_car_from_string(
 ) -> CarFromStringResponseDTO:
     """
     Find or create a car from appointment string format.
-    
+
     This endpoint is used during Excel import to automatically
     register cars that don't exist yet.
 

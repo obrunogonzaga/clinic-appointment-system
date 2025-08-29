@@ -229,7 +229,7 @@ class CarRepositoryInterface(ABC):
     async def find_or_create_from_string(self, car_string: str) -> Car:
         """
         Find a car by the string format or create if not found.
-        
+
         Used during Excel import to automatically register cars.
 
         Args:

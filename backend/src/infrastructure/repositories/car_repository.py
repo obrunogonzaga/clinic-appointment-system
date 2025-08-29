@@ -400,7 +400,7 @@ class CarRepository(CarRepositoryInterface):
     async def find_or_create_from_string(self, car_string: str) -> Car:
         """
         Find a car by the string format or create if not found.
-        
+
         Used during Excel import to automatically register cars.
 
         Args:
@@ -422,11 +422,7 @@ class CarRepository(CarRepositoryInterface):
             return Car(**doc)
 
         # Car doesn't exist, create new one
-        new_car = Car(
-            nome=car_name,
-            unidade=unit,
-            status="Ativo"
-        )
+        new_car = Car(nome=car_name, unidade=unit, status="Ativo")
 
         # Save to database
         await self.create(new_car)
@@ -478,7 +474,7 @@ class CarRepository(CarRepositoryInterface):
                 (
                     [("nome", ASCENDING), ("unidade", ASCENDING)],
                     "idx_nome_unidade_unique",
-                    True
+                    True,
                 ),
             ]
 

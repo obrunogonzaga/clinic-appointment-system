@@ -39,9 +39,7 @@ api_v1_router.include_router(
     collectors.router, prefix="/collectors", tags=["Collectors"]
 )
 
-api_v1_router.include_router(
-    cars.router, prefix="/cars", tags=["Cars"]
-)
+api_v1_router.include_router(cars.router, prefix="/cars", tags=["Cars"])
 
 api_v1_router.include_router(
     reports.router, prefix="/reports", tags=["Reports"]

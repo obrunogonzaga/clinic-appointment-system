@@ -66,6 +66,7 @@ export interface ExcelUploadResponse {
   valid_rows: number;
   invalid_rows: number;
   imported_appointments: number;
+  duplicates_found: number;
   errors: string[];
   processing_time?: number;
 }

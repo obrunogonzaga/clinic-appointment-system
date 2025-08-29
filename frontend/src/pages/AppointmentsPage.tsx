@@ -71,10 +71,10 @@ export const AppointmentsPage: React.FC = () => {
     queryClient.invalidateQueries({ queryKey: ['filterOptions'] });
     queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
     
-    // Auto-hide success message after 5 seconds
+    // Auto-hide success message after 50 seconds
     setTimeout(() => {
       setUploadResult(null);
-    }, 5000);
+    }, 50000);
   };
 
   const handleUploadError = (error: string) => {
@@ -181,6 +181,9 @@ export const AppointmentsPage: React.FC = () => {
                   <span>Válidos: {uploadResult.valid_rows} | </span>
                   <span>Inválidos: {uploadResult.invalid_rows} | </span>
                   <span>Importados: {uploadResult.imported_appointments}</span>
+                  {uploadResult.duplicates_found > 0 && (
+                    <span> | <strong>Duplicados: {uploadResult.duplicates_found}</strong></span>
+                  )}
                   {uploadResult.processing_time && (
                     <span> | Tempo: {uploadResult.processing_time.toFixed(1)}s</span>
                   )}

@@ -133,7 +133,9 @@ class ActiveCarListResponseDTO(BaseModel):
 class CarFromStringDTO(BaseModel):
     """DTO for creating car from string (like from Excel import)."""
 
-    car_string: str = Field(..., description="String do carro (ex: 'CENTER 3 CARRO 1 - UND84')")
+    car_string: str = Field(
+        ..., description="String do carro (ex: 'CENTER 3 CARRO 1 - UND84')"
+    )
 
 
 class CarFromStringResponseDTO(BaseModel):
