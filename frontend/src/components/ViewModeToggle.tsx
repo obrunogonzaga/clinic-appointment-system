@@ -1,10 +1,11 @@
 import {
     CalendarIcon,
+    QueueListIcon,
     Squares2X2Icon,
 } from '@heroicons/react/24/outline';
 import React from 'react';
 
-export type ViewMode = 'cards' | 'calendar';
+export type ViewMode = 'cards' | 'calendar' | 'agenda';
 
 interface ViewModeToggleProps {
   viewMode: ViewMode;
@@ -31,6 +32,12 @@ const viewOptions: ViewOption[] = [
     label: 'Calendário',
     icon: CalendarIcon,
     description: 'Visualização em calendário'
+  },
+  {
+    mode: 'agenda',
+    label: 'Agenda',
+    icon: QueueListIcon,
+    description: 'Agenda das coletoras'
   }
 ];
 

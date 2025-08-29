@@ -8,6 +8,7 @@ import React, { useState } from 'react';
 import { AppointmentCardList } from '../components/AppointmentCardList';
 import { AppointmentCalendarView } from '../components/AppointmentCalendarView';
 import { AppointmentFilters } from '../components/AppointmentFilters';
+import { CollectorAgendaView } from '../components/CollectorAgendaView';
 import { FileUpload } from '../components/FileUpload';
 import { ViewModeToggle, type ViewMode } from '../components/ViewModeToggle';
 import { appointmentAPI, collectorAPI, driverAPI } from '../services/api';
@@ -25,6 +26,7 @@ export const AppointmentsPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
   const [currentCalendarDate, setCurrentCalendarDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedAgendaDate, setSelectedAgendaDate] = useState<Date>(new Date());
 
   // Fetch appointments
   const { 
@@ -232,6 +234,11 @@ export const AppointmentsPage: React.FC = () => {
                   (Visualização Calendário)
                 </span>
               )}
+              {viewMode === 'agenda' && (
+                <span className="ml-2 text-sm font-normal text-gray-500">
+                  (Agenda das Coletoras)
+                </span>
+              )}
             </h2>
             
             {appointmentsData?.pagination && (
@@ -270,6 +277,39 @@ export const AppointmentsPage: React.FC = () => {
               collectors={collectorsData?.collectors || []}
               isLoading={isLoadingAppointments}
             />
+          )}
+
+          {viewMode === 'agenda' && (
+            <div className="space-y-4">
+              {/* Date Selector for Agenda */}
+              <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+                <div className="flex items-center space-x-4">
+                  <label htmlFor="agenda-date" className="text-sm font-medium text-gray-700">
+                    Data da Agenda:
+                  </label>
+                  <input
+                    id="agenda-date"
+                    type="date"
+                    value={selectedAgendaDate.toISOString().split('T')[0]}
+                    onChange={(e) => setSelectedAgendaDate(new Date(e.target.value))}
+                    className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+              
+              <CollectorAgendaView
+                appointments={appointmentsData?.appointments || []}
+                collectors={collectorsData?.collectors || []}
+                drivers={driversData?.drivers || []}
+                selectedDate={selectedAgendaDate}
+                isLoading={isLoadingAppointments}
+                onAppointmentStatusChange={handleStatusChange}
+                onAppointmentDriverChange={handleDriverChange}
+                onAppointmentCollectorChange={handleCollectorChange}
+                onAppointmentDelete={handleDelete}
+                onDateChange={setSelectedAgendaDate}
+              />
+            </div>
           )}
 
           {/* Pagination - only show for cards view */}
