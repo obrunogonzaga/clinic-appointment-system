@@ -22,9 +22,10 @@ from src.application.services.address_normalization_service import (
     AddressNormalizationService,
 )
 from src.application.services.appointment_service import AppointmentService
+from src.application.services.car_service import CarService
 from src.application.services.excel_parser_service import ExcelParserService
 from src.infrastructure.config import Settings, get_settings
-from src.infrastructure.container import get_appointment_repository
+from src.infrastructure.container import get_appointment_repository, get_car_repository
 from src.infrastructure.repositories.appointment_repository import (
     AppointmentRepository,
 )
@@ -42,9 +43,13 @@ async def get_appointment_service(
     appointment_repository: AppointmentRepository = Depends(
         get_appointment_repository
     ),
+    car_repository = Depends(get_car_repository),
     settings: Settings = Depends(get_settings),
 ) -> AppointmentService:
     """Get appointment service instance."""
+    # Create car service
+    car_service = CarService(car_repository)
+    
     try:
         # Use settings to get the correct model and API key
         address_service = AddressNormalizationService(
@@ -52,10 +57,10 @@ async def get_appointment_service(
             model=settings.openrouter_model,
             base_url=settings.openrouter_base_url,
         )
-        excel_parser = ExcelParserService(address_service)
+        excel_parser = ExcelParserService(address_service, car_service)
     except ValueError:
         # OpenRouter not configured, continue without address normalization
-        excel_parser = ExcelParserService()
+        excel_parser = ExcelParserService(car_service=car_service)
     return AppointmentService(appointment_repository, excel_parser)
 
 

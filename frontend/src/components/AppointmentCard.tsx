@@ -10,6 +10,7 @@ import {
 } from '@heroicons/react/24/outline';
 import React from 'react';
 import type { Appointment } from '../types/appointment';
+import type { ActiveCar } from '../types/car';
 import type { ActiveCollector } from '../types/collector';
 import type { ActiveDriver } from '../types/driver';
 import { formatDate } from '../utils/dateUtils';
@@ -19,9 +20,11 @@ interface AppointmentCardProps {
   appointment: Appointment;
   drivers: ActiveDriver[];
   collectors?: ActiveCollector[];
+  cars?: ActiveCar[];
   onStatusChange: (id: string, status: string) => void;
   onDriverChange: (appointmentId: string, driverId: string) => void;
   onCollectorChange?: (appointmentId: string, collectorId: string) => void;
+  onCarChange?: (appointmentId: string, carId: string) => void;
   onDelete: (id: string) => void;
   compact?: boolean;
 }
@@ -38,18 +41,36 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
   appointment,
   drivers,
   collectors = [],
+  cars = [],
   onStatusChange,
   onDriverChange,
   onCollectorChange,
+  onCarChange,
   onDelete,
   compact = false
 }) => {
-  // Extract car info from carro field
-  const getCarInfo = (carro?: string): string => {
-    if (!carro) return '-';
-    const carroRegex = /Carro:\s*([^|]+)/;
-    const carroMatch = carroRegex.exec(carro);
-    return carroMatch ? carroMatch[1].trim() : carro;
+  // Get car info from linked car or carro field
+  const getCarInfo = (): string => {
+    // First try to get info from linked car (car_id)
+    if (appointment.car_id && cars.length > 0) {
+      const linkedCar = cars.find(car => car.id === appointment.car_id);
+      if (linkedCar) {
+        let info = linkedCar.nome;
+        if (linkedCar.placa) {
+          info += ` (${linkedCar.placa})`;
+        }
+        return info;
+      }
+    }
+
+    // Fallback to carro field (string format from Excel)
+    if (appointment.carro) {
+      const carroRegex = /Carro:\s*([^|]+)/;
+      const carroMatch = carroRegex.exec(appointment.carro);
+      return carroMatch ? carroMatch[1].trim() : appointment.carro;
+    }
+
+    return '-';
   };
 
   const handleDelete = () => {
@@ -126,7 +147,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
         <div className="flex items-center">
           <TruckIcon className="w-4 h-4 mr-2 flex-shrink-0" />
           <span className="truncate">
-            {getCarInfo(appointment.carro)}
+            {getCarInfo()}
           </span>
         </div>
 
@@ -201,6 +222,28 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
                 {collectors.map((collector) => (
                   <option key={collector.id} value={collector.id}>
                     {collector.nome_completo}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Car Selection */}
+          {onCarChange && cars.length > 0 && (
+            <div className="flex-1">
+              <select
+                value={appointment.car_id || ''}
+                onChange={(e) => onCarChange(appointment.id, e.target.value)}
+                className={`
+                  w-full border border-gray-300 rounded px-2 py-1.5 
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                  ${compact ? 'text-xs' : 'text-sm'}
+                `}
+              >
+                <option value="">Selecionar carro</option>
+                {cars.map((car) => (
+                  <option key={car.id} value={car.id}>
+                    {car.nome} {car.placa ? `(${car.placa})` : ''}
                   </option>
                 ))}
               </select>

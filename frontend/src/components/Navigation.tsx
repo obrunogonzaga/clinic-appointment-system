@@ -36,6 +36,12 @@ const navigationItems = [
     icon: UserIcon,
     description: 'Cadastrar e gerenciar coletoras',
   },
+  {
+    id: 'cars',
+    name: 'Carros',
+    icon: TruckIcon,
+    description: 'Cadastrar e gerenciar carros',
+  },
 ];
 
 export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {

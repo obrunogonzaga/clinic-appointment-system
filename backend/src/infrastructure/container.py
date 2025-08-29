@@ -8,6 +8,7 @@ from src.infrastructure.config import Settings, get_settings
 from src.infrastructure.repositories.appointment_repository import (
     AppointmentRepository,
 )
+from src.infrastructure.repositories.car_repository import CarRepository
 from src.infrastructure.repositories.collector_repository import (
     CollectorRepository,
 )
@@ -30,6 +31,7 @@ class Container:
         )
         self._database: Optional[Any] = None  # Actually AsyncIOMotorDatabase
         self._appointment_repository: Optional[AppointmentRepository] = None
+        self._car_repository: Optional[CarRepository] = None
         self._driver_repository: Optional[DriverRepository] = None
         self._collector_repository: Optional[CollectorRepository] = None
 
@@ -88,6 +90,18 @@ class Container:
         return self._appointment_repository
 
     @property
+    def car_repository(self) -> CarRepository:
+        """
+        Get car repository instance.
+
+        Returns:
+            CarRepository: Repository instance
+        """
+        if self._car_repository is None:
+            self._car_repository = CarRepository(self.database)
+        return self._car_repository
+
+    @property
     def driver_repository(self) -> DriverRepository:
         """
         Get driver repository instance.
@@ -122,6 +136,7 @@ class Container:
 
             # Create database indexes
             await self.appointment_repository.create_indexes()
+            await self.car_repository.create_indexes()
             await self.driver_repository.create_indexes()
             await self.collector_repository.create_indexes()
             print("✅ Database indexes created")
@@ -173,6 +188,16 @@ async def get_appointment_repository() -> AppointmentRepository:
         AppointmentRepository: Repository instance
     """
     return container.appointment_repository
+
+
+async def get_car_repository() -> CarRepository:
+    """
+    Dependency for getting car repository instance.
+
+    Returns:
+        CarRepository: Repository instance
+    """
+    return container.car_repository
 
 
 async def get_driver_repository() -> DriverRepository:
