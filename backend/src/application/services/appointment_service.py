@@ -66,6 +66,7 @@ class AppointmentService:
                     "valid_rows": 0,
                     "invalid_rows": parse_result.invalid_rows,
                     "imported_appointments": 0,
+                    "duplicates_found": 0,
                 }
 
             # Handle existing appointments if needed
@@ -85,22 +86,48 @@ class AppointmentService:
                             {"nome_unidade": unit, "nome_marca": brand}
                         )
 
-            # Save appointments to database
+            # Check for duplicates before saving
+            duplicates_found = 0
             saved_appointments = []
+
             if parse_result.appointments:
-                saved_appointments = (
-                    await self.appointment_repository.create_many(
+                # Find duplicate appointment IDs
+                duplicate_ids = (
+                    await self.appointment_repository.find_duplicates(
                         parse_result.appointments
                     )
                 )
+                duplicates_found = len(duplicate_ids)
+
+                # Filter out duplicates to get only new appointments
+                new_appointments = [
+                    apt
+                    for apt in parse_result.appointments
+                    if str(apt.id) not in duplicate_ids
+                ]
+
+                # Save only the new appointments
+                if new_appointments:
+                    saved_appointments = (
+                        await self.appointment_repository.create_many(
+                            new_appointments
+                        )
+                    )
+
+            # Build success message based on duplicates found
+            if duplicates_found > 0:
+                message = f"{len(saved_appointments)} agendamentos importados, {duplicates_found} duplicados ignorados."
+            else:
+                message = f"Arquivo processado com sucesso. {len(saved_appointments)} agendamentos importados."
 
             return {
                 "success": True,
-                "message": f"Arquivo processado com sucesso. {len(saved_appointments)} agendamentos importados.",
+                "message": message,
                 "total_rows": parse_result.total_rows,
                 "valid_rows": parse_result.valid_rows,
                 "invalid_rows": parse_result.invalid_rows,
                 "imported_appointments": len(saved_appointments),
+                "duplicates_found": duplicates_found,
                 "errors": parse_result.errors,
                 "filename": filename,
             }
@@ -114,6 +141,7 @@ class AppointmentService:
                 "valid_rows": 0,
                 "invalid_rows": 0,
                 "imported_appointments": 0,
+                "duplicates_found": 0,
             }
 
     async def get_appointments_with_filters(

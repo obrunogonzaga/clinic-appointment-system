@@ -173,8 +173,7 @@ class CarService:
 
             # Prepare update data (only non-None fields)
             update_data = {
-                k: v for k, v in car_data.model_dump().items() 
-                if v is not None
+                k: v for k, v in car_data.model_dump().items() if v is not None
             }
             update_data["updated_at"] = datetime.utcnow()
 
@@ -263,13 +262,16 @@ class CarService:
 
             # Get total count
             filter_dict = {
-                k: v for k, v in filters.model_dump().items() 
+                k: v
+                for k, v in filters.model_dump().items()
                 if v is not None and k not in ["page", "page_size"]
             }
             total_items = await self.car_repository.count(filter_dict)
 
             # Calculate pagination info
-            total_pages = (total_items + filters.page_size - 1) // filters.page_size
+            total_pages = (
+                total_items + filters.page_size - 1
+            ) // filters.page_size
             has_next = filters.page < total_pages
             has_previous = filters.page > 1
 
@@ -314,9 +316,7 @@ class CarService:
 
             return {
                 "success": True,
-                "cars": [
-                    ActiveCarDTO(**car.model_dump()) for car in cars
-                ],
+                "cars": [ActiveCarDTO(**car.model_dump()) for car in cars],
             }
 
         except Exception as e:
@@ -379,7 +379,7 @@ class CarService:
     async def find_or_create_car_from_string(self, car_string: str) -> Dict:
         """
         Find or create a car from appointment string format.
-        
+
         This method is used during Excel import to automatically
         register cars that don't exist yet.
 
@@ -397,7 +397,7 @@ class CarService:
                     "success": True,
                     "car": CarResponseDTO(**existing_car.model_dump()),
                     "created": False,
-                    "message": "Carro já existente"
+                    "message": "Carro já existente",
                 }
 
             # Extract car info from string
@@ -409,11 +409,7 @@ class CarService:
                 unit = "UND"
 
             # Create new car
-            car = Car(
-                nome=car_name,
-                unidade=unit,
-                status="Ativo"
-            )
+            car = Car(nome=car_name, unidade=unit, status="Ativo")
 
             created_car = await self.car_repository.create(car)
 
@@ -421,7 +417,7 @@ class CarService:
                 "success": True,
                 "car": CarResponseDTO(**created_car.model_dump()),
                 "created": True,
-                "message": "Carro criado automaticamente"
+                "message": "Carro criado automaticamente",
             }
 
         except Exception as e:
@@ -430,5 +426,5 @@ class CarService:
                 "message": f"Erro ao processar carro: {str(e)}",
                 "error": str(e),
                 "car": None,
-                "created": False
+                "created": False,
             }

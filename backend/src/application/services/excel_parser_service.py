@@ -4,7 +4,7 @@ Service for parsing Excel files containing appointment data.
 
 import re
 from datetime import datetime
-from typing import Any, BinaryIO, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, BinaryIO, Dict, List, Optional, Tuple
 
 import pandas as pd
 from pydantic import BaseModel, ValidationError
@@ -14,6 +14,10 @@ from src.application.services.address_normalization_service import (
 )
 from src.domain.entities.appointment import Appointment
 from src.infrastructure.config import get_settings
+
+# Import CarService for type annotation
+if TYPE_CHECKING:
+    from src.application.services.car_service import CarService
 
 
 class ExcelParseResult(BaseModel):
@@ -88,9 +92,9 @@ class ExcelParserService:
     }
 
     def __init__(
-        self, 
+        self,
         address_service: Optional[AddressNormalizationService] = None,
-        car_service: Optional["CarService"] = None
+        car_service: Optional["CarService"] = None,
     ) -> None:
         """Initialize the parser service."""
         self.supported_formats = [".xlsx", ".xls", ".csv"]
@@ -225,15 +229,17 @@ class ExcelParserService:
                     # Process car registration if car_service is available
                     car_id = None
                     if appointment.carro and self.car_service:
-                        car_id = await self._process_car(appointment.carro, processed_cars)
+                        car_id = await self._process_car(
+                            appointment.carro, processed_cars
+                        )
                         if car_id and appointment.carro not in processed_cars:
                             cars_created += 1
                             processed_cars.add(appointment.carro)
-                    
+
                     # Set car_id in appointment if found/created
                     if car_id:
                         appointment.car_id = car_id
-                    
+
                     appointments.append(appointment)
 
             except Exception as e:
@@ -709,7 +715,9 @@ class ExcelParserService:
         except Exception as e:
             return {"filename": filename, "error": str(e), "file_size": 0}
 
-    async def _process_car(self, car_string: str, processed_cars: set) -> Optional[str]:
+    async def _process_car(
+        self, car_string: str, processed_cars: set
+    ) -> Optional[str]:
         """
         Process car registration from appointment data.
 
@@ -725,13 +733,15 @@ class ExcelParserService:
 
         try:
             # Use the car service to find or create the car
-            result = await self.car_service.find_or_create_car_from_string(car_string)
-            
+            result = await self.car_service.find_or_create_car_from_string(
+                car_string
+            )
+
             if result.get("success"):
                 car_data = result.get("car")
                 if car_data:
                     return str(car_data.id)
-            
+
             return None
 
         except Exception as e:

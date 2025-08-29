@@ -9,7 +9,7 @@ from .driver_repository_interface import DriverRepositoryInterface
 
 __all__ = [
     "AppointmentRepositoryInterface",
-    "CarRepositoryInterface", 
+    "CarRepositoryInterface",
     "CollectorRepositoryInterface",
-    "DriverRepositoryInterface"
+    "DriverRepositoryInterface",
 ]

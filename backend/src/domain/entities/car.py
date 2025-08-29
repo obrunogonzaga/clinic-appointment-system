@@ -72,7 +72,9 @@ class Car(Entity):
         old_pattern = r"^[A-Z]{3}\d{4}$"
         mercosul_pattern = r"^[A-Z]{3}\d[A-Z]\d{2}$"
 
-        if not (re.match(old_pattern, placa) or re.match(mercosul_pattern, placa)):
+        if not (
+            re.match(old_pattern, placa) or re.match(mercosul_pattern, placa)
+        ):
             raise ValueError(
                 "Placa deve estar no formato brasileiro (ABC1234 ou ABC1D23)"
             )
@@ -99,10 +101,10 @@ class Car(Entity):
     def extract_car_info_from_string(cls, car_string: str) -> tuple[str, str]:
         """
         Extract car name and unit from appointment car field.
-        
+
         Args:
             car_string: String like "CENTER 3 CARRO 1 - UND84"
-            
+
         Returns:
             tuple: (car_name, unit) like ("CENTER 3 CARRO 1", "UND84")
         """

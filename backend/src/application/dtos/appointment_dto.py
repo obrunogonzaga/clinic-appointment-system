@@ -120,6 +120,7 @@ class ExcelUploadResponseDTO(BaseModel):
     valid_rows: int
     invalid_rows: int
     imported_appointments: int
+    duplicates_found: int = 0
     errors: List[str] = []
     processing_time: Optional[float] = None
 
