@@ -49,6 +49,9 @@ class Appointment(Entity):
     collector_id: Optional[str] = Field(
         None, description="ID da coletora responsável pela coleta"
     )
+    car_id: Optional[str] = Field(
+        None, description="ID do carro utilizado na coleta"
+    )
     # Campos adicionais de endereço/convenio
     # (podem não existir em todas as planilhas)
     cep: Optional[str] = Field(None, description="CEP do endereço de coleta")

@@ -12,6 +12,7 @@ export interface Appointment {
   observacoes?: string;
   driver_id?: string;
   collector_id?: string;
+  car_id?: string;
   // Campos opcionais que podem vir a existir no backend
   cep?: string;
   endereco_coleta?: string;

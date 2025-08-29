@@ -25,6 +25,7 @@ class ExcelParseResult(BaseModel):
     total_rows: int = 0
     valid_rows: int = 0
     invalid_rows: int = 0
+    cars_created: int = 0  # Number of cars created during import
 
 
 class ExcelParseError(BaseModel):
@@ -87,11 +88,14 @@ class ExcelParserService:
     }
 
     def __init__(
-        self, address_service: Optional[AddressNormalizationService] = None
+        self, 
+        address_service: Optional[AddressNormalizationService] = None,
+        car_service: Optional["CarService"] = None
     ) -> None:
         """Initialize the parser service."""
         self.supported_formats = [".xlsx", ".xls", ".csv"]
         self.address_service = address_service
+        self.car_service = car_service
         # Importar somente quando "Nome da Sala" iniciar com o padrão
         # AA-AA-AA-AA-AA (ex.: AD-SF-FQ-AC-AV). Texto extra à direita
         # (ex.: "CENTER 3 CARRO 1 - UND84") será preservado.
@@ -194,6 +198,8 @@ class ExcelParserService:
         """
         appointments = []
         errors = []
+        cars_created = 0
+        processed_cars = set()  # Track cars already processed
         original_total_rows = len(df)
 
         # Filtra por padrão do "Nome da Sala" quando a coluna existir.
@@ -216,6 +222,18 @@ class ExcelParserService:
             try:
                 appointment = self._parse_row(row)
                 if appointment:
+                    # Process car registration if car_service is available
+                    car_id = None
+                    if appointment.carro and self.car_service:
+                        car_id = await self._process_car(appointment.carro, processed_cars)
+                        if car_id and appointment.carro not in processed_cars:
+                            cars_created += 1
+                            processed_cars.add(appointment.carro)
+                    
+                    # Set car_id in appointment if found/created
+                    if car_id:
+                        appointment.car_id = car_id
+                    
                     appointments.append(appointment)
 
             except Exception as e:
@@ -237,6 +255,7 @@ class ExcelParserService:
             total_rows=original_total_rows,
             valid_rows=len(appointments),
             invalid_rows=len(errors),
+            cars_created=cars_created,
         )
 
     def _parse_row(self, row: pd.Series) -> Optional[Appointment]:
@@ -689,3 +708,33 @@ class ExcelParserService:
 
         except Exception as e:
             return {"filename": filename, "error": str(e), "file_size": 0}
+
+    async def _process_car(self, car_string: str, processed_cars: set) -> Optional[str]:
+        """
+        Process car registration from appointment data.
+
+        Args:
+            car_string: Car string from appointment (e.g., "CENTER 3 CARRO 1 - UND84")
+            processed_cars: Set of already processed car strings
+
+        Returns:
+            Optional[str]: Car ID if found or created, None if failed
+        """
+        if not self.car_service or not car_string:
+            return None
+
+        try:
+            # Use the car service to find or create the car
+            result = await self.car_service.find_or_create_car_from_string(car_string)
+            
+            if result.get("success"):
+                car_data = result.get("car")
+                if car_data:
+                    return str(car_data.id)
+            
+            return None
+
+        except Exception as e:
+            # Log error but don't fail the entire import
+            print(f"Erro ao processar carro '{car_string}': {e}")
+            return None

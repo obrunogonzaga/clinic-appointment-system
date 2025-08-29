@@ -26,6 +26,18 @@ import type {
     DriverStats,
     DriverUpdateRequest
 } from '../types/driver';
+import type {
+    ActiveCarListResponse,
+    CarCreateRequest,
+    CarFilter,
+    CarFilterOptions,
+    CarFromStringRequest,
+    CarFromStringResponse,
+    CarListResponse,
+    CarResponse,
+    CarStats,
+    CarUpdateRequest
+} from '../types/car';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -265,6 +277,74 @@ export const collectorAPI = {
   // Get collector filter options
   getCollectorFilterOptions: async (): Promise<CollectorFilterOptions> => {
     const response = await api.get<CollectorFilterOptions>('/collectors/filter-options');
+    return response.data;
+  },
+};
+
+export const carAPI = {
+  // Create car
+  createCar: async (data: CarCreateRequest): Promise<CarResponse> => {
+    const response = await api.post<CarResponse>('/cars', data);
+    return response.data;
+  },
+
+  // Get cars with filters
+  getCars: async (filters: CarFilter): Promise<CarListResponse> => {
+    const params = new URLSearchParams();
+    
+    if (filters.nome) params.append('nome', filters.nome);
+    if (filters.unidade) params.append('unidade', filters.unidade);
+    if (filters.placa) params.append('placa', filters.placa);
+    if (filters.modelo) params.append('modelo', filters.modelo);
+    if (filters.status) params.append('status', filters.status);
+    if (filters.page) params.append('page', filters.page.toString());
+    if (filters.page_size) params.append('page_size', filters.page_size.toString());
+    
+    const response = await api.get<CarListResponse>(
+      `/cars?${params.toString()}`
+    );
+    
+    return response.data;
+  },
+
+  // Get car by ID
+  getCar: async (id: string): Promise<CarResponse> => {
+    const response = await api.get<CarResponse>(`/cars/${id}`);
+    return response.data;
+  },
+
+  // Update car
+  updateCar: async (id: string, data: CarUpdateRequest): Promise<CarResponse> => {
+    const response = await api.put<CarResponse>(`/cars/${id}`, data);
+    return response.data;
+  },
+
+  // Delete car
+  deleteCar: async (id: string): Promise<void> => {
+    await api.delete(`/cars/${id}`);
+  },
+
+  // Get active cars
+  getActiveCars: async (): Promise<ActiveCarListResponse> => {
+    const response = await api.get<ActiveCarListResponse>('/cars/active/list');
+    return response.data;
+  },
+
+  // Get car statistics
+  getCarStats: async (): Promise<CarStats> => {
+    const response = await api.get<CarStats>('/cars/statistics/overview');
+    return response.data;
+  },
+
+  // Get car filter options
+  getCarFilterOptions: async (): Promise<CarFilterOptions> => {
+    const response = await api.get<CarFilterOptions>('/cars/filters/options');
+    return response.data;
+  },
+
+  // Find or create car from string (used in Excel import)
+  findOrCreateCarFromString: async (data: CarFromStringRequest): Promise<CarFromStringResponse> => {
+    const response = await api.post<CarFromStringResponse>('/cars/from-string', data);
     return response.data;
   },
 };
