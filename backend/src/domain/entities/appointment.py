@@ -158,6 +158,7 @@ class Appointment(Entity):
             "Reagendado",
             "Concluído",
             "Não Compareceu",
+            "Em Atendimento",
         ]
 
         if value not in valid_statuses:
