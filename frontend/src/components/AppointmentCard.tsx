@@ -34,7 +34,8 @@ const statusOptions = [
   'Cancelado', 
   'Reagendado',
   'Concluído',
-  'Não Compareceu'
+  'Não Compareceu',
+  'Em Atendimento'
 ];
 
 export const AppointmentCard: React.FC<AppointmentCardProps> = ({

@@ -87,8 +87,11 @@ class ExcelParserService:
         "Reagendado": "Reagendado",
         "Realizado": "Concluído",
         "Não Compareceu": "Não Compareceu",
-        "Agendado": "Agendado",
+        "Agendado": "Confirmado",
         "Efetivado": "Confirmado",
+        # Novos mapeamentos
+        "Em atendimento": "Em Atendimento",
+        "Em Atendimento": "Em Atendimento",
     }
 
     def __init__(

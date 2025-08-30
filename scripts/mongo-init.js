@@ -133,7 +133,7 @@ db.createCollection('appointments', {
           description: 'Tipo de consulta médica'
         },
         status: {
-          enum: ['Confirmado', 'Cancelado', 'Reagendado', 'Concluído', 'Não Compareceu'],
+          enum: ['Confirmado', 'Cancelado', 'Reagendado', 'Concluído', 'Não Compareceu', 'Em Atendimento'],
           description: 'Status do agendamento'
         },
         telefone: {

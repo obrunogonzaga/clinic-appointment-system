@@ -250,6 +250,7 @@ class AppointmentService:
                 "Reagendado",
                 "Concluído",
                 "Não Compareceu",
+                "Em Atendimento",
             ]
 
             return {
@@ -355,6 +356,7 @@ class AppointmentService:
                 "Reagendado",
                 "Concluído",
                 "Não Compareceu",
+                "Em Atendimento",
             ]
             if new_status not in valid_statuses:
                 return {

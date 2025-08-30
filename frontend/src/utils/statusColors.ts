@@ -3,7 +3,8 @@ export type AppointmentStatus =
   | 'Cancelado' 
   | 'Reagendado' 
   | 'Concluído' 
-  | 'Não Compareceu';
+  | 'Não Compareceu'
+  | 'Em Atendimento';
 
 interface StatusColorConfig {
   background: string;
@@ -42,6 +43,12 @@ const statusColorMap: Record<AppointmentStatus, StatusColorConfig> = {
     text: 'text-status-no-show-700',
     border: 'border-status-no-show',
     badge: 'bg-status-no-show-50 text-status-no-show-700 border-status-no-show'
+  },
+  'Em Atendimento': {
+    background: 'bg-status-in-service-50',
+    text: 'text-status-in-service-700',
+    border: 'border-status-in-service',
+    badge: 'bg-status-in-service-50 text-status-in-service-700 border-status-in-service'
   }
 };
 
