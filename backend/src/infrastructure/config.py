@@ -43,6 +43,13 @@ class Settings(BaseSettings):
         description="Ambiente de execução (development, staging, production)",
     )
 
+    # Server settings
+    port: int = Field(
+        default=8000,
+        description="Porta do servidor",
+        validation_alias="PORT",
+    )
+
     # API settings
     api_v1_prefix: str = Field(
         default="/api/v1",
