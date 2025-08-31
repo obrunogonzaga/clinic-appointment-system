@@ -38,6 +38,11 @@ export default {
             50: '#F3F4F6',
             700: '#374151',
             DEFAULT: '#6B7280'
+          },
+          'in-service': {
+            50: '#EDE9FE',
+            700: '#6D28D9',
+            DEFAULT: '#8B5CF6'
           }
         }
       }

@@ -30,6 +30,7 @@ const statusColors = {
   'Reagendado': 'bg-yellow-50 text-yellow-700 border-yellow-200',
   'Concluído': 'bg-blue-50 text-blue-700 border-blue-200',
   'Não Compareceu': 'bg-gray-50 text-gray-700 border-gray-200',
+  'Em Atendimento': 'bg-indigo-50 text-indigo-700 border-indigo-200',
 };
 
 const statusOptions = [
@@ -37,7 +38,8 @@ const statusOptions = [
   'Cancelado', 
   'Reagendado',
   'Concluído',
-  'Não Compareceu'
+  'Não Compareceu',
+  'Em Atendimento'
 ];
 
 export const AppointmentTable: React.FC<AppointmentTableProps> = ({
