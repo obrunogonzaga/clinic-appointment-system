@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for Python Backend
 
 # Base stage with common dependencies
-FROM python:3.11-slim as base
+FROM python:3.13-slim as base
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
