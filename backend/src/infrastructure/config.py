@@ -23,6 +23,7 @@ class Settings(BaseSettings):
         env_nested_delimiter="__",
         env_prefix="",
         env_alias_generator=None,
+        extra="ignore",  # Ignore extra fields from deployment platforms like Coolify
     )
 
     # Application settings
