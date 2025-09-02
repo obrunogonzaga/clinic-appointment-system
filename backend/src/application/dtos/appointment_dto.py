@@ -70,6 +70,19 @@ class AppointmentResponseDTO(BaseModel):
     endereco_normalizado: Optional[Dict[str, Optional[str]]] = Field(
         None, description="Endereço normalizado em campos estruturados"
     )
+    # Campos de documento do paciente
+    documento_completo: Optional[str] = Field(
+        None, description="Documento completo não normalizado da planilha"
+    )
+    documento_normalizado: Optional[Dict[str, Optional[str]]] = Field(
+        None, description="Documentos normalizados (CPF e RG estruturados)"
+    )
+    cpf: Optional[str] = Field(
+        None, description="CPF do paciente (apenas dígitos)"
+    )
+    rg: Optional[str] = Field(
+        None, description="RG do paciente (apenas dígitos)"
+    )
     # Campos de convênio
     numero_convenio: Optional[str]
     nome_convenio: Optional[str]
