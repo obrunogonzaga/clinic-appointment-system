@@ -13,6 +13,7 @@ from src.infrastructure.repositories.collector_repository import (
     CollectorRepository,
 )
 from src.infrastructure.repositories.driver_repository import DriverRepository
+from src.infrastructure.repositories.user_repository import UserRepository
 
 
 class Container:
@@ -34,6 +35,7 @@ class Container:
         self._car_repository: Optional[CarRepository] = None
         self._driver_repository: Optional[DriverRepository] = None
         self._collector_repository: Optional[CollectorRepository] = None
+        self._user_repository: Optional[UserRepository] = None
 
     @property
     def settings(self) -> Settings:
@@ -125,6 +127,18 @@ class Container:
             self._collector_repository = CollectorRepository(self.database)
         return self._collector_repository
 
+    @property
+    def user_repository(self) -> UserRepository:
+        """
+        Get user repository instance.
+
+        Returns:
+            UserRepository: Repository instance
+        """
+        if self._user_repository is None:
+            self._user_repository = UserRepository(self.database)
+        return self._user_repository
+
     async def startup(self) -> None:
         """
         Initialize resources on application startup.
@@ -139,6 +153,7 @@ class Container:
             await self.car_repository.create_indexes()
             await self.driver_repository.create_indexes()
             await self.collector_repository.create_indexes()
+            await self.user_repository.ensure_indexes()
             print("✅ Database indexes created")
         except Exception as e:
             print(f"❌ Failed to connect to MongoDB: {e}")
@@ -218,3 +233,13 @@ async def get_collector_repository() -> CollectorRepository:
         CollectorRepository: Repository instance
     """
     return container.collector_repository
+
+
+async def get_user_repository() -> UserRepository:
+    """
+    Dependency for getting user repository instance.
+
+    Returns:
+        UserRepository: Repository instance
+    """
+    return container.user_repository

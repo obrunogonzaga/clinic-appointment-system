@@ -75,7 +75,8 @@ class Settings(BaseSettings):
     # Security settings
     secret_key: str = Field(
         default="your-secret-key-here-change-in-production",
-        description="Chave secreta para JWT",
+        description="Chave secreta principal",
+        validation_alias="JWT_SECRET_KEY",
     )
     algorithm: str = Field(
         default="HS256",

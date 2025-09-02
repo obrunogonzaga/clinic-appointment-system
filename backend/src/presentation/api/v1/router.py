@@ -11,6 +11,7 @@ from src.infrastructure.config import get_settings
 # Import and include routers
 from src.presentation.api.v1.endpoints import (
     appointments,
+    auth,
     cars,
     collectors,
     drivers,
@@ -27,6 +28,10 @@ api_v1_router = APIRouter(
 )
 
 # Include routers
+api_v1_router.include_router(
+    auth.router, prefix="/auth", tags=["Authentication"]
+)
+
 api_v1_router.include_router(
     appointments.router, prefix="/appointments", tags=["Appointments"]
 )
@@ -55,6 +60,7 @@ async def api_v1_root() -> dict[str, Any]:
         "endpoints": {
             "docs": f"{settings.api_v1_prefix}/docs",
             "health": f"{settings.api_v1_prefix}/health",
+            "auth": f"{settings.api_v1_prefix}/auth",
             "appointments": f"{settings.api_v1_prefix}/appointments",
             "drivers": f"{settings.api_v1_prefix}/drivers",
             "collectors": f"{settings.api_v1_prefix}/collectors",

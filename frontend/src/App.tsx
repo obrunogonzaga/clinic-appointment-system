@@ -1,13 +1,17 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import { HashRouter, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import { Navigation } from './components/Navigation';
+import { PrivateRoute } from './components/PrivateRoute';
 import { AppointmentsPage } from './pages/AppointmentsPage';
 import { CarsPage } from './pages/CarsPage';
 import { CollectorsPage } from './pages/CollectorsPage';
 import { Dashboard } from './pages/Dashboard';
 import { DriverRoutePage } from './pages/DriverRoutePage';
 import { DriversPage } from './pages/DriversPage';
+import { Login } from './pages/Login';
+import { Setup } from './pages/Setup';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -38,22 +42,35 @@ function Shell() {
     }
   };
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
-      <main className="flex-1 p-8">{renderContent()}</main>
-    </div>
+    <PrivateRoute>
+      <div className="min-h-screen bg-gray-50 flex">
+        <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+        <main className="flex-1 p-8">{renderContent()}</main>
+      </div>
+    </PrivateRoute>
   );
 }
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <HashRouter>
-        <Routes>
-          <Route path="/routes/driver" element={<DriverRoutePage />} />
-          <Route path="*" element={<Shell />} />
-        </Routes>
-      </HashRouter>
+      <AuthProvider>
+        <HashRouter>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/setup" element={<Setup />} />
+            
+            {/* Protected routes */}
+            <Route path="/routes/driver" element={
+              <PrivateRoute>
+                <DriverRoutePage />
+              </PrivateRoute>
+            } />
+            <Route path="*" element={<Shell />} />
+          </Routes>
+        </HashRouter>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
