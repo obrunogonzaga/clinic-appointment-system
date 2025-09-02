@@ -1,5 +1,5 @@
 # Multi-stage build for React frontend
-FROM node:20-alpine as builder
+FROM node:20-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -7,8 +7,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies (including dev dependencies for build)
+RUN npm ci
 
 # Copy source code
 COPY . .
@@ -17,22 +17,30 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM nginx:alpine as production
+FROM nginx:alpine AS production
+
+# Install envsubst (gettext package)
+RUN apk add --no-cache gettext
 
 # Copy built files to nginx
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy nginx template and entrypoint script
+COPY nginx.template.conf /etc/nginx/conf.d/nginx.template.conf
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+# Set default backend URL (can be overridden)
+ENV BACKEND_URL=http://backend:8000
 
 # Expose port
 EXPOSE 80
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Use custom entrypoint
+ENTRYPOINT ["/docker-entrypoint.sh"]
 
 # Development stage
-FROM node:20-alpine as development
+FROM node:20-alpine AS development
 
 # Set working directory
 WORKDIR /app
