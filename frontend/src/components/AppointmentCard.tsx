@@ -3,6 +3,7 @@ import {
     CalendarIcon,
     ClockIcon,
     CreditCardIcon,
+    IdentificationIcon,
     PhoneIcon,
     TrashIcon,
     TruckIcon,
@@ -166,6 +167,34 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
             </span>
           </div>
         )}
+
+        {/* CPF/RG */}
+        {(() => {
+          // Priorizar CPF/RG formatados dos campos normalizados
+          const cpfFormatted = appointment.documento_normalizado?.cpf_formatted;
+          const rgFormatted = appointment.documento_normalizado?.rg_formatted;
+          
+          // Se não houver documentos normalizados, não exibir
+          if (!cpfFormatted && !rgFormatted) {
+            return null;
+          }
+          
+          // Criar string com os documentos disponíveis
+          const documents = [];
+          if (cpfFormatted) {
+            documents.push(`CPF: ${cpfFormatted}`);
+          }
+          if (rgFormatted) {
+            documents.push(`RG: ${rgFormatted}`);
+          }
+          
+          return (
+            <div className="flex items-center">
+              <IdentificationIcon className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="truncate">{documents.join(' | ')}</span>
+            </div>
+          );
+        })()}
 
         {/* Phone (only show if not compact and exists) */}
         {!compact && appointment.telefone && (

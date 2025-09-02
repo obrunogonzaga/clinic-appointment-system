@@ -26,6 +26,16 @@ export interface Appointment {
     estado?: string | null;
     cep?: string | null;
   } | null;
+  // Campos de documento do paciente
+  documento_completo?: string;
+  documento_normalizado?: {
+    cpf?: string | null;
+    rg?: string | null;
+    cpf_formatted?: string | null;
+    rg_formatted?: string | null;
+  } | null;
+  cpf?: string;
+  rg?: string;
   numero_convenio?: string;
   nome_convenio?: string;
   created_at: string;

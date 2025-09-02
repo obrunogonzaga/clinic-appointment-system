@@ -12,6 +12,9 @@ from pydantic import BaseModel, ValidationError
 from src.application.services.address_normalization_service import (
     AddressNormalizationService,
 )
+from src.application.services.document_normalization_service import (
+    DocumentNormalizationService,
+)
 from src.domain.entities.appointment import Appointment
 from src.infrastructure.config import get_settings
 
@@ -98,11 +101,13 @@ class ExcelParserService:
         self,
         address_service: Optional[AddressNormalizationService] = None,
         car_service: Optional["CarService"] = None,
+        document_service: Optional[DocumentNormalizationService] = None,
     ) -> None:
         """Initialize the parser service."""
         self.supported_formats = [".xlsx", ".xls", ".csv"]
         self.address_service = address_service
         self.car_service = car_service
+        self.document_service = document_service
         # Importar somente quando "Nome da Sala" iniciar com o padrão
         # AA-AA-AA-AA-AA (ex.: AD-SF-FQ-AC-AV). Texto extra à direita
         # (ex.: "CENTER 3 CARRO 1 - UND84") será preservado.
@@ -257,6 +262,14 @@ class ExcelParserService:
         ):
             appointments = await self._normalize_addresses_batch(appointments)
 
+        # Normalizar documentos se o serviço estiver disponível E habilitado
+        if (
+            self.document_service
+            and appointments
+            and settings.address_normalization_enabled  # Reuse the same setting
+        ):
+            appointments = await self._normalize_documents_batch(appointments)
+
         return ExcelParseResult(
             success=len(errors) == 0,
             appointments=appointments,
@@ -323,6 +336,11 @@ class ExcelParserService:
             # Se endereco_completo não existe, usar endereco_coleta como fallback
             if not endereco_completo and endereco_coleta:
                 endereco_completo = endereco_coleta
+
+            # Extrair campo de documento do paciente
+            documento_completo = self._clean_string(
+                row.get("Documento(s) do Paciente")
+            )
             numero_convenio = self._clean_string(
                 row.get("Convênio")
                 or row.get("Numero Convenio")
@@ -381,6 +399,10 @@ class ExcelParserService:
                 endereco_coleta=endereco_coleta,
                 endereco_completo=endereco_completo,
                 endereco_normalizado=endereco_normalizado,
+                documento_completo=documento_completo,
+                documento_normalizado=None,  # Will be set during normalization
+                cpf=None,  # Will be extracted during normalization
+                rg=None,  # Will be extracted during normalization
                 numero_convenio=numero_convenio,
                 nome_convenio=nome_convenio,
                 carteira_convenio=carteira_convenio,
@@ -641,6 +663,53 @@ class ExcelParserService:
                     # Log error but don't fail the whole batch
                     print(
                         f"Erro na normalização para '{appointment.endereco_completo}': {e}"
+                    )
+                    normalized_appointments.append(appointment)
+            else:
+                normalized_appointments.append(appointment)
+
+        return normalized_appointments
+
+    async def _normalize_documents_batch(
+        self, appointments: List[Appointment]
+    ) -> List[Appointment]:
+        """
+        Normalize documents for a batch of appointments.
+
+        Args:
+            appointments: List of appointments to normalize
+
+        Returns:
+            List of appointments with normalized documents
+        """
+        normalized_appointments = []
+
+        for appointment in appointments:
+            if (
+                appointment.documento_completo
+                and not appointment.documento_normalizado
+            ):
+                try:
+                    normalized = (
+                        await self.document_service.normalize_documents(
+                            appointment.documento_completo
+                        )
+                    )
+                    if normalized:
+                        # Create a new appointment with normalized documents
+                        appointment_dict = appointment.model_dump()
+                        appointment_dict["documento_normalizado"] = normalized
+                        appointment_dict["cpf"] = normalized.get("cpf")
+                        appointment_dict["rg"] = normalized.get("rg")
+                        normalized_appointments.append(
+                            Appointment(**appointment_dict)
+                        )
+                    else:
+                        normalized_appointments.append(appointment)
+                except Exception as e:
+                    # Log error but don't fail the whole batch
+                    print(
+                        f"Erro na normalização de documento para '{appointment.documento_completo}': {e}"
                     )
                     normalized_appointments.append(appointment)
             else:

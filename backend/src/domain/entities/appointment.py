@@ -64,6 +64,19 @@ class Appointment(Entity):
     endereco_normalizado: Optional[Dict[str, Optional[str]]] = Field(
         None, description="Endereço normalizado em campos estruturados"
     )
+    # Campos de documento do paciente
+    documento_completo: Optional[str] = Field(
+        None, description="Documento completo não normalizado da planilha"
+    )
+    documento_normalizado: Optional[Dict[str, Optional[str]]] = Field(
+        None, description="Documentos normalizados (CPF e RG estruturados)"
+    )
+    cpf: Optional[str] = Field(
+        None, description="CPF do paciente (apenas dígitos)"
+    )
+    rg: Optional[str] = Field(
+        None, description="RG do paciente (apenas dígitos)"
+    )
     numero_convenio: Optional[str] = Field(
         None, description="Número do convênio"
     )
@@ -196,6 +209,15 @@ class Appointment(Entity):
                     "estado": "RJ",
                     "cep": "22790-285",
                 },
+                "documento_completo": "CPF: 12345678901, RG: 123456789",
+                "documento_normalizado": {
+                    "cpf": "12345678901",
+                    "rg": "123456789",
+                    "cpf_formatted": "123.456.789-01",
+                    "rg_formatted": "12.345.678",
+                },
+                "cpf": "12345678901",
+                "rg": "123456789",
                 "created_at": "2025-01-14T10:00:00",
                 "updated_at": "2025-01-14T10:00:00",
             }
