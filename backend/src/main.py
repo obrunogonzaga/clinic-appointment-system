@@ -8,6 +8,7 @@ from typing import Any, AsyncGenerator, Callable
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.types import ASGIApp
@@ -59,6 +60,12 @@ app = FastAPI(
     redoc_url="/redoc" if not settings.is_production else None,
     openapi_url="/openapi.json" if not settings.is_production else None,
     lifespan=lifespan,
+)
+
+# Configure trusted hosts for HTTPS proxy
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=["localhost", "127.0.0.1", "*.widia.io", "api-staging.widia.io", "clinica-staging.widia.io"]
 )
 
 # Configure CORS
