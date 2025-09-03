@@ -11,20 +11,22 @@ from pymongo.errors import DuplicateKeyError
 
 from src.domain.base import DomainException
 from src.domain.entities.user import User
-from src.domain.repositories.user_repository_interface import UserRepositoryInterface
+from src.domain.repositories.user_repository_interface import (
+    UserRepositoryInterface,
+)
 
 
 class UserRepository(UserRepositoryInterface):
     """
     MongoDB implementation of UserRepositoryInterface.
-    
+
     Handles user persistence with proper error handling and indexing.
     """
 
     def __init__(self, database: AsyncIOMotorDatabase):
         """
         Initialize user repository.
-        
+
         Args:
             database: MongoDB database instance
         """
@@ -47,16 +49,18 @@ class UserRepository(UserRepositoryInterface):
             # Prepare user data for MongoDB
             user_dict = user.model_dump(by_alias=True, exclude={"id"})
             user_dict["_id"] = ObjectId()
-            
+
             # Insert user
             result = await self.collection.insert_one(user_dict)
-            
+
             # Return user with populated ID
             user.id = str(result.inserted_id)
             return user
-            
+
         except DuplicateKeyError:
-            raise DomainException(f"Usuário com email '{user.email}' já existe")
+            raise DomainException(
+                f"Usuário com email '{user.email}' já existe"
+            )
         except Exception as e:
             raise DomainException(f"Erro ao criar usuário: {str(e)}")
 
@@ -65,10 +69,10 @@ class UserRepository(UserRepositoryInterface):
         try:
             if not ObjectId.is_valid(user_id):
                 return None
-                
+
             doc = await self.collection.find_one({"_id": ObjectId(user_id)})
             return self._doc_to_user(doc) if doc else None
-            
+
         except Exception:
             return None
 
@@ -77,7 +81,7 @@ class UserRepository(UserRepositoryInterface):
         try:
             doc = await self.collection.find_one({"email": email.lower()})
             return self._doc_to_user(doc) if doc else None
-            
+
         except Exception:
             return None
 
@@ -86,20 +90,19 @@ class UserRepository(UserRepositoryInterface):
         try:
             if not ObjectId.is_valid(user_id):
                 return None
-                
+
             update_data = user.model_dump(
-                by_alias=True, 
-                exclude={"id", "created_at"}
+                by_alias=True, exclude={"id", "created_at"}
             )
-            
+
             result = await self.collection.find_one_and_update(
                 {"_id": ObjectId(user_id)},
                 {"$set": update_data},
-                return_document=True
+                return_document=True,
             )
-            
+
             return self._doc_to_user(result) if result else None
-            
+
         except DuplicateKeyError:
             raise DomainException(f"Email '{user.email}' já está em uso")
         except Exception as e:
@@ -110,10 +113,12 @@ class UserRepository(UserRepositoryInterface):
         try:
             if not ObjectId.is_valid(user_id):
                 return False
-                
-            result = await self.collection.delete_one({"_id": ObjectId(user_id)})
+
+            result = await self.collection.delete_one(
+                {"_id": ObjectId(user_id)}
+            )
             return result.deleted_count > 0
-            
+
         except Exception:
             return False
 
@@ -121,11 +126,10 @@ class UserRepository(UserRepositoryInterface):
         """Check if user exists by email."""
         try:
             count = await self.collection.count_documents(
-                {"email": email.lower()}, 
-                limit=1
+                {"email": email.lower()}, limit=1
             )
             return count > 0
-            
+
         except Exception:
             return False
 
@@ -133,11 +137,10 @@ class UserRepository(UserRepositoryInterface):
         """Check if there are any admin users in the system."""
         try:
             count = await self.collection.count_documents(
-                {"is_admin": True, "is_active": True}, 
-                limit=1
+                {"is_admin": True, "is_active": True}, limit=1
             )
             return count > 0
-            
+
         except Exception:
             return False
 

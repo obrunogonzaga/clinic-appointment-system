@@ -101,9 +101,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(response.user);
     } catch (error: any) {
       console.error('Registration failed:', error);
-      throw new Error(
-        error.response?.data?.detail || 'Falha no registro'
-      );
+      // Preserve the original error to maintain response data
+      throw error;
     } finally {
       setIsLoading(false);
     }

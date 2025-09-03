@@ -33,13 +33,13 @@ settings = get_settings()
 @router.get(
     "/setup-check",
     response_model=FirstAdminCheckResponse,
-    summary="Verificar Setup Inicial",
-    description="Verifica se o sistema precisa de configuração inicial do primeiro administrador",
+    summary="Verificar Status do Sistema",
+    description="Verifica o status do sistema (sempre permite criar novos administradores autorizados)",
 )
 async def check_setup(
     auth_service: AuthService = Depends(get_auth_service),
 ) -> FirstAdminCheckResponse:
-    """Check if system needs initial admin setup."""
+    """Check system status for admin registration."""
     return await auth_service.check_first_admin_setup()
 
 
@@ -47,21 +47,30 @@ async def check_setup(
     "/register",
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Registrar Primeiro Admin",
-    description="Registra o primeiro usuário administrador do sistema",
+    summary="Registrar Administrador",
+    description="Registra um novo usuário administrador do sistema (apenas emails autorizados)",
 )
-async def register_first_admin(
+async def register_admin(
     user_data: UserCreateRequest,
     auth_service: AuthService = Depends(get_auth_service),
 ) -> UserResponse:
-    """Register the first admin user."""
+    """Register a new admin user."""
     try:
         return await auth_service.register_first_admin(user_data)
     except DomainException as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        error_message = str(e)
+        # Check if it's an authorization error
+        if "ADMIN_NOT_AUTHORIZED" in error_message:
+            # Remove the error code prefix for user-friendly message
+            clean_message = error_message.replace("ADMIN_NOT_AUTHORIZED: ", "")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, 
+                detail=clean_message
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=error_message
+            )
 
 
 @router.post(
@@ -78,25 +87,25 @@ async def login(
     """Login user and set JWT cookie."""
     try:
         token_response = await auth_service.login(credentials)
-        
+
         # Set httpOnly cookie with JWT token
         response.set_cookie(
             key="access_token",
             value=token_response.access_token,
-            max_age=settings.access_token_expire_minutes * 60,  # Convert to seconds
+            max_age=settings.access_token_expire_minutes
+            * 60,  # Convert to seconds
             expires=token_response.expires_at,
             httponly=True,
             secure=settings.is_production,  # Only HTTPS in production
             samesite="lax",
-            path="/"
+            path="/",
         )
-        
+
         return token_response
-        
+
     except DomainException as e:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e)
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e)
         )
 
 
@@ -113,12 +122,11 @@ async def logout(response: Response) -> SuccessResponse:
         path="/",
         secure=settings.is_production,
         httponly=True,
-        samesite="lax"
+        samesite="lax",
     )
-    
+
     return SuccessResponse(
-        success=True,
-        message="Logout realizado com sucesso"
+        success=True, message="Logout realizado com sucesso"
     )
 
 
@@ -152,10 +160,19 @@ async def create_user(
     try:
         return await auth_service.register_user(user_data)
     except DomainException as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        error_message = str(e)
+        # Check if it's an authorization error
+        if "ADMIN_NOT_AUTHORIZED" in error_message:
+            # Remove the error code prefix for user-friendly message
+            clean_message = error_message.replace("ADMIN_NOT_AUTHORIZED: ", "")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, 
+                detail=clean_message
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=error_message
+            )
 
 
 @router.get(
@@ -174,5 +191,5 @@ async def auth_health() -> dict[str, Any]:
             "cookie_auth": True,
             "admin_registration": True,
             "user_management": True,
-        }
+        },
     }

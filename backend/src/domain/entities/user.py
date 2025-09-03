@@ -11,18 +11,26 @@ from pydantic import BaseModel, Field, field_validator
 class User(BaseModel):
     """
     User entity representing a system user.
-    
+
     This entity handles user authentication and basic authorization.
     For Phase 1, we use a simple is_admin flag.
     """
 
-    id: Optional[str] = Field(None, alias="_id", description="MongoDB ObjectId")
+    id: Optional[str] = Field(
+        None, alias="_id", description="MongoDB ObjectId"
+    )
     email: str = Field(..., description="User email address (unique)")
-    name: str = Field(..., min_length=2, max_length=100, description="User full name")
+    name: str = Field(
+        ..., min_length=2, max_length=100, description="User full name"
+    )
     password_hash: str = Field(..., description="Bcrypt hashed password")
-    is_admin: bool = Field(False, description="Whether user has admin privileges")
+    is_admin: bool = Field(
+        False, description="Whether user has admin privileges"
+    )
     is_active: bool = Field(True, description="Whether user account is active")
-    created_at: datetime = Field(default_factory=datetime.utcnow, description="User creation timestamp")
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow, description="User creation timestamp"
+    )
 
     @field_validator("email", mode="before")
     @classmethod
@@ -50,6 +58,7 @@ class User(BaseModel):
 
     class Config:
         """Pydantic configuration."""
+
         populate_by_name = True
         str_strip_whitespace = True
         validate_assignment = True

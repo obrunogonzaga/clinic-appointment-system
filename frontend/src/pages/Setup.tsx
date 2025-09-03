@@ -1,10 +1,9 @@
 /**
- * Setup page for first admin registration
+ * Setup page for admin registration
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { authService } from '../services/auth';
 import { useAuth } from '../hooks/useAuth';
 import type { RegisterData } from '../types/auth';
 
@@ -12,7 +11,6 @@ export function Setup() {
   const { register, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   
-  const [needsSetup, setNeedsSetup] = useState<boolean | null>(null);
   const [setupData, setSetupData] = useState<RegisterData>({
     email: '',
     name: '',
@@ -23,25 +21,10 @@ export function Setup() {
   const [error, setError] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Check if setup is needed on mount
-  useEffect(() => {
-    checkSetupStatus();
-  }, []);
-
   // Redirect if already authenticated
   if (isAuthenticated && !isLoading) {
     return <Navigate to="/" replace />;
   }
-
-  const checkSetupStatus = async () => {
-    try {
-      const response = await authService.checkFirstAdminSetup();
-      setNeedsSetup(response.needs_setup);
-    } catch (error) {
-      console.error('Failed to check setup status:', error);
-      setError('Erro ao verificar status do sistema');
-    }
-  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -97,26 +80,51 @@ export function Setup() {
       navigate('/', { replace: true });
       
     } catch (err: any) {
-      setError(err.message || 'Erro ao criar administrador');
+      // Handle different types of errors
+      let errorMessage = 'Erro ao criar administrador';
+      
+      console.log('Error caught:', err);
+      console.log('Error response:', err.response);
+      console.log('Error response data:', err.response?.data);
+      console.log('Error response status:', err.response?.status);
+      
+      if (err.response?.status === 403) {
+        // Authorization error - show detailed info
+        const errorData = err.response.data;
+        console.log('403 Error data:', errorData);
+        
+        if (typeof errorData === 'object' && errorData.message) {
+          errorMessage = errorData.message;
+          console.log('Using errorData.message:', errorMessage);
+        } else if (err.response?.data?.detail) {
+          errorMessage = err.response.data.detail;
+          console.log('Using response.data.detail:', errorMessage);
+        } else {
+          errorMessage = errorData.detail || errorMessage;
+          console.log('Using errorData.detail or default:', errorMessage);
+        }
+      } else {
+        // Other errors
+        errorMessage = err.response?.data?.detail || err.message || errorMessage;
+        console.log('Non-403 error message:', errorMessage);
+      }
+      
+      console.log('Final error message:', errorMessage);
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isLoading || needsSetup === null) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Verificando sistema...</p>
+          <p className="mt-2 text-gray-600">Carregando...</p>
         </div>
       </div>
     );
-  }
-
-  // If setup is not needed, redirect to login
-  if (!needsSetup) {
-    return <Navigate to="/login" replace />;
   }
 
   return (
@@ -124,11 +132,17 @@ export function Setup() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Configuração Inicial
+            Cadastro de Administrador
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Crie o primeiro administrador do sistema
+            Crie uma nova conta de administrador do sistema
           </p>
+          <div className="mt-4 rounded-md bg-blue-50 p-4">
+            <div className="text-sm text-blue-800">
+              <strong>Importante:</strong> Apenas emails autorizados podem criar contas administrativas. 
+              Se você encontrar erro de autorização, verifique com o responsável pelo sistema.
+            </div>
+          </div>
         </div>
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -205,6 +219,24 @@ export function Setup() {
             <div className="rounded-md bg-red-50 p-4">
               <div className="text-sm text-red-800">
                 {error}
+                {(error.includes('não autorizado') || error.includes('não está autorizado')) && (
+                  <div className="mt-3 p-3 bg-red-100 rounded-md">
+                    <div className="text-xs">
+                      <strong>🚨 Acesso Restrito</strong>
+                      <p className="mt-1">
+                        Apenas emails pré-autorizados podem criar contas administrativas neste sistema.
+                      </p>
+                      <p className="mt-2">
+                        <strong>O que fazer:</strong>
+                      </p>
+                      <ul className="mt-1 ml-4 list-disc">
+                        <li>Entre em contato com o administrador do sistema</li>
+                        <li>Solicite a inclusão do seu email na lista de administradores</li>
+                        <li>Aguarde a autorização antes de tentar novamente</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

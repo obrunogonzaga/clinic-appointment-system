@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=[".env", "../.env", ".env.local"],
         env_file_encoding="utf-8",
         case_sensitive=False,
         # Map environment variables to field names
@@ -165,6 +165,13 @@ class Settings(BaseSettings):
         description="Email remetente padrão",
     )
 
+    # Admin email whitelist for security
+    admin_email_whitelist: Optional[List[str]] = Field(
+        default=None,
+        description="Lista de emails autorizados para criar contas administrativas",
+        validation_alias="ADMIN_EMAIL_WHITELIST",
+    )
+
     # OpenRouter API settings (for address normalization)
     openrouter_api_key: Optional[str] = Field(
         default=None,
@@ -212,6 +219,45 @@ class Settings(BaseSettings):
             return v
         else:
             return ["http://localhost:3000", "http://localhost:5173"]
+
+    @field_validator("admin_email_whitelist", mode="before")
+    @classmethod
+    def validate_admin_email_whitelist(cls, v) -> Optional[List[str]]:
+        """Validate and parse admin email whitelist from environment variable."""
+        if v is None or v == "":
+            return None
+
+        if isinstance(v, str):
+            try:
+                # Try to parse as JSON array
+                parsed = json.loads(v)
+                if isinstance(parsed, list):
+                    # Normalize emails to lowercase and strip whitespace
+                    return [
+                        email.lower().strip()
+                        for email in parsed
+                        if isinstance(email, str)
+                    ]
+                else:
+                    # If not a list, treat as single email
+                    return [v.lower().strip()]
+            except json.JSONDecodeError:
+                # If not valid JSON, split by comma
+                if "," in v:
+                    return [
+                        email.lower().strip()
+                        for email in v.split(",")
+                        if email.strip()
+                    ]
+                else:
+                    return [v.lower().strip()]
+        elif isinstance(v, list):
+            # Normalize emails to lowercase and strip whitespace
+            return [
+                email.lower().strip() for email in v if isinstance(email, str)
+            ]
+
+        return None
 
     @field_validator("environment")
     @classmethod
@@ -263,6 +309,7 @@ class Settings(BaseSettings):
             "smtp_password",
             "smtp_username",
             "openrouter_api_key",
+            "admin_email_whitelist",
         ]
         for field in sensitive_fields:
             if field in data:

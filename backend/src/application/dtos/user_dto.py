@@ -12,9 +12,13 @@ class UserCreateRequest(BaseModel):
     """DTO for user creation request."""
 
     email: str = Field(..., description="User email address")
-    name: str = Field(..., min_length=2, max_length=100, description="User full name")
+    name: str = Field(
+        ..., min_length=2, max_length=100, description="User full name"
+    )
     password: str = Field(..., min_length=8, description="User password")
-    is_admin: bool = Field(False, description="Whether user has admin privileges")
+    is_admin: bool = Field(
+        False, description="Whether user has admin privileges"
+    )
 
     @field_validator("email", mode="before")
     @classmethod
@@ -34,6 +38,7 @@ class UserCreateRequest(BaseModel):
 
     class Config:
         """Pydantic configuration."""
+
         str_strip_whitespace = True
 
 
@@ -53,6 +58,7 @@ class LoginRequest(BaseModel):
 
     class Config:
         """Pydantic configuration."""
+
         str_strip_whitespace = True
 
 
@@ -62,12 +68,15 @@ class UserResponse(BaseModel):
     id: str = Field(..., description="User unique identifier")
     email: str = Field(..., description="User email address")
     name: str = Field(..., description="User full name")
-    is_admin: bool = Field(..., description="Whether user has admin privileges")
+    is_admin: bool = Field(
+        ..., description="Whether user has admin privileges"
+    )
     is_active: bool = Field(..., description="Whether user account is active")
     created_at: datetime = Field(..., description="User creation timestamp")
 
     class Config:
         """Pydantic configuration."""
+
         from_attributes = True
 
 
@@ -85,13 +94,17 @@ class AuthStatusResponse(BaseModel):
 
     success: bool = Field(..., description="Whether request was successful")
     message: str = Field(..., description="Response message")
-    user: Optional[UserResponse] = Field(None, description="User data if authenticated")
+    user: Optional[UserResponse] = Field(
+        None, description="User data if authenticated"
+    )
 
 
 class FirstAdminCheckResponse(BaseModel):
     """DTO for checking if first admin setup is needed."""
 
-    needs_setup: bool = Field(..., description="Whether system needs initial admin setup")
+    needs_setup: bool = Field(
+        ..., description="Whether system needs initial admin setup"
+    )
     message: str = Field(..., description="Explanation message")
 
 
@@ -103,4 +116,5 @@ class PasswordChangeRequest(BaseModel):
 
     class Config:
         """Pydantic configuration."""
+
         str_strip_whitespace = True
