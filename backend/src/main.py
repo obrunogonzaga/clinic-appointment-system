@@ -68,6 +68,25 @@ app.add_middleware(
     allowed_hosts=["localhost", "127.0.0.1", "*.widia.io", "api-staging.widia.io", "clinica-staging.widia.io"]
 )
 
+# Add middleware to handle proxy headers and force HTTPS in production
+@app.middleware("http")
+async def force_https_redirect(request: Request, call_next: Callable[[Request], Any]) -> Any:
+    """Force HTTPS URLs in Location headers when behind proxy."""
+    # Get forwarded proto header
+    forwarded_proto = request.headers.get("X-Forwarded-Proto", "")
+    
+    # Process the request
+    response = await call_next(request)
+    
+    # If we're behind HTTPS proxy and have a Location header with HTTP
+    if forwarded_proto == "https" and "location" in response.headers:
+        location = response.headers["location"]
+        if location.startswith("http://"):
+            # Replace http:// with https://
+            response.headers["location"] = location.replace("http://", "https://", 1)
+    
+    return response
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
