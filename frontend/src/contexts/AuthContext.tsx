@@ -30,35 +30,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setIsLoading(true);
       
-      // First check if system needs setup
-      const setupResponse = await authService.checkFirstAdminSetup();
+      // Try to get current user directly (faster initialization)
+      const response = await authService.getCurrentUser();
       
-      // If system needs setup, don't try to get current user
-      if (setupResponse.needs_setup) {
+      if (response.success && response.user) {
+        setUser(response.user);
+      } else {
         setUser(null);
-        return;
       }
-      
-      // Try to get current user only if system is set up
-      try {
-        const response = await authService.getCurrentUser();
-        
-        if (response.success && response.user) {
-          setUser(response.user);
-        } else {
-          setUser(null);
-        }
-      } catch (error: any) {
-        // 401 error is expected when user is not logged in
-        if (error.response?.status === 401) {
-          setUser(null);
-        } else {
-          throw error; // Re-throw other errors
-        }
+    } catch (error: any) {
+      // 401 error is expected when user is not logged in
+      if (error.response?.status === 401) {
+        setUser(null);
+      } else {
+        console.error('Failed to initialize auth:', error);
+        setUser(null);
       }
-    } catch (error) {
-      console.error('Failed to initialize auth:', error);
-      setUser(null);
     } finally {
       setIsLoading(false);
     }
