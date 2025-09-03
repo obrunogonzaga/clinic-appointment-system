@@ -151,6 +151,42 @@ class UserRepository(UserRepositoryInterface):
         except Exception:
             return 0
 
+    async def list_users(self, limit: int = 10, offset: int = 0) -> list[User]:
+        """List users with pagination."""
+        try:
+            cursor = (
+                self.collection.find({})
+                .sort("created_at", -1)  # Order by created_at desc
+                .skip(offset)
+                .limit(limit)
+            )
+            
+            docs = await cursor.to_list(length=limit)
+            return [self._doc_to_user(doc) for doc in docs]
+        except Exception:
+            return []
+
+    async def count_total_users(self) -> int:
+        """Count total number of users (active and inactive)."""
+        try:
+            return await self.collection.count_documents({})
+        except Exception:
+            return 0
+
+    async def soft_delete(self, user_id: str) -> bool:
+        """Soft delete user by setting is_active to False."""
+        try:
+            if not ObjectId.is_valid(user_id):
+                return False
+
+            result = await self.collection.update_one(
+                {"_id": ObjectId(user_id)},
+                {"$set": {"is_active": False}}
+            )
+            return result.modified_count > 0
+        except Exception:
+            return False
+
     def _doc_to_user(self, doc: dict) -> User:
         """Convert MongoDB document to User entity."""
         if "_id" in doc:

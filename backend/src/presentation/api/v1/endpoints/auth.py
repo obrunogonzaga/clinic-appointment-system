@@ -14,6 +14,9 @@ from src.application.dtos.user_dto import (
     TokenResponse,
     UserCreateRequest,
     UserResponse,
+    UserListRequest,
+    UserListResponse,
+    UserUpdateRequest,
 )
 from src.application.services.auth_service import AuthService
 from src.domain.base import DomainException
@@ -173,6 +176,74 @@ async def create_user(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail=error_message
             )
+
+
+@router.get(
+    "/users",
+    response_model=UserListResponse,
+    summary="Listar Usuários",
+    description="Lista todos os usuários com paginação (apenas admin)",
+    dependencies=[Depends(get_current_admin_user)],
+)
+async def list_users(
+    limit: int = 10,
+    offset: int = 0,
+    auth_service: AuthService = Depends(get_auth_service),
+) -> UserListResponse:
+    """List all users with pagination (admin only)."""
+    try:
+        request = UserListRequest(limit=limit, offset=offset)
+        return await auth_service.list_users(request)
+    except DomainException as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        )
+
+
+@router.patch(
+    "/users/{user_id}",
+    response_model=UserResponse,
+    summary="Atualizar Usuário",
+    description="Atualiza dados do usuário (apenas admin)",
+    dependencies=[Depends(get_current_admin_user)],
+)
+async def update_user(
+    user_id: str,
+    user_data: UserUpdateRequest,
+    current_user: User = Depends(get_current_admin_user),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> UserResponse:
+    """Update user information (admin only)."""
+    try:
+        return await auth_service.update_user(user_id, user_data, current_user)
+    except DomainException as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        )
+
+
+@router.delete(
+    "/users/{user_id}",
+    summary="Excluir Usuário",
+    description="Desativa usuário (soft delete) - apenas admin",
+    dependencies=[Depends(get_current_admin_user)],
+)
+async def delete_user(
+    user_id: str,
+    current_user: User = Depends(get_current_admin_user),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> dict[str, Any]:
+    """Soft delete user (admin only)."""
+    try:
+        success = await auth_service.delete_user(user_id, current_user)
+        return {
+            "success": success,
+            "message": "Usuário excluído com sucesso",
+        }
+    except DomainException as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        )
 
 
 @router.get(

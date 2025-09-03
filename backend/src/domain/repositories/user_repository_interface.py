@@ -119,3 +119,40 @@ class UserRepositoryInterface(ABC):
             Number of active users
         """
         pass
+
+    @abstractmethod
+    async def list_users(self, limit: int = 10, offset: int = 0) -> list[User]:
+        """
+        List users with pagination.
+
+        Args:
+            limit: Maximum number of users to return
+            offset: Number of users to skip
+
+        Returns:
+            List of user entities
+        """
+        pass
+
+    @abstractmethod
+    async def count_total_users(self) -> int:
+        """
+        Count total number of users (active and inactive).
+
+        Returns:
+            Total number of users
+        """
+        pass
+
+    @abstractmethod
+    async def soft_delete(self, user_id: str) -> bool:
+        """
+        Soft delete user by setting is_active to False.
+
+        Args:
+            user_id: User unique identifier
+
+        Returns:
+            True if user was deactivated, False if not found
+        """
+        pass

@@ -23,6 +23,12 @@ export interface RegisterData {
   is_admin?: boolean;
 }
 
+export interface UserUpdateData {
+  name?: string;
+  is_admin?: boolean;
+  is_active?: boolean;
+}
+
 export interface AuthResponse {
   access_token: string;
   token_type: string;
@@ -49,6 +55,19 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   refreshUser: () => Promise<void>;
+}
+
+export interface UserListResponse {
+  users: User[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_next: boolean;
+}
+
+export interface UserListParams {
+  limit?: number;
+  offset?: number;
 }
 
 export interface ApiError {

@@ -12,6 +12,7 @@ import { DriverRoutePage } from './pages/DriverRoutePage';
 import { DriversPage } from './pages/DriversPage';
 import { Login } from './pages/Login';
 import { Setup } from './pages/Setup';
+import { UsersPage } from './pages/UsersPage';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -37,6 +38,8 @@ function Shell() {
         return <CollectorsPage />;
       case 'cars':
         return <CarsPage />;
+      case 'users':
+        return <UsersPage />;
       default:
         return <Dashboard onTabChange={setActiveTab} />;
     }

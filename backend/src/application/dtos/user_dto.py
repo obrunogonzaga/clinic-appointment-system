@@ -108,6 +108,62 @@ class FirstAdminCheckResponse(BaseModel):
     message: str = Field(..., description="Explanation message")
 
 
+class UserUpdateRequest(BaseModel):
+    """DTO for user update request."""
+
+    name: Optional[str] = Field(
+        None, min_length=2, max_length=100, description="User full name"
+    )
+    is_admin: Optional[bool] = Field(
+        None, description="Whether user has admin privileges"
+    )
+    is_active: Optional[bool] = Field(
+        None, description="Whether user account is active"
+    )
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def validate_name(cls, v: Optional[str]) -> Optional[str]:
+        """Normalize name by stripping whitespace."""
+        if isinstance(v, str):
+            return v.strip()
+        return v
+
+    class Config:
+        """Pydantic configuration."""
+
+        str_strip_whitespace = True
+
+
+class UserListRequest(BaseModel):
+    """DTO for user list request with pagination."""
+
+    limit: int = Field(
+        10, ge=1, le=100, description="Number of users per page"
+    )
+    offset: int = Field(0, ge=0, description="Number of users to skip")
+    
+    class Config:
+        """Pydantic configuration."""
+        
+        str_strip_whitespace = True
+
+
+class UserListResponse(BaseModel):
+    """DTO for paginated user list response."""
+
+    users: list[UserResponse] = Field(..., description="List of users")
+    total: int = Field(..., description="Total number of users")
+    limit: int = Field(..., description="Number of users per page")
+    offset: int = Field(..., description="Number of users skipped")
+    has_next: bool = Field(..., description="Whether there are more users")
+
+    class Config:
+        """Pydantic configuration."""
+
+        from_attributes = True
+
+
 class PasswordChangeRequest(BaseModel):
     """DTO for password change request."""
 

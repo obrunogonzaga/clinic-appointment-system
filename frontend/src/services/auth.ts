@@ -9,6 +9,10 @@ import type {
   FirstAdminCheckResponse,
   LoginCredentials,
   RegisterData,
+  UserListResponse,
+  UserListParams,
+  UserUpdateData,
+  User,
 } from '../types/auth';
 
 const API_BASE_URL = window.ENV?.API_URL || import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -99,6 +103,38 @@ export const authService = {
     } catch {
       return false;
     }
+  },
+
+  /**
+   * List all users with pagination (admin only)
+   */
+  async listUsers(params: UserListParams = {}): Promise<UserListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params.limit) searchParams.set('limit', params.limit.toString());
+    if (params.offset) searchParams.set('offset', params.offset.toString());
+    
+    const response = await authApi.get<UserListResponse>(
+      `/users?${searchParams.toString()}`
+    );
+    return response.data;
+  },
+
+  /**
+   * Update user information (admin only)
+   */
+  async updateUser(userId: string, data: UserUpdateData): Promise<User> {
+    const response = await authApi.patch<User>(`/users/${userId}`, data);
+    return response.data;
+  },
+
+  /**
+   * Delete user (soft delete - admin only)
+   */
+  async deleteUser(userId: string): Promise<{ success: boolean; message: string }> {
+    const response = await authApi.delete<{ success: boolean; message: string }>(
+      `/users/${userId}`
+    );
+    return response.data;
   },
 };
 

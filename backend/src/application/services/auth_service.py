@@ -16,6 +16,9 @@ from src.application.dtos.user_dto import (
     TokenResponse,
     UserCreateRequest,
     UserResponse,
+    UserListRequest,
+    UserListResponse,
+    UserUpdateRequest,
 )
 from src.domain.base import DomainException
 from src.domain.entities.user import User
@@ -221,6 +224,130 @@ class AuthService:
             user=self._user_to_response(user),
         )
 
+    async def list_users(self, request: UserListRequest) -> UserListResponse:
+        """
+        List all users with pagination (admin only).
+
+        Args:
+            request: Pagination parameters
+
+        Returns:
+            UserListResponse: Paginated list of users
+        """
+        users = await self.user_repository.list_users(
+            limit=request.limit, offset=request.offset
+        )
+        total = await self.user_repository.count_total_users()
+        
+        has_next = (request.offset + request.limit) < total
+
+        return UserListResponse(
+            users=[self._user_to_response(user) for user in users],
+            total=total,
+            limit=request.limit,
+            offset=request.offset,
+            has_next=has_next,
+        )
+
+    async def update_user(
+        self, user_id: str, request: UserUpdateRequest, current_user: User
+    ) -> UserResponse:
+        """
+        Update user information (admin only).
+
+        Args:
+            user_id: User ID to update
+            request: Update data
+            current_user: User making the request
+
+        Returns:
+            UserResponse: Updated user data
+
+        Raises:
+            DomainException: If update fails or validation errors
+        """
+        # Get user to update
+        user_to_update = await self.user_repository.get_by_id(user_id)
+        if not user_to_update:
+            raise DomainException("Usuário não encontrado")
+
+        # Prevent user from deactivating themselves
+        if user_id == current_user.id and request.is_active is False:
+            raise DomainException(
+                "Você não pode desativar sua própria conta"
+            )
+
+        # Prevent removing admin from themselves
+        if user_id == current_user.id and request.is_admin is False:
+            raise DomainException(
+                "Você não pode remover seus próprios privilégios de administrador"
+            )
+
+        # Check if trying to deactivate or remove admin privileges from last admin
+        if (request.is_active is False or request.is_admin is False) and user_to_update.is_admin:
+            await self._ensure_not_last_admin(user_id)
+
+        # Update user fields
+        update_data = {}
+        if request.name is not None:
+            update_data["name"] = request.name
+        if request.is_admin is not None:
+            update_data["is_admin"] = request.is_admin
+        if request.is_active is not None:
+            update_data["is_active"] = request.is_active
+
+        # Create updated user entity
+        updated_user = User(
+            id=user_to_update.id,
+            email=user_to_update.email,
+            name=update_data.get("name", user_to_update.name),
+            password_hash=user_to_update.password_hash,
+            is_admin=update_data.get("is_admin", user_to_update.is_admin),
+            is_active=update_data.get("is_active", user_to_update.is_active),
+            created_at=user_to_update.created_at,
+        )
+
+        # Save updated user
+        result = await self.user_repository.update(user_id, updated_user)
+        if not result:
+            raise DomainException("Erro ao atualizar usuário")
+
+        return self._user_to_response(result)
+
+    async def delete_user(self, user_id: str, current_user: User) -> bool:
+        """
+        Soft delete user (admin only).
+
+        Args:
+            user_id: User ID to delete
+            current_user: User making the request
+
+        Returns:
+            True if user was deleted successfully
+
+        Raises:
+            DomainException: If deletion fails or validation errors
+        """
+        # Get user to delete
+        user_to_delete = await self.user_repository.get_by_id(user_id)
+        if not user_to_delete:
+            raise DomainException("Usuário não encontrado")
+
+        # Prevent user from deleting themselves
+        if user_id == current_user.id:
+            raise DomainException("Você não pode excluir sua própria conta")
+
+        # Check if trying to delete last admin
+        if user_to_delete.is_admin:
+            await self._ensure_not_last_admin(user_id)
+
+        # Soft delete user
+        success = await self.user_repository.soft_delete(user_id)
+        if not success:
+            raise DomainException("Erro ao excluir usuário")
+
+        return True
+
     def hash_password(self, password: str) -> str:
         """
         Hash password using bcrypt.
@@ -332,6 +459,35 @@ class AuthService:
         created_user = await self.user_repository.create(user)
 
         return self._user_to_response(created_user)
+
+    async def _ensure_not_last_admin(self, user_id: str) -> None:
+        """
+        Ensure we're not removing the last admin from the system.
+
+        Args:
+            user_id: ID of the user being modified
+
+        Raises:
+            DomainException: If this would remove the last admin
+        """
+        # Count active admins excluding the current user
+        total_admins = 0
+        try:
+            # Get all active admin users
+            all_users = await self.user_repository.list_users(limit=1000, offset=0)
+            active_admins = [
+                user for user in all_users 
+                if user.is_admin and user.is_active and user.id != user_id
+            ]
+            total_admins = len(active_admins)
+        except Exception:
+            total_admins = 0
+
+        if total_admins == 0:
+            raise DomainException(
+                "Não é possível remover o último administrador do sistema. "
+                "Deve haver pelo menos um administrador ativo."
+            )
 
     def _user_to_response(self, user: User) -> UserResponse:
         """
