@@ -219,7 +219,7 @@ jobs:
 
     steps:
     - name: Assign reviewers based on changed files
-      uses: actions/github-script@v6
+      uses: actions/github-script@v8
       with:
         script: |
           const { owner, repo, number } = context.issue;
