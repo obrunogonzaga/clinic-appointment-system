@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { CloudArrowUpIcon, DocumentIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
@@ -65,14 +66,24 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploa
           setUploadProgress(0);
         }, 500);
         
-      } catch (error: any) {
+      } catch (error: unknown) {
         setIsUploading(false);
         setUploadProgress(0);
-        
-        const errorMessage = error.response?.data?.detail || 
-                           error.message || 
-                           'Erro ao fazer upload do arquivo';
-        onUploadError(errorMessage);
+
+        const defaultMessage = 'Erro ao fazer upload do arquivo';
+
+        if (isAxiosError<{ detail?: string; message?: string }>(error)) {
+          const axiosMessage = error.response?.data?.detail || error.response?.data?.message;
+          onUploadError(axiosMessage ?? defaultMessage);
+          return;
+        }
+
+        if (error instanceof Error && error.message) {
+          onUploadError(error.message);
+          return;
+        }
+
+        onUploadError(defaultMessage);
       }
     },
     [replaceExisting, onUploadSuccess, onUploadError]

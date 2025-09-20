@@ -5,6 +5,7 @@ import {
     TruckIcon,
     XCircleIcon
 } from '@heroicons/react/24/outline';
+import { isAxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { CarFilters } from '../components/CarFilters';
@@ -18,6 +19,18 @@ import type {
     CarFormData,
     CarUpdateRequest
 } from '../types/car';
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (isAxiosError<{ detail?: string; message?: string }>(error)) {
+    return error.response?.data?.detail || error.response?.data?.message || fallback;
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
+};
 
 export const CarsPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -58,8 +71,8 @@ export const CarsPage: React.FC = () => {
       setIsFormOpen(false);
       setError(null);
     },
-    onError: (error: any) => {
-      setError(error.response?.data?.detail || 'Erro ao criar carro');
+    onError: (error: unknown) => {
+      setError(getErrorMessage(error, 'Erro ao criar carro'));
     }
   });
 
@@ -74,8 +87,8 @@ export const CarsPage: React.FC = () => {
       setSelectedCar(undefined);
       setError(null);
     },
-    onError: (error: any) => {
-      setError(error.response?.data?.detail || 'Erro ao atualizar carro');
+    onError: (error: unknown) => {
+      setError(getErrorMessage(error, 'Erro ao atualizar carro'));
     }
   });
 
@@ -87,8 +100,8 @@ export const CarsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['carStats'] });
       setError(null);
     },
-    onError: (error: any) => {
-      setError(error.response?.data?.detail || 'Erro ao excluir carro');
+    onError: (error: unknown) => {
+      setError(getErrorMessage(error, 'Erro ao excluir carro'));
     }
   });
 

@@ -30,7 +30,7 @@ export const CollectorFilters: React.FC<CollectorFiltersProps> = ({
     
     // Apply filters with debounce effect
     const filteredValues = Object.fromEntries(
-      Object.entries(newFilters).filter(([_, value]) => value !== '')
+      Object.entries(newFilters).filter(([, value]) => value !== '')
     );
     
     onFilterChange(filteredValues);
@@ -163,7 +163,7 @@ export const CollectorFilters: React.FC<CollectorFiltersProps> = ({
       {hasActiveFilters && (
         <div className="mt-4 flex flex-wrap gap-2">
           {Object.entries(filters)
-            .filter(([_, value]) => value !== '')
+            .filter(([, value]) => value !== '')
             .map(([key, value]) => (
               <span
                 key={key}

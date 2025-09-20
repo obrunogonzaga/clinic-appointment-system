@@ -5,6 +5,7 @@ import {
     UserIcon,
     XCircleIcon
 } from '@heroicons/react/24/outline';
+import { isAxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { CollectorFilters } from '../components/CollectorFilters';
@@ -18,6 +19,18 @@ import type {
     CollectorFormData,
     CollectorUpdateRequest
 } from '../types/collector';
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (isAxiosError<{ detail?: string; message?: string }>(error)) {
+    return error.response?.data?.detail || error.response?.data?.message || fallback;
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
+};
 
 export const CollectorsPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -58,8 +71,8 @@ export const CollectorsPage: React.FC = () => {
       setIsFormOpen(false);
       setError(null);
     },
-    onError: (error: any) => {
-      setError(error.response?.data?.detail || 'Erro ao criar coletora');
+    onError: (error: unknown) => {
+      setError(getErrorMessage(error, 'Erro ao criar coletora'));
     }
   });
 
@@ -74,8 +87,8 @@ export const CollectorsPage: React.FC = () => {
       setSelectedCollector(undefined);
       setError(null);
     },
-    onError: (error: any) => {
-      setError(error.response?.data?.detail || 'Erro ao atualizar coletora');
+    onError: (error: unknown) => {
+      setError(getErrorMessage(error, 'Erro ao atualizar coletora'));
     }
   });
 
@@ -86,8 +99,8 @@ export const CollectorsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['collectors'] });
       queryClient.invalidateQueries({ queryKey: ['collectorStats'] });
     },
-    onError: (error: any) => {
-      setError(error.response?.data?.detail || 'Erro ao excluir coletora');
+    onError: (error: unknown) => {
+      setError(getErrorMessage(error, 'Erro ao excluir coletora'));
     }
   });
 
@@ -99,8 +112,8 @@ export const CollectorsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['collectors'] });
       queryClient.invalidateQueries({ queryKey: ['collectorStats'] });
     },
-    onError: (error: any) => {
-      setError(error.response?.data?.detail || 'Erro ao atualizar status');
+    onError: (error: unknown) => {
+      setError(getErrorMessage(error, 'Erro ao atualizar status'));
     }
   });
 

@@ -5,6 +5,7 @@ import {
     UserIcon,
     XCircleIcon
 } from '@heroicons/react/24/outline';
+import { isAxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { DriverFilters } from '../components/DriverFilters';
@@ -18,6 +19,18 @@ import type {
     DriverFormData,
     DriverUpdateRequest
 } from '../types/driver';
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (isAxiosError<{ detail?: string; message?: string }>(error)) {
+    return error.response?.data?.detail || error.response?.data?.message || fallback;
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
+};
 
 export const DriversPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -60,8 +73,8 @@ export const DriversPage: React.FC = () => {
       setIsFormOpen(false);
       setError(null);
     },
-    onError: (error: any) => {
-      setError(error.response?.data?.detail || 'Erro ao criar motorista');
+    onError: (error: unknown) => {
+      setError(getErrorMessage(error, 'Erro ao criar motorista'));
     }
   });
 
@@ -76,8 +89,8 @@ export const DriversPage: React.FC = () => {
       setSelectedDriver(undefined);
       setError(null);
     },
-    onError: (error: any) => {
-      setError(error.response?.data?.detail || 'Erro ao atualizar motorista');
+    onError: (error: unknown) => {
+      setError(getErrorMessage(error, 'Erro ao atualizar motorista'));
     }
   });
 
@@ -88,8 +101,8 @@ export const DriversPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['drivers'] });
       queryClient.invalidateQueries({ queryKey: ['driverStats'] });
     },
-    onError: (error: any) => {
-      setError(error.response?.data?.detail || 'Erro ao excluir motorista');
+    onError: (error: unknown) => {
+      setError(getErrorMessage(error, 'Erro ao excluir motorista'));
     }
   });
 
@@ -101,8 +114,8 @@ export const DriversPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['drivers'] });
       queryClient.invalidateQueries({ queryKey: ['driverStats'] });
     },
-    onError: (error: any) => {
-      setError(error.response?.data?.detail || 'Erro ao atualizar status');
+    onError: (error: unknown) => {
+      setError(getErrorMessage(error, 'Erro ao atualizar status'));
     }
   });
 
@@ -160,7 +173,8 @@ export const DriversPage: React.FC = () => {
       const date = reportDate || new Date().toISOString().slice(0, 10);
       const url = `/#/routes/driver?driverId=${encodeURIComponent(driver.id)}&date=${encodeURIComponent(date)}`;
       window.open(url, '_blank');
-    } catch (err: any) {
+    } catch (error: unknown) {
+      console.error('Erro ao abrir página de rota:', error);
       alert('Erro ao abrir página de rota');
     }
   };
