@@ -21,6 +21,7 @@ const queryClient = new QueryClient({
 
 function Shell() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isNavigationCollapsed, setIsNavigationCollapsed] = useState(false);
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -39,8 +40,13 @@ function Shell() {
   };
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
-      <main className="flex-1 p-8">{renderContent()}</main>
+      <Navigation
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        isCollapsed={isNavigationCollapsed}
+        onToggleCollapse={() => setIsNavigationCollapsed((previous) => !previous)}
+      />
+      <main className="flex-1 p-8 transition-all duration-300">{renderContent()}</main>
     </div>
   );
 }
