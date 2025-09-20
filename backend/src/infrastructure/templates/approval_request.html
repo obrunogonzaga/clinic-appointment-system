@@ -1,0 +1,83 @@
+{% extends "base_email.html" %}
+
+{% block title %}Solicitação de Cadastro Recebida{% endblock %}
+
+{% block header_subtitle %}
+<p style="margin: 10px 0 0 0; font-size: 18px; opacity: 0.9;">Confirmação de recebimento</p>
+{% endblock %}
+
+{% block content %}
+<h2>✅ Solicitação Recebida com Sucesso!</h2>
+
+<p>Olá, {{ user_name }}!</p>
+
+<p>Recebemos sua solicitação de cadastro no Sistema de Coleta e ela está sendo processada por nossa equipe administrativa.</p>
+
+<div class="success-box">
+    <strong>📋 Status da Solicitação</strong>
+    <p style="margin: 5px 0;">Sua solicitação foi recebida e está aguardando análise e aprovação.</p>
+</div>
+
+<p><strong>Informações da sua solicitação:</strong></p>
+<ul>
+    <li><strong>Nome:</strong> {{ user_name }}</li>
+    <li><strong>E-mail:</strong> {{ user_email }}</li>
+    <li><strong>Função solicitada:</strong> {{ user_role }}</li>
+    <li><strong>Data da solicitação:</strong> {{ created_at }}</li>
+    <li><strong>Status atual:</strong> Pendente de Aprovação</li>
+    <li><strong>E-mail verificado:</strong> {{ "Sim ✓" if email_verified else "Não - Verifique seu e-mail" }}</li>
+</ul>
+
+{% if not email_verified %}
+<div class="warning-box">
+    <strong>⚠️ Verificação de E-mail Pendente</strong>
+    <p style="margin: 5px 0;">
+        Para que sua solicitação seja processada, você precisa verificar seu endereço de e-mail. 
+        Verifique sua caixa de entrada para o e-mail de verificação.
+    </p>
+</div>
+{% endif %}
+
+<p><strong>O que acontece agora?</strong></p>
+<ol>
+    <li><strong>Análise:</strong> Um administrador revisará sua solicitação</li>
+    <li><strong>Verificação:</strong> Suas informações serão validadas</li>
+    <li><strong>Decisão:</strong> Você receberá um e-mail com o resultado</li>
+    <li><strong>Acesso:</strong> Se aprovado, poderá acessar o sistema imediatamente</li>
+</ol>
+
+<div class="info-box">
+    <strong>⏱️ Tempo de Processamento</strong>
+    <p style="margin: 5px 0;">
+        Normalmente, as solicitações são processadas em até 48 horas úteis. 
+        Você receberá uma notificação por e-mail assim que houver uma atualização.
+    </p>
+</div>
+
+<p><strong>Enquanto aguarda:</strong></p>
+<ul>
+    <li>Certifique-se de que verificou seu e-mail</li>
+    <li>Adicione nosso domínio à lista de remetentes confiáveis</li>
+    <li>Prepare-se para começar a usar o sistema após a aprovação</li>
+</ul>
+
+{% if admin_contact %}
+<div class="info-box">
+    <strong>💬 Precisa de ajuda?</strong>
+    <p style="margin: 5px 0;">
+        Se você tem alguma pergunta urgente ou precisa acelerar o processo, 
+        entre em contato com: {{ admin_contact }}
+    </p>
+</div>
+{% endif %}
+
+<p style="margin-top: 30px;">
+    Agradecemos seu interesse em fazer parte do Sistema de Coleta. 
+    Entraremos em contato em breve com uma atualização sobre sua solicitação.
+</p>
+
+<p class="text-muted">
+    <small>ID da Solicitação: {{ request_id }}</small><br>
+    <small>Guarde este ID para referência futura.</small>
+</p>
+{% endblock %}

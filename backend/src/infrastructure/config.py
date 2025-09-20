@@ -164,6 +164,76 @@ class Settings(BaseSettings):
         default=None,
         description="Email remetente padrão",
     )
+    smtp_from_name: str = Field(
+        default="Sistema de Coleta",
+        description="Nome do remetente de email",
+    )
+    
+    # Redis settings
+    redis_url: str = Field(
+        default="redis://localhost:6379",
+        description="URL de conexão do Redis",
+    )
+    redis_password: Optional[str] = Field(
+        default=None,
+        description="Senha do Redis",
+    )
+    redis_db: int = Field(
+        default=0,
+        description="Database do Redis",
+    )
+    
+    # Enhanced security settings
+    email_verification_expire_hours: int = Field(
+        default=24,
+        description="Tempo de expiração do token de verificação de email em horas",
+    )
+    password_reset_expire_hours: int = Field(
+        default=1,
+        description="Tempo de expiração do token de redefinição de senha em horas",
+    )
+    max_login_attempts: int = Field(
+        default=5,
+        description="Número máximo de tentativas de login antes do bloqueio",
+    )
+    account_lock_minutes: int = Field(
+        default=30,
+        description="Tempo de bloqueio da conta em minutos",
+    )
+    
+    # Rate limiting settings
+    rate_limit_enabled: bool = Field(
+        default=True,
+        description="Habilitar rate limiting",
+    )
+    login_rate_limit: str = Field(
+        default="5/minute",
+        description="Rate limit para endpoint de login",
+    )
+    register_rate_limit: str = Field(
+        default="3/hour",
+        description="Rate limit para endpoint de registro",
+    )
+    api_rate_limit: str = Field(
+        default="100/minute",
+        description="Rate limit global da API",
+    )
+    verification_rate_limit: str = Field(
+        default="2/hour",
+        description="Rate limit para verificação de email",
+    )
+    
+    # Frontend URL
+    frontend_url: str = Field(
+        default="http://localhost:3000",
+        description="URL do frontend para links em emails",
+    )
+    
+    # Admin notification settings
+    admin_notification_emails: Optional[str] = Field(
+        default=None,
+        description="Emails dos admins para notificações (separados por vírgula)",
+    )
 
     # Admin email whitelist for security
     admin_email_whitelist: Optional[List[str]] = Field(

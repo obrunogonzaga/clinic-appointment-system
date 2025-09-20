@@ -10,6 +10,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.types import ASGIApp
 
@@ -96,6 +97,30 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["X-Request-ID"],
 )
+
+# Add Rate Limiting
+if settings.rate_limit_enabled:
+    # Add SlowAPI state
+    app.state.limiter = container.rate_limiter.get_limiter()
+    
+    # Add rate limit exceeded handler
+    @app.exception_handler(RateLimitExceeded)
+    async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+        """Handle rate limit exceeded errors."""
+        retry_after = exc.detail.split(" ")[-2] if " " in str(exc.detail) else "60"
+        return JSONResponse(
+            status_code=429,
+            content={
+                "success": False,
+                "error": "rate_limit_exceeded", 
+                "message": "Muitas tentativas. Por favor, aguarde antes de tentar novamente.",
+                "retry_after": retry_after
+            },
+            headers={
+                "Retry-After": retry_after,
+                "X-RateLimit-Limit": str(exc.detail),
+            }
+        )
 
 # Add exception handlers
 app.add_exception_handler(DomainException, domain_exception_handler)

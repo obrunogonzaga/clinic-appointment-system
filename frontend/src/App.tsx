@@ -13,6 +13,8 @@ import { DriversPage } from './pages/DriversPage';
 import { Login } from './pages/Login';
 import { Setup } from './pages/Setup';
 import { UsersPage } from './pages/UsersPage';
+import { PublicRegister } from './pages/PublicRegister';
+import { VerifyEmail } from './pages/VerifyEmail';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -62,7 +64,10 @@ function App() {
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<PublicRegister />} />
             <Route path="/setup" element={<Setup />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/verify-email/:token" element={<VerifyEmail />} />
             
             {/* Protected routes */}
             <Route path="/routes/driver" element={

@@ -9,6 +9,8 @@ import type {
   FirstAdminCheckResponse,
   LoginCredentials,
   RegisterData,
+  PublicRegisterData,
+  VerifyEmailResponse,
   UserListResponse,
   UserListParams,
   UserUpdateData,
@@ -63,6 +65,14 @@ export const authService = {
   },
 
   /**
+   * Public self-registration (awaits admin approval)
+   */
+  async publicRegister(data: PublicRegisterData): Promise<User> {
+    const response = await authApi.post<User>('/public-register', data);
+    return response.data;
+  },
+
+  /**
    * Login user with email and password
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
@@ -82,6 +92,24 @@ export const authService = {
    */
   async getCurrentUser(): Promise<AuthStatusResponse> {
     const response = await authApi.get<AuthStatusResponse>('/me');
+    return response.data;
+  },
+
+  /**
+   * Verify email using token sent via email
+   */
+  async verifyEmail(token: string): Promise<VerifyEmailResponse> {
+    const response = await authApi.get<VerifyEmailResponse>(`/verify-email/${token}`);
+    return response.data;
+  },
+
+  /**
+   * Resend email verification to a user
+   */
+  async resendVerification(email: string): Promise<VerifyEmailResponse> {
+    const response = await authApi.post<VerifyEmailResponse>('/resend-verification', {
+      email,
+    });
     return response.data;
   },
 

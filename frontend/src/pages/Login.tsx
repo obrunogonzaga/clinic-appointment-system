@@ -17,6 +17,9 @@ export function Login() {
   });
   const [error, setError] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAccountLocked, setIsAccountLocked] = useState(false);
+  const [awaitingApproval, setAwaitingApproval] = useState(false);
+  const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
 
   // Redirect if already authenticated
   if (isAuthenticated && !isLoading) {
@@ -33,6 +36,15 @@ export function Login() {
     if (error) {
       setError('');
     }
+    if (isAccountLocked) {
+      setIsAccountLocked(false);
+    }
+    if (awaitingApproval) {
+      setAwaitingApproval(false);
+    }
+    if (needsEmailVerification) {
+      setNeedsEmailVerification(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,14 +58,28 @@ export function Login() {
     try {
       setIsSubmitting(true);
       setError('');
+      setIsAccountLocked(false);
+      setAwaitingApproval(false);
+      setNeedsEmailVerification(false);
       
       await login(credentials);
       
       // Redirect to home page on successful login
       navigate('/', { replace: true });
       
-    } catch (err: any) {
-      setError(err.message || 'Erro ao fazer login');
+    } catch (err: unknown) {
+      const apiMessage =
+        typeof err === 'object' && err !== null && 'response' in err
+          ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
+          : undefined;
+      const fallbackMessage = err instanceof Error ? err.message : undefined;
+      const message = apiMessage || fallbackMessage || 'Erro ao fazer login';
+      setError(message);
+
+      const normalized = message.toLowerCase();
+      setIsAccountLocked(normalized.includes('conta bloqueada'));
+      setAwaitingApproval(normalized.includes('aguardando aprovação'));
+      setNeedsEmailVerification(normalized.includes('verifique seu email'));
     } finally {
       setIsSubmitting(false);
     }
@@ -126,6 +152,37 @@ export function Login() {
             </div>
           )}
 
+          {isAccountLocked && (
+            <div className="rounded-md border border-yellow-200 bg-yellow-50 p-4">
+              <p className="text-sm text-yellow-800">
+                Sua conta está temporariamente bloqueada após várias tentativas de acesso. Aguarde alguns minutos e tente novamente ou contate o suporte se precisar de liberação imediata.
+              </p>
+            </div>
+          )}
+
+          {awaitingApproval && (
+            <div className="rounded-md border border-blue-200 bg-blue-50 p-4">
+              <p className="text-sm text-blue-800">
+                Seu cadastro está aguardando aprovação do administrador. Você receberá um email assim que o acesso for liberado.
+              </p>
+            </div>
+          )}
+
+          {needsEmailVerification && (
+            <div className="rounded-md border border-indigo-200 bg-indigo-50 p-4">
+              <p className="text-sm text-indigo-800">
+                Antes de entrar, confirme seu endereço de email. Se não encontrou a mensagem na inbox, cheque a caixa de spam ou solicite um novo envio.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/verify-email')}
+                className="mt-3 inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
+              >
+                Abrir página de verificação
+              </button>
+            </div>
+          )}
+
           <div>
             <button
               type="submit"
@@ -152,6 +209,16 @@ export function Login() {
                 className="font-medium text-blue-600 hover:text-blue-500"
               >
                 Configure o administrador
+              </button>
+            </p>
+            <p className="mt-2 text-sm text-gray-600">
+              É colaborador da clínica?{' '}
+              <button
+                type="button"
+                onClick={() => navigate('/register')}
+                className="font-medium text-blue-600 hover:text-blue-500"
+              >
+                Solicite acesso
               </button>
             </p>
           </div>

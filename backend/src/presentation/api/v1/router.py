@@ -10,11 +10,13 @@ from src.infrastructure.config import get_settings
 
 # Import and include routers
 from src.presentation.api.v1.endpoints import (
+    admin,
     appointments,
     auth,
     cars,
     collectors,
     drivers,
+    notifications,
     reports,
 )
 
@@ -30,6 +32,10 @@ api_v1_router = APIRouter(
 # Include routers
 api_v1_router.include_router(
     auth.router, prefix="/auth", tags=["Authentication"]
+)
+
+api_v1_router.include_router(
+    admin.router, tags=["Admin"]  # No prefix, already has /admin
 )
 
 api_v1_router.include_router(
@@ -50,6 +56,10 @@ api_v1_router.include_router(
     reports.router, prefix="/reports", tags=["Reports"]
 )
 
+api_v1_router.include_router(
+    notifications.router, prefix="/notifications", tags=["Notifications"]
+)
+
 
 @api_v1_router.get("/")
 async def api_v1_root() -> dict[str, Any]:
@@ -61,9 +71,12 @@ async def api_v1_root() -> dict[str, Any]:
             "docs": f"{settings.api_v1_prefix}/docs",
             "health": f"{settings.api_v1_prefix}/health",
             "auth": f"{settings.api_v1_prefix}/auth",
+            "admin": f"{settings.api_v1_prefix}/admin",
             "appointments": f"{settings.api_v1_prefix}/appointments",
             "drivers": f"{settings.api_v1_prefix}/drivers",
             "collectors": f"{settings.api_v1_prefix}/collectors",
             "cars": f"{settings.api_v1_prefix}/cars",
+            "reports": f"{settings.api_v1_prefix}/reports",
+            "notifications": f"{settings.api_v1_prefix}/notifications",
         },
     }

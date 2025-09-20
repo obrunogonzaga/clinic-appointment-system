@@ -21,6 +21,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const normalizeUser = (rawUser?: User | null): User | null => {
+    if (!rawUser) {
+      return null;
+    }
+
+    if (typeof rawUser.is_admin === 'undefined' && rawUser.role) {
+      return {
+        ...rawUser,
+        is_admin: rawUser.role === 'admin',
+      };
+    }
+
+    return rawUser;
+  };
+
   // Initialize authentication state on mount
   useEffect(() => {
     initializeAuth();
@@ -34,13 +49,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const response = await authService.getCurrentUser();
       
       if (response.success && response.user) {
-        setUser(response.user);
+        setUser(normalizeUser(response.user));
       } else {
         setUser(null);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // 401 error is expected when user is not logged in
-      if (error.response?.status === 401) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        (error as { response?: { status?: number } }).response?.status === 401
+      ) {
         setUser(null);
       } else {
         console.error('Failed to initialize auth:', error);
@@ -55,12 +75,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setIsLoading(true);
       const response = await authService.login(credentials);
-      setUser(response.user);
-    } catch (error: any) {
+      setUser(normalizeUser(response.user));
+    } catch (error: unknown) {
       console.error('Login failed:', error);
-      throw new Error(
-        error.response?.data?.detail || 'Falha na autenticação'
-      );
+      const detail =
+        typeof error === 'object' && error !== null && 'response' in error
+          ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail
+          : undefined;
+      throw new Error(detail || (error instanceof Error ? error.message : 'Falha na autenticação'));
     } finally {
       setIsLoading(false);
     }
@@ -85,8 +107,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setIsLoading(true);
       const response = await authService.registerFirstAdmin(data);
-      setUser(response.user);
-    } catch (error: any) {
+      setUser(normalizeUser(response.user));
+    } catch (error: unknown) {
       console.error('Registration failed:', error);
       // Preserve the original error to maintain response data
       throw error;
@@ -100,7 +122,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const response = await authService.getCurrentUser();
       
       if (response.success && response.user) {
-        setUser(response.user);
+        setUser(normalizeUser(response.user));
       } else {
         setUser(null);
       }

@@ -14,6 +14,9 @@ from src.infrastructure.repositories.collector_repository import (
 )
 from src.infrastructure.repositories.driver_repository import DriverRepository
 from src.infrastructure.repositories.user_repository import UserRepository
+from src.infrastructure.repositories.notification_repository import NotificationRepository
+from src.infrastructure.services.redis_service import RedisService
+from src.infrastructure.services.rate_limiter import RateLimiter
 
 
 class Container:
@@ -36,6 +39,9 @@ class Container:
         self._driver_repository: Optional[DriverRepository] = None
         self._collector_repository: Optional[CollectorRepository] = None
         self._user_repository: Optional[UserRepository] = None
+        self._notification_repository: Optional[NotificationRepository] = None
+        self._redis_service: Optional[RedisService] = None
+        self._rate_limiter: Optional[RateLimiter] = None
 
     @property
     def settings(self) -> Settings:
@@ -138,11 +144,54 @@ class Container:
         if self._user_repository is None:
             self._user_repository = UserRepository(self.database)
         return self._user_repository
+    
+    @property
+    def notification_repository(self) -> NotificationRepository:
+        """
+        Get notification repository instance.
+
+        Returns:
+            NotificationRepository: Repository instance
+        """
+        if self._notification_repository is None:
+            self._notification_repository = NotificationRepository(self.database)
+        return self._notification_repository
+    
+    @property
+    def redis_service(self) -> RedisService:
+        """
+        Get Redis service instance.
+
+        Returns:
+            RedisService: Redis service instance
+        """
+        if self._redis_service is None:
+            self._redis_service = RedisService(self.settings)
+        return self._redis_service
+    
+    @property
+    def rate_limiter(self) -> RateLimiter:
+        """
+        Get rate limiter instance.
+
+        Returns:
+            RateLimiter: Rate limiter instance
+        """
+        if self._rate_limiter is None:
+            self._rate_limiter = RateLimiter(self.settings, self.redis_service)
+        return self._rate_limiter
 
     async def startup(self) -> None:
         """
         Initialize resources on application startup.
         """
+        # Initialize Redis service
+        try:
+            await self.redis_service.connect()
+            print(f"✅ Connected to Redis")
+        except Exception as e:
+            print(f"⚠️ Redis connection failed (using in-memory fallback): {e}")
+        
         # Test database connection
         try:
             await self.mongodb_client.admin.command("ping")
@@ -154,6 +203,7 @@ class Container:
             await self.driver_repository.create_indexes()
             await self.collector_repository.create_indexes()
             await self.user_repository.ensure_indexes()
+            await self.notification_repository.create_indexes()
             print("✅ Database indexes created")
         except Exception as e:
             print(f"❌ Failed to connect to MongoDB: {e}")
@@ -163,6 +213,12 @@ class Container:
         """
         Cleanup resources on application shutdown.
         """
+        # Disconnect Redis
+        if self._redis_service is not None:
+            await self._redis_service.disconnect()
+            print("✅ Closed Redis connection")
+        
+        # Close MongoDB
         if self._mongodb_client is not None:
             self._mongodb_client.close()
             print("✅ Closed MongoDB connection")

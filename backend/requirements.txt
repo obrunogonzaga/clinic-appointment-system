@@ -36,6 +36,17 @@ httpx==0.26.0
 # AI/ML Services
 openai>=1.0.0
 
+# Rate Limiting & Caching
+slowapi==0.1.9
+redis==5.0.1
+
+# Enhanced Security
+python-jose[cryptography]==3.3.0
+
+# Email Services
+aiosmtplib==3.0.1
+jinja2==3.1.4
+
 # Development & Testing
 pytest>=8.0.0
 pytest-asyncio>=0.24.0

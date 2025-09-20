@@ -3,7 +3,7 @@ Authentication service for user management and JWT operations.
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Optional, List
 
 import jwt
 from jwt import InvalidTokenError
@@ -19,13 +19,27 @@ from src.application.dtos.user_dto import (
     UserListRequest,
     UserListResponse,
     UserUpdateRequest,
+    PublicUserRegisterRequest,
+    UserEnhancedResponse,
+    PendingUsersResponse,
+    UserApprovalRequest,
+    UserRejectionRequest,
+    DashboardStatsResponse,
+    RefreshTokenRequest,
+    RefreshTokenResponse,
 )
+from src.application.services.notification_manager_service import NotificationManagerService
 from src.domain.base import DomainException
 from src.domain.entities.user import User
+from src.domain.entities.user_enhanced import UserEnhanced
+from src.domain.enums import UserStatus, UserRole
 from src.domain.repositories.user_repository_interface import (
     UserRepositoryInterface,
 )
+from src.domain.services.token_service import TokenService
 from src.infrastructure.config import Settings
+from src.infrastructure.services.email_service import EmailService
+from src.infrastructure.services.redis_service import RedisService
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -40,7 +54,10 @@ class AuthService:
     """
 
     def __init__(
-        self, user_repository: UserRepositoryInterface, settings: Settings
+        self, 
+        user_repository: UserRepositoryInterface, 
+        settings: Settings,
+        notification_manager: Optional[NotificationManagerService] = None
     ):
         """
         Initialize authentication service.
@@ -48,9 +65,14 @@ class AuthService:
         Args:
             user_repository: User repository for data access
             settings: Application settings
+            notification_manager: Optional notification manager service
         """
         self.user_repository = user_repository
         self.settings = settings
+        self.notification_manager = notification_manager
+        self.email_service = EmailService(settings)
+        self.token_service = TokenService(settings)
+        self.redis_service = None  # Will be injected if available
 
     async def check_first_admin_setup(self) -> FirstAdminCheckResponse:
         """
@@ -125,33 +147,109 @@ class AuthService:
 
     async def authenticate_user(self, request: LoginRequest) -> Optional[User]:
         """
-        Authenticate user with email and password.
+        Authenticate user with email and password with security checks.
 
         Args:
             request: Login credentials
 
         Returns:
             User entity if authentication successful, None otherwise
+            
+        Raises:
+            DomainException: For specific authentication failures
         """
         user = await self.user_repository.get_by_email(request.email)
 
-        if not user or not user.is_active:
+        if not user:
             return None
+        
+        # Check if user is enhanced (has status field)
+        if isinstance(user, UserEnhanced):
+            # Check if account is locked due to failed attempts
+            if user.security.get("account_locked_until"):
+                locked_until = user.security["account_locked_until"]
+                if isinstance(locked_until, datetime) and locked_until > datetime.utcnow():
+                    remaining_minutes = int((locked_until - datetime.utcnow()).total_seconds() / 60)
+                    raise DomainException(
+                        f"Conta bloqueada por muitas tentativas falhas. "
+                        f"Tente novamente em {remaining_minutes} minutos."
+                    )
+                else:
+                    # Lock expired, reset it
+                    user.security["account_locked_until"] = None
+                    user.security["failed_login_attempts"] = 0
+            
+            # Check if user is approved
+            if user.status != UserStatus.APROVADO:
+                if user.status == UserStatus.PENDENTE:
+                    raise DomainException("Sua conta ainda está aguardando aprovação do administrador")
+                elif user.status == UserStatus.REJEITADO:
+                    raise DomainException("Sua conta foi rejeitada. Entre em contato com o administrador")
+                elif user.status == UserStatus.SUSPENSO:
+                    raise DomainException("Sua conta está suspensa. Entre em contato com o administrador")
+                else:
+                    raise DomainException("Sua conta não está ativa")
+            
+            # Check if email is verified (make it mandatory)
+            if not user.security.get("email_verified", False):
+                raise DomainException("Por favor, verifique seu email antes de fazer login")
+        else:
+            # Legacy user check (backward compatibility)
+            if not user.is_active:
+                return None
 
-        if not self.verify_password(request.password, user.password_hash):
-            return None
+        # Verify password
+        password_valid = self.verify_password(request.password, user.password_hash)
+        
+        if isinstance(user, UserEnhanced):
+            if not password_valid:
+                # Increment failed attempts
+                failed_attempts = user.security.get("failed_login_attempts", 0) + 1
+                user.security["failed_login_attempts"] = failed_attempts
+                user.security["last_failed_attempt"] = datetime.utcnow()
+                
+                # Lock account if max attempts reached
+                if failed_attempts >= self.settings.max_login_attempts:
+                    lock_until = datetime.utcnow() + timedelta(minutes=self.settings.account_lock_minutes)
+                    user.security["account_locked_until"] = lock_until
+                    
+                    # Update user in database
+                    await self.user_repository.update(user.id, user)
+                    
+                    # Send email notification about account lock
+                    await self.email_service.send_account_locked_email(
+                        user, failed_attempts
+                    )
+                    
+                    raise DomainException(
+                        f"Conta bloqueada após {failed_attempts} tentativas falhas. "
+                        f"Tente novamente em {self.settings.account_lock_minutes} minutos."
+                    )
+                else:
+                    # Update failed attempts in database
+                    await self.user_repository.update(user.id, user)
+                    return None
+            else:
+                # Reset failed attempts on successful password verification
+                if user.security.get("failed_login_attempts", 0) > 0:
+                    user.security["failed_login_attempts"] = 0
+                    user.security["last_successful_login"] = datetime.utcnow()
+                    await self.user_repository.update(user.id, user)
+        else:
+            if not password_valid:
+                return None
 
         return user
 
     async def login(self, request: LoginRequest) -> TokenResponse:
         """
-        Login user and generate JWT token.
+        Login user and generate JWT and refresh tokens.
 
         Args:
             request: Login credentials
 
         Returns:
-            TokenResponse: JWT token and user data
+            TokenResponse: JWT token, refresh token and user data
 
         Raises:
             DomainException: If login fails
@@ -161,15 +259,49 @@ class AuthService:
         if not user:
             raise DomainException("Email ou senha incorretos")
 
-        # Generate access token
-        access_token, expires_at = self._create_access_token(user)
+        # Generate access token using TokenService
+        access_token, expires_at = self.token_service.create_access_token(
+            user_id=user.id,
+            user_email=user.email,
+            is_admin=user.is_admin if hasattr(user, 'is_admin') else False,
+            additional_claims={
+                "role": user.role.value if isinstance(user, UserEnhanced) else "colaborador"
+            }
+        )
+        
+        # Generate refresh token for enhanced users
+        refresh_token = None
+        if isinstance(user, UserEnhanced):
+            refresh_token_data = self.token_service.create_refresh_token(
+                user_id=user.id,
+                token_family=user.security.get("refresh_token_family")
+            )
+            refresh_token = refresh_token_data[0]
+            refresh_expires = refresh_token_data[1]
+            family_id = refresh_token_data[2]
+            
+            # Store hashed refresh token in user
+            hashed_refresh = self.token_service._hash_token(refresh_token)
+            user.security["refresh_token"] = hashed_refresh
+            user.security["refresh_token_expires"] = refresh_expires
+            user.security["refresh_token_family"] = family_id
+            
+            # Update user in database
+            await self.user_repository.update(user.id, user)
 
-        return TokenResponse(
+        # Create response with proper user type
+        response = TokenResponse(
             access_token=access_token,
             token_type="bearer",
             expires_at=expires_at,
             user=self._user_to_response(user),
         )
+        
+        # Add refresh token to response if available
+        if refresh_token:
+            response.refresh_token = refresh_token
+            
+        return response
 
     async def get_current_user(self, token: str) -> Optional[User]:
         """
@@ -218,12 +350,93 @@ class AuthService:
                 success=False, message="Usuário não encontrado", user=None
             )
 
-        return AuthStatusResponse(
-            success=True,
-            message="Perfil do usuário carregado com sucesso",
-            user=self._user_to_response(user),
-        )
+        # Return enhanced response if user is UserEnhanced
+        if isinstance(user, UserEnhanced):
+            return AuthStatusResponse(
+                success=True,
+                message="Perfil do usuário carregado com sucesso",
+                user=self._user_to_enhanced_response(user),
+            )
+        else:
+            # Legacy response for backward compatibility
+            return AuthStatusResponse(
+                success=True,
+                message="Perfil do usuário carregado com sucesso",
+                user=self._user_to_response(user),
+            )
 
+    async def list_users_by_status(
+        self, status: UserStatus, limit: int = 10, offset: int = 0
+    ) -> UserListResponse:
+        """
+        List users filtered by status.
+        
+        Args:
+            status: User status to filter by
+            limit: Maximum number of users to return
+            offset: Number of users to skip
+            
+        Returns:
+            UserListResponse: Filtered list of users
+        """
+        users = await self.user_repository.get_users_by_status(status, limit, offset)
+        total = await self.user_repository.count_users_by_status(status)
+        
+        has_next = (offset + limit) < total
+        
+        # Convert to appropriate response type
+        response_users = []
+        for user in users:
+            if isinstance(user, UserEnhanced):
+                response_users.append(self._user_to_enhanced_response(user))
+            else:
+                response_users.append(self._user_to_response(user))
+        
+        return UserListResponse(
+            users=response_users,
+            total=total,
+            limit=limit,
+            offset=offset,
+            has_next=has_next,
+        )
+    
+    async def list_users_by_role(
+        self, role: UserRole, limit: int = 10, offset: int = 0
+    ) -> UserListResponse:
+        """
+        List users filtered by role.
+        
+        Args:
+            role: User role to filter by
+            limit: Maximum number of users to return
+            offset: Number of users to skip
+            
+        Returns:
+            UserListResponse: Filtered list of users
+        """
+        users = await self.user_repository.get_users_by_role(role, limit, offset)
+        
+        # Count users with this role
+        total = len(await self.user_repository.get_users_by_role(role, limit=1000, offset=0))
+        
+        has_next = (offset + limit) < total
+        
+        # Convert to appropriate response type
+        response_users = []
+        for user in users:
+            if isinstance(user, UserEnhanced):
+                response_users.append(self._user_to_enhanced_response(user))
+            else:
+                response_users.append(self._user_to_response(user))
+        
+        return UserListResponse(
+            users=response_users,
+            total=total,
+            limit=limit,
+            offset=offset,
+            has_next=has_next,
+        )
+    
     async def list_users(self, request: UserListRequest) -> UserListResponse:
         """
         List all users with pagination (admin only).
@@ -507,3 +720,448 @@ class AuthService:
             is_active=user.is_active,
             created_at=user.created_at,
         )
+    
+    def _user_to_enhanced_response(self, user: UserEnhanced) -> UserEnhancedResponse:
+        """
+        Convert UserEnhanced entity to UserEnhancedResponse DTO.
+        
+        Args:
+            user: UserEnhanced entity
+            
+        Returns:
+            UserEnhancedResponse: Enhanced user response DTO
+        """
+        return UserEnhancedResponse(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            role=user.role,
+            status=user.status,
+            phone=user.metadata.phone,
+            department=user.metadata.department,
+            email_verified=user.security.email_verified,
+            created_at=user.created_at,
+            created_by=user.created_by,
+            approved_by=user.approval.approved_by,
+            approved_at=user.approval.approved_at,
+            rejected_by=user.approval.rejected_by,
+            rejected_at=user.approval.rejected_at,
+            rejection_reason=user.approval.rejection_reason,
+        )
+    
+    async def register_public_user(
+        self, request: PublicUserRegisterRequest
+    ) -> UserEnhancedResponse:
+        """
+        Register a new user through public registration (self-service).
+        Creates user with PENDENTE status awaiting admin approval.
+        
+        Args:
+            request: Public registration data
+            
+        Returns:
+            UserEnhancedResponse: Created user data
+            
+        Raises:
+            DomainException: If registration fails
+        """
+        # Check if user already exists
+        if await self.user_repository.exists_by_email(request.email):
+            raise DomainException(
+                f"Usuário com email '{request.email}' já existe"
+            )
+        
+        # Create UserEnhanced entity with PENDENTE status
+        user = UserEnhanced(
+            email=request.email,
+            name=request.name,
+            password_hash=self.hash_password(request.password),
+            role=request.role,
+            status=UserStatus.PENDENTE,
+            created_at=datetime.now(timezone.utc),
+            created_by=None,  # Self-registered
+        )
+
+        # Populate metadata/security using model fields to avoid dict mutation issues
+        user.metadata.phone = request.phone
+        user.metadata.cpf = request.cpf
+        user.metadata.department = request.department
+        if request.role == UserRole.MOTORISTA:
+            user.metadata.drivers_license = request.drivers_license
+
+        user.security.email_verified = False  # Requires verification
+        
+        # Generate email verification token using TokenService
+        token, hashed_token, expires_at = self.token_service.generate_email_verification_token()
+        
+        # Update user with verification token
+        user.security.email_verification_token = hashed_token
+        user.security.email_verification_expires = expires_at
+        
+        # Save user
+        created_user = await self.user_repository.create(user)
+        
+        # Send email verification using real EmailService
+        await self.email_service.send_verification_email(
+            created_user, token  # Send plain token to user
+        )
+        
+        # Create notification for pending user approval (if notification manager available)
+        if self.notification_manager:
+            await self.notification_manager.create_user_pending_notification(
+                created_user
+            )
+        
+        # Send email to admins
+        # Get admin emails from settings (from whitelist)
+        admin_emails = self.settings.admin_email_whitelist if hasattr(self.settings, 'admin_email_whitelist') else []
+        if admin_emails:
+            await self.email_service.send_admin_notification(
+                created_user, admin_emails
+            )
+        
+        return self._user_to_enhanced_response(created_user)
+    
+    async def refresh_access_token(
+        self, request: RefreshTokenRequest
+    ) -> RefreshTokenResponse:
+        """
+        Refresh access token using refresh token.
+        
+        Args:
+            request: Refresh token request
+            
+        Returns:
+            RefreshTokenResponse: New tokens
+            
+        Raises:
+            DomainException: If refresh fails
+        """
+        # Verify refresh token
+        claims = self.token_service.verify_refresh_token(request.refresh_token)
+        if not claims:
+            raise DomainException("Token de atualização inválido ou expirado")
+        
+        user_id = claims.get("sub")
+        if not user_id:
+            raise DomainException("Token de atualização inválido")
+        
+        # Get user
+        user = await self.user_repository.get_by_id(user_id)
+        if not user:
+            raise DomainException("Usuário não encontrado")
+        
+        # Check if user is enhanced and has refresh token
+        if isinstance(user, UserEnhanced):
+            stored_refresh = user.security.get("refresh_token")
+            if not stored_refresh:
+                raise DomainException("Token de atualização não encontrado")
+            
+            # Verify token matches stored hash
+            token_hash = self.token_service._hash_token(request.refresh_token)
+            if token_hash != stored_refresh:
+                # Possible token theft - invalidate all tokens
+                user.security["refresh_token"] = None
+                user.security["refresh_token_expires"] = None
+                user.security["refresh_token_family"] = None
+                await self.user_repository.update(user.id, user)
+                raise DomainException("Token de atualização inválido - possível comprometimento")
+            
+            # Generate new access token
+            access_token, expires_at = self.token_service.create_access_token(
+                user_id=user.id,
+                user_email=user.email,
+                is_admin=user.is_admin if hasattr(user, 'is_admin') else False,
+                additional_claims={
+                    "role": user.role.value if isinstance(user, UserEnhanced) else "colaborador"
+                }
+            )
+            
+            # Rotate refresh token (best practice)
+            new_refresh_data = self.token_service.rotate_refresh_token(
+                request.refresh_token, user.id
+            )
+            
+            if new_refresh_data:
+                new_refresh_token = new_refresh_data[0]
+                refresh_expires = new_refresh_data[1]
+                family_id = new_refresh_data[2]
+                
+                # Update stored refresh token
+                hashed_refresh = self.token_service._hash_token(new_refresh_token)
+                user.security["refresh_token"] = hashed_refresh
+                user.security["refresh_token_expires"] = refresh_expires
+                user.security["refresh_token_family"] = family_id
+                await self.user_repository.update(user.id, user)
+                
+                return RefreshTokenResponse(
+                    access_token=access_token,
+                    token_type="bearer",
+                    expires_at=expires_at,
+                    refresh_token=new_refresh_token,
+                    refresh_expires_at=refresh_expires
+                )
+        
+        raise DomainException("Token de atualização não suportado para usuário legado")
+    
+    async def verify_email(self, token: str) -> bool:
+        """
+        Verify user email with token.
+        
+        Args:
+            token: Verification token
+            
+        Returns:
+            True if verified successfully
+            
+        Raises:
+            DomainException: If verification fails
+        """
+        # Find user by token
+        user = await self.user_repository.get_by_email_verification_token(token)
+        if not user:
+            raise DomainException("Token de verificação inválido ou expirado")
+        
+        if isinstance(user, UserEnhanced):
+            # Verify token hasn't expired
+            expires = user.security.get("email_verification_expires")
+            if expires and expires < datetime.utcnow():
+                raise DomainException("Token de verificação expirado")
+            
+            # Verify token hash matches
+            stored_hash = user.security.get("email_verification_token")
+            if not stored_hash:
+                raise DomainException("Token de verificação não encontrado")
+            
+            if not self.token_service.verify_email_token(
+                token, stored_hash, expires
+            ):
+                raise DomainException("Token de verificação inválido")
+            
+            # Mark email as verified
+            user.security["email_verified"] = True
+            user.security["email_verified_at"] = datetime.utcnow()
+            user.security["email_verification_token"] = None
+            user.security["email_verification_expires"] = None
+            
+            await self.user_repository.update(user.id, user)
+            return True
+        
+        raise DomainException("Verificação não suportada para usuário legado")
+    
+    async def get_pending_users(
+        self, limit: int = 10, offset: int = 0
+    ) -> PendingUsersResponse:
+        """
+        Get list of users pending approval.
+        
+        Args:
+            limit: Maximum number of users to return
+            offset: Number of users to skip
+            
+        Returns:
+            PendingUsersResponse: List of pending users
+        """
+        users = await self.user_repository.get_pending_users(limit, offset)
+        total = await self.user_repository.count_pending_users()
+        
+        has_next = (offset + limit) < total
+        
+        enhanced_users = []
+        for user in users:
+            if isinstance(user, UserEnhanced):
+                enhanced_users.append(self._user_to_enhanced_response(user))
+        
+        return PendingUsersResponse(
+            users=enhanced_users,
+            total=total,
+            limit=limit,
+            offset=offset,
+            has_next=has_next,
+        )
+    
+    async def approve_user(
+        self, user_id: str, admin_user: User, request: UserApprovalRequest
+    ) -> UserEnhancedResponse:
+        """
+        Approve a pending user.
+        
+        Args:
+            user_id: ID of user to approve
+            admin_user: Admin performing the approval
+            request: Approval request data
+            
+        Returns:
+            UserEnhancedResponse: Approved user data
+            
+        Raises:
+            DomainException: If approval fails
+        """
+        # Approve user in repository
+        approved_user = await self.user_repository.approve_user(
+            user_id, admin_user.id
+        )
+        
+        if not approved_user:
+            raise DomainException("Usuário não encontrado ou já foi processado")
+        
+        # Send approval notification to user
+        if isinstance(approved_user, UserEnhanced):
+            # Send email notification
+            await self.email_service.send_welcome_email(approved_user)
+            
+            # Create in-app notification if notification manager available
+            if self.notification_manager:
+                from src.application.dtos.notification_dto import CreateNotificationRequest
+                from src.domain.entities.notification import NotificationType, NotificationPriority
+                
+                notification_request = CreateNotificationRequest(
+                    type=NotificationType.USER_APPROVED,
+                    title="Conta Aprovada",
+                    message=f"Sua conta foi aprovada por {admin_user.name}. Você já pode fazer login no sistema.",
+                    user_id=approved_user.id,
+                    source_user_id=admin_user.id,
+                    priority=NotificationPriority.MEDIUM,
+                    action_url="/login",
+                    data={
+                        "approved_by": admin_user.name,
+                        "approved_at": datetime.utcnow().isoformat()
+                    }
+                )
+                await self.notification_manager.create_notification(notification_request)
+            
+            return self._user_to_enhanced_response(approved_user)
+        
+        raise DomainException("Erro ao aprovar usuário")
+    
+    async def reject_user(
+        self, user_id: str, admin_user: User, request: UserRejectionRequest
+    ) -> UserEnhancedResponse:
+        """
+        Reject a pending user.
+        
+        Args:
+            user_id: ID of user to reject
+            admin_user: Admin performing the rejection
+            request: Rejection request data
+            
+        Returns:
+            UserEnhancedResponse: Rejected user data
+            
+        Raises:
+            DomainException: If rejection fails
+        """
+        # Reject user in repository
+        rejected_user = await self.user_repository.reject_user(
+            user_id, admin_user.id, request.reason
+        )
+        
+        if not rejected_user:
+            raise DomainException("Usuário não encontrado ou já foi processado")
+        
+        # Send rejection notification to user
+        if isinstance(rejected_user, UserEnhanced):
+            # Send email notification
+            await self.email_service.send_rejection_email(
+                rejected_user, request.reason
+            )
+            
+            # Create in-app notification if notification manager available
+            if self.notification_manager:
+                from src.application.dtos.notification_dto import CreateNotificationRequest
+                from src.domain.entities.notification import NotificationType, NotificationPriority
+                
+                notification_request = CreateNotificationRequest(
+                    type=NotificationType.USER_REJECTED,
+                    title="Solicitação Rejeitada",
+                    message=f"Sua solicitação de cadastro foi rejeitada. Motivo: {request.reason}",
+                    user_id=rejected_user.id,
+                    source_user_id=admin_user.id,
+                    priority=NotificationPriority.HIGH,
+                    data={
+                        "rejected_by": admin_user.name,
+                        "rejected_at": datetime.utcnow().isoformat(),
+                        "reason": request.reason
+                    }
+                )
+                await self.notification_manager.create_notification(notification_request)
+            
+            return self._user_to_enhanced_response(rejected_user)
+        
+        raise DomainException("Erro ao rejeitar usuário")
+    
+    async def get_dashboard_stats(self) -> DashboardStatsResponse:
+        """
+        Get dashboard statistics for admin.
+        
+        Returns:
+            DashboardStatsResponse: Dashboard statistics
+        """
+        # Get counts by status
+        total_users = await self.user_repository.count_total_users()
+        pending_users = await self.user_repository.count_pending_users()
+        approved_users = await self.user_repository.count_users_by_status(UserStatus.APROVADO)
+        rejected_users = await self.user_repository.count_users_by_status(UserStatus.REJEITADO)
+        suspended_users = await self.user_repository.count_users_by_status(UserStatus.SUSPENSO)
+        
+        # Get users by role
+        users_by_role = {}
+        for role in UserRole:
+            count = 0
+            role_users = await self.user_repository.get_users_by_role(role, limit=1000)
+            users_by_role[role.value] = len(role_users)
+        
+        # Get recent registrations and pending approvals
+        recent_users = await self.user_repository.list_users(limit=5, offset=0)
+        pending_list = await self.user_repository.get_pending_users(limit=10, offset=0)
+        
+        recent_registrations = []
+        for user in recent_users:
+            if isinstance(user, UserEnhanced):
+                recent_registrations.append(self._user_to_enhanced_response(user))
+        
+        pending_approvals = []
+        for user in pending_list:
+            if isinstance(user, UserEnhanced):
+                pending_approvals.append(self._user_to_enhanced_response(user))
+        
+        return DashboardStatsResponse(
+            total_users=total_users,
+            pending_users=pending_users,
+            approved_users=approved_users,
+            rejected_users=rejected_users,
+            suspended_users=suspended_users,
+            users_by_role=users_by_role,
+            recent_registrations=recent_registrations,
+            pending_approvals=pending_approvals,
+        )
+    
+    async def logout(self, user_id: str) -> bool:
+        """
+        Logout user by revoking refresh token (AE-045).
+        
+        Args:
+            user_id: User ID to logout
+            
+        Returns:
+            bool: True if logout successful
+        """
+        try:
+            # Get user
+            user = await self.user_repository.get_by_id(user_id)
+            if not user:
+                return False
+            
+            # Clear refresh token and related fields
+            user.security["refresh_token"] = None
+            user.security["refresh_token_expires"] = None
+            user.security["refresh_token_family"] = None
+            
+            # Update user in database
+            await self.user_repository.update(user_id, user)
+            
+            return True
+            
+        except Exception:
+            # Don't throw error on logout failure
+            return False

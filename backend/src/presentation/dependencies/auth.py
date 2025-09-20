@@ -9,8 +9,10 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from src.application.services.auth_service import AuthService
 from src.domain.entities.user import User
-from src.infrastructure.container import get_app_settings, get_user_repository
+from src.infrastructure.container import container, get_app_settings, get_user_repository
 from src.infrastructure.repositories.user_repository import UserRepository
+from src.presentation.dependencies.services import get_notification_manager_service
+from src.application.services.notification_manager_service import NotificationManagerService
 
 # HTTP Bearer token scheme (for API documentation)
 security = HTTPBearer(auto_error=False)
@@ -19,6 +21,7 @@ security = HTTPBearer(auto_error=False)
 async def get_auth_service(
     user_repository: UserRepository = Depends(get_user_repository),
     settings=Depends(get_app_settings),
+    notification_manager: NotificationManagerService = Depends(get_notification_manager_service),
 ) -> AuthService:
     """
     Dependency to get authentication service instance.
@@ -26,7 +29,7 @@ async def get_auth_service(
     Returns:
         AuthService: Authentication service
     """
-    return AuthService(user_repository, settings)
+    return AuthService(user_repository, settings, notification_manager)
 
 
 async def get_token_from_cookie_or_header(
