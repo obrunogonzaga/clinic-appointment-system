@@ -417,7 +417,15 @@ class EmailService:
             logger.error(f"Failed to render template {template_name}: {e}")
             # Return simple fallback
             return f"<html><body><p>{context.get('message', 'Email content')}</p></body></html>"
-            
+
+    def _serialize_role(self, role: Any) -> str:
+        """Normalize role enumeration/string for template context."""
+        if hasattr(role, "value"):
+            return str(role.value)
+        if isinstance(role, str) and role:
+            return role
+        return "colaborador"
+
     async def send_verification_email(
         self, 
         user: UserEnhanced, 
@@ -463,7 +471,7 @@ class EmailService:
             title='Bem-vindo ao Sistema!',
             user_name=user.name,
             user_email=user.email,
-            user_role=user.role.value,
+            user_role=self._serialize_role(user.role),
             login_url=f"{self.frontend_url}/login"
         )
         
@@ -575,11 +583,7 @@ class EmailService:
         Returns:
             True if sent successfully
         """
-        role_value = (
-            user.role.value
-            if hasattr(user.role, "value")
-            else str(user.role)
-        )
+        role_value = self._serialize_role(user.role)
 
         html_content = self.render_template(
             'admin_new_user.html',

@@ -102,9 +102,38 @@ export interface UserListResponse {
 export interface UserListParams {
   limit?: number;
   offset?: number;
+  status?: UserStatus;
+  role?: UserRole;
 }
 
 export interface ApiError {
   detail: string;
   status?: number;
+}
+
+export interface PendingUsersResponse {
+  users: User[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_next: boolean;
+}
+
+export interface UserApprovalPayload {
+  message?: string;
+}
+
+export interface UserRejectionPayload {
+  reason: string;
+}
+
+export interface AdminDashboardStats {
+  total_users: number;
+  pending_users: number;
+  approved_users: number;
+  rejected_users: number;
+  suspended_users: number;
+  users_by_role: Record<string, number>;
+  recent_registrations: User[];
+  pending_approvals: User[];
 }

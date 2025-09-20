@@ -4,17 +4,21 @@
 
 import axios from 'axios';
 import type {
+  AdminDashboardStats,
   AuthResponse,
   AuthStatusResponse,
   FirstAdminCheckResponse,
   LoginCredentials,
-  RegisterData,
+  PendingUsersResponse,
   PublicRegisterData,
-  VerifyEmailResponse,
-  UserListResponse,
-  UserListParams,
-  UserUpdateData,
+  RegisterData,
   User,
+  UserApprovalPayload,
+  UserListParams,
+  UserListResponse,
+  UserRejectionPayload,
+  UserUpdateData,
+  VerifyEmailResponse,
 } from '../types/auth';
 
 const API_BASE_URL = window.ENV?.API_URL || import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -29,12 +33,34 @@ const authApi = axios.create({
   },
 });
 
+const adminApi = axios.create({
+  baseURL: `${API_BASE_URL}/api/v1/admin`,
+  timeout: 10000,
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
 // Response interceptor to handle authentication errors
 authApi.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       // Only redirect if not already on auth pages
+      const currentPath = window.location.pathname;
+      if (!currentPath.includes('/login') && !currentPath.includes('/setup')) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+adminApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
       const currentPath = window.location.pathname;
       if (!currentPath.includes('/login') && !currentPath.includes('/setup')) {
         window.location.href = '/login';
@@ -140,16 +166,19 @@ export const authService = {
     const searchParams = new URLSearchParams();
     if (params.limit) searchParams.set('limit', params.limit.toString());
     if (params.offset) searchParams.set('offset', params.offset.toString());
-    
+    if (params.status) searchParams.set('status', params.status);
+    if (params.role) searchParams.set('role', params.role);
+
+    const queryString = searchParams.toString();
     const response = await authApi.get<UserListResponse>(
-      `/users?${searchParams.toString()}`
+      queryString ? `/users?${queryString}` : '/users'
     );
     return response.data;
   },
 
   /**
    * Update user information (admin only)
-   */
+  */
   async updateUser(userId: string, data: UserUpdateData): Promise<User> {
     const response = await authApi.patch<User>(`/users/${userId}`, data);
     return response.data;
@@ -162,6 +191,44 @@ export const authService = {
     const response = await authApi.delete<{ success: boolean; message: string }>(
       `/users/${userId}`
     );
+    return response.data;
+  },
+
+  /**
+   * Fetch admin dashboard statistics
+   */
+  async getAdminDashboardStats(): Promise<AdminDashboardStats> {
+    const response = await adminApi.get<AdminDashboardStats>('/dashboard/stats');
+    return response.data;
+  },
+
+  /**
+   * Fetch pending users awaiting approval
+   */
+  async getPendingUsers(params: { limit?: number; offset?: number } = {}): Promise<PendingUsersResponse> {
+    const searchParams = new URLSearchParams();
+    if (params.limit) searchParams.set('limit', params.limit.toString());
+    if (params.offset) searchParams.set('offset', params.offset.toString());
+    const queryString = searchParams.toString();
+    const response = await adminApi.get<PendingUsersResponse>(
+      queryString ? `/users/pending?${queryString}` : '/users/pending'
+    );
+    return response.data;
+  },
+
+  /**
+   * Approve a pending user
+   */
+  async approvePendingUser(userId: string, payload: UserApprovalPayload = {}): Promise<User> {
+    const response = await adminApi.post<User>(`/users/${userId}/approve`, payload);
+    return response.data;
+  },
+
+  /**
+   * Reject a pending user with reason
+   */
+  async rejectPendingUser(userId: string, payload: UserRejectionPayload): Promise<User> {
+    const response = await adminApi.post<User>(`/users/${userId}/reject`, payload);
     return response.data;
   },
 };

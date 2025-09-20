@@ -4,7 +4,7 @@
 **Objetivo**: Implementar sistema robusto de autenticação com aprovação de usuários por administradores  
 **Início**: 2025-01-12  
 **Prazo Estimado**: 12 dias úteis  
-**Status Geral**: ✅ Backend Completo (Frontend Pendente)
+**Status Geral**: ✅ Backend Completo · 🟡 Frontend em Progresso (Fase 5.1 entregue)
 
 ## 🎯 Objetivos Principais
 - [x] Sistema de auto-cadastro com aprovação administrativa ✅
@@ -21,9 +21,9 @@
 | Fase 2: Endpoints de Aprovação | 100% | ✅ Completo |
 | Fase 3: Segurança | 100% | ✅ Completo |
 | Fase 4: Notificações | 100% | ✅ Completo |
-| Fase 5: Frontend | 0% | 🔴 Não Iniciado |
+| Fase 5: Frontend | 80% | 🟡 Em Progresso |
 
-**Progresso Total**: ⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛ 100% (Backend Completo)
+**Progresso Total**: ⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛ 96% (Frontend em andamento)
 
 ## 📝 Detalhamento das Tarefas
 
@@ -132,18 +132,18 @@
 
 ### Fase 5: Frontend Integration (3 dias) - Status: 🔴 Não Iniciado
 
-#### 5.1 Telas de Autenticação
-- [ ] **AE-058**: Tela de registro público com seleção de role
-- [ ] **AE-059**: Mensagem de "aguardando aprovação"
-- [ ] **AE-060**: Tela de verificação de email
-- [ ] **AE-061**: Indicador de conta bloqueada
+#### 5.1 Telas de Autenticação ✅ CONCLUÍDO
+- [x] **AE-058**: Tela de registro público com seleção de role (React + React Hook Form)
+- [x] **AE-059**: Mensagem de "aguardando aprovação" com instruções de próximos passos
+- [x] **AE-060**: Tela de verificação de email com reenviar token
+- [x] **AE-061**: Indicador de conta bloqueada/pendente diretamente na tela de login
 
-#### 5.2 Painel Administrativo
-- [ ] **AE-062**: Dashboard com cards de estatísticas
-- [ ] **AE-063**: Lista de usuários pendentes com ações
-- [ ] **AE-064**: Modal de aprovação/rejeição
-- [ ] **AE-065**: Filtros por role, status e data
-- [ ] **AE-066**: Exportação de relatório de usuários
+#### 5.2 Painel Administrativo ✅ CONCLUÍDO
+- [x] **AE-062**: Dashboard com cards de estatísticas e distribuição por perfil
+- [x] **AE-063**: Lista de usuários pendentes com ações e paginação dedicada
+- [x] **AE-064**: Modais de aprovação/rejeição com mensagens personalizadas
+- [x] **AE-065**: Filtros avançados por role, status e intervalo de datas
+- [x] **AE-066**: Exportação de relatório CSV respeitando filtros ativos
 
 #### 5.3 Melhorias UX
 - [ ] **AE-067**: Loading states durante aprovação
@@ -258,7 +258,21 @@ API_RATE_LIMIT=100/minute
     - Notificações automáticas no registro
     - Notificações em aprovação/rejeição
     - Notificações paralelas aos emails
-  
+
+### 2025-09-20 - FASE 5.1 FINALIZADA E AJUSTES DE LOGIN
+- ✅ Telas públicas implementadas (AE-058 a AE-060): formulário de auto-cadastro com seleção de role, mensagens de aprovação pendente e fluxo de verificação de email com reenvio de token.
+- ✅ Ajustes na tela de login (AE-061) exibindo feedback para aprovação pendente, conta bloqueada e email não verificado.
+- ✅ Correção no backend para geração de tokens JWT com timezone UTC, evitando erro 500 ao definir cookies de sessão.
+- ✅ Ajustes no EmailService para lidar com roles serializadas e normalização de enums minúsculos.
+- ✅ Execução de testes manuais via `curl` para `/auth/public-register` e `/auth/login`, confirmando cabeçalhos CORS e emissão de cookies.
+
+### 2025-09-20 (Noite) - FASE 5.2 FINALIZADA
+- ✅ Dashboard administrativo com cards resumindo totais, pendentes, aprovados, rejeitados e suspensos, além de distribuição por perfil e últimos cadastros.
+- ✅ Painel de pendências com lista interativa, paginação e ações de aprovar/rejeitar usando modais dedicados.
+- ✅ Fluxo de aprovação/rejeição integrado aos endpoints admin com feedback visual e toasts.
+- ✅ Filtros avançados por status, role e intervalo de datas aplicados ao gerenciamento de usuários.
+- ✅ Exportação CSV alinhada aos filtros ativos para facilitar auditoria.
+
   - **Correções Técnicas Aplicadas**:
     - Fixed: ImportError com get_role_permissions no enums
     - Fixed: NameError com UserEnhancedResponse (forward references)
@@ -445,7 +459,7 @@ API_RATE_LIMIT=100/minute
 
 ---
 
-**Última Atualização**: 2025-01-19 17:30
+**Última Atualização**: 2025-09-20 22:10
 **Responsável**: Development Team  
 **Branch**: `feature/authentication-system`  
 **Status**: ✅ Backend 100% Completo - Pronto para Frontend

@@ -1,5 +1,5 @@
 // Removed date-fns dependency - using native Date formatting
-import { PencilIcon, TrashIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Table } from '../ui/Table';
 import type { Column, SortConfig } from '../ui/Table';
 import { Badge } from '../ui/Badge';
@@ -13,6 +13,35 @@ interface UserTableProps {
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
 }
+
+const ROLE_BADGE: Record<string, { label: string; variant: 'info' | 'success' | 'warning' | 'neutral' }> = {
+  admin: { label: 'Administrador', variant: 'info' },
+  motorista: { label: 'Motorista', variant: 'success' },
+  coletor: { label: 'Coletor', variant: 'warning' },
+  colaborador: { label: 'Colaborador', variant: 'neutral' },
+};
+
+const STATUS_BADGE: Record<string, { label: string; variant: 'success' | 'error' | 'warning' | 'neutral' }> = {
+  aprovado: { label: 'Aprovado', variant: 'success' },
+  pendente: { label: 'Pendente', variant: 'warning' },
+  rejeitado: { label: 'Rejeitado', variant: 'error' },
+  suspenso: { label: 'Suspenso', variant: 'warning' },
+  inativo: { label: 'Inativo', variant: 'neutral' },
+};
+
+const normalizeRole = (user: User): string => {
+  if (user.role && ROLE_BADGE[user.role]) {
+    return user.role;
+  }
+  return user.is_admin ? 'admin' : 'colaborador';
+};
+
+const normalizeStatus = (user: User): string => {
+  if (user.status && STATUS_BADGE[user.status]) {
+    return user.status;
+  }
+  return user.is_active === false ? 'inativo' : 'aprovado';
+};
 
 export function UserTable({
   users,
@@ -36,35 +65,32 @@ export function UserTable({
       width: '25%',
     },
     {
-      key: 'is_admin',
-      label: 'Tipo',
+      key: 'role',
+      label: 'Perfil',
       width: '15%',
-      render: (value) => (
-        <div className="flex items-center">
-          {(value as boolean) ? (
-            <>
-              <ShieldCheckIcon className="w-4 h-4 text-green-500 mr-1" />
-              <Badge variant="info" size="sm">
-                Admin
-              </Badge>
-            </>
-          ) : (
-            <Badge variant="neutral" size="sm">
-              Usuário
-            </Badge>
-          )}
-        </div>
-      ),
+      render: (_, user) => {
+        const roleKey = normalizeRole(user);
+        const roleInfo = ROLE_BADGE[roleKey] ?? { label: roleKey, variant: 'neutral' };
+        return (
+          <Badge variant={roleInfo.variant} size="sm">
+            {roleInfo.label}
+          </Badge>
+        );
+      },
     },
     {
-      key: 'is_active',
+      key: 'status',
       label: 'Status',
       width: '10%',
-      render: (value) => (
-        <Badge variant={(value as boolean) ? 'success' : 'error'} size="sm">
-          {(value as boolean) ? 'Ativo' : 'Inativo'}
-        </Badge>
-      ),
+      render: (_, user) => {
+        const statusKey = normalizeStatus(user);
+        const statusInfo = STATUS_BADGE[statusKey] ?? { label: statusKey, variant: 'neutral' };
+        return (
+          <Badge variant={statusInfo.variant} size="sm">
+            {statusInfo.label}
+          </Badge>
+        );
+      },
     },
     {
       key: 'created_at',
@@ -97,7 +123,7 @@ export function UserTable({
             onClick={() => onDelete(user)}
             className="p-1 text-red-600 hover:text-red-800 hover:bg-red-100 rounded"
             title="Excluir usuário"
-            disabled={!user.is_active}
+            disabled={normalizeStatus(user) === 'inativo'}
           >
             <TrashIcon className="w-4 h-4" />
           </button>
