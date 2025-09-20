@@ -32,7 +32,7 @@ export const CarFilters: React.FC<CarFiltersProps> = ({
     
     // Apply filters with debounce effect
     const filteredValues = Object.fromEntries(
-      Object.entries(newFilters).filter(([_, value]) => value !== '')
+      Object.entries(newFilters).filter(([, value]) => value !== '')
     );
     
     onFiltersChange(filteredValues);
