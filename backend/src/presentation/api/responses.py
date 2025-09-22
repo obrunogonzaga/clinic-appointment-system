@@ -95,9 +95,3 @@ class DeletedResponse(BaseResponse):
     message: str = Field(
         "Recurso removido com sucesso", description="Mensagem de confirmação"
     )
-
-
-class SuccessResponse(BaseResponse):
-    """Simple success response."""
-
-    message: str = Field(..., description="Mensagem de sucesso")

@@ -16,13 +16,6 @@ This is a Clinic Appointment Scheduling System that is currently in the planning
 - **ALWAYS run security scans and fix vulnerabilities before committing**
 - **NEVER commit code that fails linting or has coverage below 80%**
 
-**CRITICAL GIT WORKFLOW REQUIREMENTS:**
-- **NEVER commit directly to `main` or `develop` branches**
-- **ALWAYS create feature branches** (`feature/name`) for new development
-- **ALWAYS create hotfix branches** (`hotfix-description`) for critical fixes
-- **ALWAYS create Pull Requests** - no direct pushes to protected branches
-- **See `.claude/git-workflow-rules.md` for complete workflow documentation**
-
 Use the following commands for quality checks:
 
 **Quality Check Commands (REQUIRED before commits):**

@@ -8,9 +8,7 @@ from typing import Any, AsyncGenerator, Callable
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
-from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.types import ASGIApp
 
@@ -63,43 +61,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configure trusted hosts for HTTPS proxy
-trusted_hosts = [
-    "localhost",
-    "127.0.0.1",
-    "*.widia.io",
-    "api-staging.widia.io",
-    "clinica-staging.widia.io",
-]
-
-# Allow FastAPI TestClient host during non-production environments
-if not settings.is_production:
-    trusted_hosts.append("testserver")
-
-app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=trusted_hosts,
-)
-
-# Add middleware to handle proxy headers and force HTTPS in production
-@app.middleware("http")
-async def force_https_redirect(request: Request, call_next: Callable[[Request], Any]) -> Any:
-    """Force HTTPS URLs in Location headers when behind proxy."""
-    # Get forwarded proto header
-    forwarded_proto = request.headers.get("X-Forwarded-Proto", "")
-    
-    # Process the request
-    response = await call_next(request)
-    
-    # If we're behind HTTPS proxy and have a Location header with HTTP
-    if forwarded_proto == "https" and "location" in response.headers:
-        location = response.headers["location"]
-        if location.startswith("http://"):
-            # Replace http:// with https://
-            response.headers["location"] = location.replace("http://", "https://", 1)
-    
-    return response
-
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
@@ -109,30 +70,6 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["X-Request-ID"],
 )
-
-# Add Rate Limiting
-if settings.rate_limit_enabled:
-    # Add SlowAPI state
-    app.state.limiter = container.rate_limiter.get_limiter()
-    
-    # Add rate limit exceeded handler
-    @app.exception_handler(RateLimitExceeded)
-    async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-        """Handle rate limit exceeded errors."""
-        retry_after = exc.detail.split(" ")[-2] if " " in str(exc.detail) else "60"
-        return JSONResponse(
-            status_code=429,
-            content={
-                "success": False,
-                "error": "rate_limit_exceeded", 
-                "message": "Muitas tentativas. Por favor, aguarde antes de tentar novamente.",
-                "retry_after": retry_after
-            },
-            headers={
-                "Retry-After": retry_after,
-                "X-RateLimit-Limit": str(exc.detail),
-            }
-        )
 
 # Add exception handlers
 app.add_exception_handler(DomainException, domain_exception_handler)
