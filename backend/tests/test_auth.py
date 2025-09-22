@@ -29,6 +29,7 @@ def auth_service(mock_user_repository):
         access_token_expire_minutes=30,
         algorithm="HS256",
     )
+    settings.admin_email_whitelist = ["admin@example.com"]
     return AuthService(mock_user_repository, settings)
 
 
@@ -91,8 +92,8 @@ class TestAuthService:
         result = await auth_service.check_first_admin_setup()
 
         # Assert
-        assert result.needs_setup is False
-        assert "já possui administrador" in result.message.lower()
+        assert result.needs_setup is True
+        assert "permite criar novos administradores" in result.message.lower()
 
     @pytest.mark.asyncio
     async def test_register_first_admin_success(
@@ -126,7 +127,7 @@ class TestAuthService:
     ):
         """Test first admin registration when admin already exists."""
         # Setup
-        mock_user_repository.has_admin_users.return_value = True
+        mock_user_repository.exists_by_email.return_value = True
 
         request = UserCreateRequest(
             email="admin@example.com",
@@ -136,7 +137,9 @@ class TestAuthService:
         )
 
         # Execute & Assert
-        with pytest.raises(DomainException, match="já possui administrador"):
+        with pytest.raises(
+            DomainException, match="Usuário com email 'admin@example.com' já existe"
+        ):
             await auth_service.register_first_admin(request)
 
     @pytest.mark.asyncio

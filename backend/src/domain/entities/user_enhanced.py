@@ -143,8 +143,9 @@ class UserEnhanced(BaseModel):
     
     def is_locked(self) -> bool:
         """Check if account is temporarily locked due to failed attempts."""
-        if self.security.locked_until:
-            return datetime.utcnow() < self.security.locked_until
+        locked_until = self.security.account_locked_until
+        if locked_until:
+            return datetime.utcnow() < locked_until
         return False
     
     def can_login(self) -> bool:

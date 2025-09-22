@@ -6,7 +6,11 @@ from datetime import datetime, timedelta
 from uuid import uuid4
 
 import pytest
-from motor.motor_asyncio import AsyncIOMotorClient
+import pytest_asyncio
+from mongomock_motor import AsyncMongoMockClient
+
+
+pytestmark = pytest.mark.asyncio
 
 from src.domain.entities.appointment import Appointment
 from src.infrastructure.repositories.appointment_repository import (
@@ -14,12 +18,12 @@ from src.infrastructure.repositories.appointment_repository import (
 )
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_database():
     """Create a test database instance."""
     # Use test database to avoid conflicts
-    client = AsyncIOMotorClient("mongodb://localhost:27017")
-    db = client.clinic_test
+    client = AsyncMongoMockClient()
+    db = client.get_database("clinic_test")
 
     # Clean up before test
     await db.appointments.delete_many({})
@@ -28,10 +32,10 @@ async def test_database():
 
     # Clean up after test
     await db.appointments.delete_many({})
-    client.close()
+    await client.drop_database("clinic_test")
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def repository(test_database):
     """Create repository instance with test database."""
     repo = AppointmentRepository(test_database)

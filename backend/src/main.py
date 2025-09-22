@@ -64,9 +64,21 @@ app = FastAPI(
 )
 
 # Configure trusted hosts for HTTPS proxy
+trusted_hosts = [
+    "localhost",
+    "127.0.0.1",
+    "*.widia.io",
+    "api-staging.widia.io",
+    "clinica-staging.widia.io",
+]
+
+# Allow FastAPI TestClient host during non-production environments
+if not settings.is_production:
+    trusted_hosts.append("testserver")
+
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["localhost", "127.0.0.1", "*.widia.io", "api-staging.widia.io", "clinica-staging.widia.io"]
+    allowed_hosts=trusted_hosts,
 )
 
 # Add middleware to handle proxy headers and force HTTPS in production

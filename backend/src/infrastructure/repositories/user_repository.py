@@ -336,15 +336,21 @@ class UserRepository(UserRepositoryInterface):
             if not ObjectId.is_valid(user_id):
                 return None
             
+            current_time = datetime.now(timezone.utc)
+
             update_data = {
                 "status": UserStatus.APROVADO,
                 "approval.approved_by": admin_id,
-                "approval.approved_at": datetime.now(timezone.utc),
+                "approval.approved_at": current_time,
                 "approval.rejected_by": None,
                 "approval.rejected_at": None,
                 "approval.rejection_reason": None,
-                "updated_at": datetime.now(timezone.utc),
+                "updated_at": current_time,
                 "updated_by": admin_id,
+                "security.email_verified": True,
+                "security.email_verified_at": current_time,
+                "security.email_verification_token": None,
+                "security.email_verification_expires": None,
             }
             
             result = await self.collection.find_one_and_update(

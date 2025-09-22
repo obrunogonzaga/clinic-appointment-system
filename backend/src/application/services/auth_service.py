@@ -165,19 +165,21 @@ class AuthService:
         
         # Check if user is enhanced (has status field)
         if isinstance(user, UserEnhanced):
+            security = user.security
+
             # Check if account is locked due to failed attempts
-            if user.security.get("account_locked_until"):
-                locked_until = user.security["account_locked_until"]
+            locked_until = security.account_locked_until
+            if locked_until:
                 if isinstance(locked_until, datetime) and locked_until > datetime.utcnow():
                     remaining_minutes = int((locked_until - datetime.utcnow()).total_seconds() / 60)
                     raise DomainException(
-                        f"Conta bloqueada por muitas tentativas falhas. "
+                        "Conta bloqueada por muitas tentativas falhas. "
                         f"Tente novamente em {remaining_minutes} minutos."
                     )
                 else:
                     # Lock expired, reset it
-                    user.security["account_locked_until"] = None
-                    user.security["failed_login_attempts"] = 0
+                    security.account_locked_until = None
+                    security.failed_login_attempts = 0
             
             # Check if user is approved
             if user.status != UserStatus.APROVADO:
@@ -191,7 +193,7 @@ class AuthService:
                     raise DomainException("Sua conta não está ativa")
             
             # Check if email is verified (make it mandatory)
-            if not user.security.get("email_verified", False):
+            if not security.email_verified:
                 raise DomainException("Por favor, verifique seu email antes de fazer login")
         else:
             # Legacy user check (backward compatibility)
@@ -202,16 +204,17 @@ class AuthService:
         password_valid = self.verify_password(request.password, user.password_hash)
         
         if isinstance(user, UserEnhanced):
+            security = user.security
             if not password_valid:
                 # Increment failed attempts
-                failed_attempts = user.security.get("failed_login_attempts", 0) + 1
-                user.security["failed_login_attempts"] = failed_attempts
-                user.security["last_failed_attempt"] = datetime.utcnow()
+                failed_attempts = (security.failed_login_attempts or 0) + 1
+                security.failed_login_attempts = failed_attempts
+                security.last_failed_attempt = datetime.utcnow()
                 
                 # Lock account if max attempts reached
                 if failed_attempts >= self.settings.max_login_attempts:
                     lock_until = datetime.utcnow() + timedelta(minutes=self.settings.account_lock_minutes)
-                    user.security["account_locked_until"] = lock_until
+                    security.account_locked_until = lock_until
                     
                     # Update user in database
                     await self.user_repository.update(user.id, user)
@@ -231,9 +234,9 @@ class AuthService:
                     return None
             else:
                 # Reset failed attempts on successful password verification
-                if user.security.get("failed_login_attempts", 0) > 0:
-                    user.security["failed_login_attempts"] = 0
-                    user.security["last_successful_login"] = datetime.utcnow()
+                if (security.failed_login_attempts or 0) > 0:
+                    security.failed_login_attempts = 0
+                    security.last_successful_login = datetime.utcnow()
                     await self.user_repository.update(user.id, user)
         else:
             if not password_valid:
@@ -265,7 +268,7 @@ class AuthService:
             user_email=user.email,
             is_admin=user.is_admin if hasattr(user, 'is_admin') else False,
             additional_claims={
-                "role": user.role.value if isinstance(user, UserEnhanced) else "colaborador"
+                "role": self._resolve_role_claim(user)
             }
         )
         
@@ -274,7 +277,7 @@ class AuthService:
         if isinstance(user, UserEnhanced):
             refresh_token_data = self.token_service.create_refresh_token(
                 user_id=user.id,
-                token_family=user.security.get("refresh_token_family")
+                token_family=user.security.refresh_token_family
             )
             refresh_token = refresh_token_data[0]
             refresh_expires = refresh_token_data[1]
@@ -282,9 +285,9 @@ class AuthService:
             
             # Store hashed refresh token in user
             hashed_refresh = self.token_service._hash_token(refresh_token)
-            user.security["refresh_token"] = hashed_refresh
-            user.security["refresh_token_expires"] = refresh_expires
-            user.security["refresh_token_family"] = family_id
+            user.security.refresh_token = hashed_refresh
+            user.security.refresh_token_expires = refresh_expires
+            user.security.refresh_token_family = family_id
             
             # Update user in database
             await self.user_repository.update(user.id, user)
@@ -702,6 +705,19 @@ class AuthService:
                 "Deve haver pelo menos um administrador ativo."
             )
 
+    def _resolve_role_claim(self, user: User) -> str:
+        """Resolve role claim for JWT payload handling legacy values."""
+        default_role = "admin" if getattr(user, "is_admin", False) else "colaborador"
+
+        if isinstance(user, UserEnhanced):
+            role_value = getattr(user, "role", None)
+            if hasattr(role_value, "value"):
+                return role_value.value
+            if isinstance(role_value, str) and role_value:
+                return role_value
+
+        return default_role
+
     def _user_to_response(self, user: User) -> UserResponse:
         """
         Convert User entity to UserResponse DTO.
@@ -853,7 +869,7 @@ class AuthService:
         
         # Check if user is enhanced and has refresh token
         if isinstance(user, UserEnhanced):
-            stored_refresh = user.security.get("refresh_token")
+            stored_refresh = user.security.refresh_token
             if not stored_refresh:
                 raise DomainException("Token de atualização não encontrado")
             
@@ -861,9 +877,9 @@ class AuthService:
             token_hash = self.token_service._hash_token(request.refresh_token)
             if token_hash != stored_refresh:
                 # Possible token theft - invalidate all tokens
-                user.security["refresh_token"] = None
-                user.security["refresh_token_expires"] = None
-                user.security["refresh_token_family"] = None
+                user.security.refresh_token = None
+                user.security.refresh_token_expires = None
+                user.security.refresh_token_family = None
                 await self.user_repository.update(user.id, user)
                 raise DomainException("Token de atualização inválido - possível comprometimento")
             
@@ -873,7 +889,7 @@ class AuthService:
                 user_email=user.email,
                 is_admin=user.is_admin if hasattr(user, 'is_admin') else False,
                 additional_claims={
-                    "role": user.role.value if isinstance(user, UserEnhanced) else "colaborador"
+                    "role": self._resolve_role_claim(user)
                 }
             )
             
@@ -889,9 +905,9 @@ class AuthService:
                 
                 # Update stored refresh token
                 hashed_refresh = self.token_service._hash_token(new_refresh_token)
-                user.security["refresh_token"] = hashed_refresh
-                user.security["refresh_token_expires"] = refresh_expires
-                user.security["refresh_token_family"] = family_id
+                user.security.refresh_token = hashed_refresh
+                user.security.refresh_token_expires = refresh_expires
+                user.security.refresh_token_family = family_id
                 await self.user_repository.update(user.id, user)
                 
                 return RefreshTokenResponse(
@@ -924,12 +940,12 @@ class AuthService:
         
         if isinstance(user, UserEnhanced):
             # Verify token hasn't expired
-            expires = user.security.get("email_verification_expires")
+            expires = user.security.email_verification_expires
             if expires and expires < datetime.utcnow():
                 raise DomainException("Token de verificação expirado")
             
             # Verify token hash matches
-            stored_hash = user.security.get("email_verification_token")
+            stored_hash = user.security.email_verification_token
             if not stored_hash:
                 raise DomainException("Token de verificação não encontrado")
             
@@ -939,10 +955,10 @@ class AuthService:
                 raise DomainException("Token de verificação inválido")
             
             # Mark email as verified
-            user.security["email_verified"] = True
-            user.security["email_verified_at"] = datetime.utcnow()
-            user.security["email_verification_token"] = None
-            user.security["email_verification_expires"] = None
+            user.security.email_verified = True
+            user.security.email_verified_at = datetime.utcnow()
+            user.security.email_verification_token = None
+            user.security.email_verification_expires = None
             
             await self.user_repository.update(user.id, user)
             return True
@@ -1153,9 +1169,9 @@ class AuthService:
                 return False
             
             # Clear refresh token and related fields
-            user.security["refresh_token"] = None
-            user.security["refresh_token_expires"] = None
-            user.security["refresh_token_family"] = None
+            user.security.refresh_token = None
+            user.security.refresh_token_expires = None
+            user.security.refresh_token_family = None
             
             # Update user in database
             await self.user_repository.update(user_id, user)

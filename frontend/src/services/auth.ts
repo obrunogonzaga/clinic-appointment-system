@@ -102,8 +102,21 @@ export const authService = {
    * Login user with email and password
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await authApi.post<AuthResponse>('/login', credentials);
-    return response.data;
+    try {
+      const response = await authApi.post<AuthResponse>('/login', credentials);
+      return response.data;
+    } catch (error: unknown) {
+      // Normalize backend error payload (supports both `detail` and custom `message` fields)
+      const maybeResponse =
+        typeof error === 'object' && error !== null && 'response' in error
+          ? (error as { response?: { data?: { detail?: string; message?: string } } }).response
+          : undefined;
+
+      const responseMessage = maybeResponse?.data?.detail ?? maybeResponse?.data?.message;
+      const fallbackMessage = error instanceof Error ? error.message : undefined;
+
+      throw new Error(responseMessage || fallbackMessage || 'Falha na autenticação');
+    }
   },
 
   /**
