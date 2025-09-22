@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Olá {{ user_name }}</h2>
+    
+    <div class="danger">
+        <strong>Cadastro não aprovado</strong>
+    </div>
+    
+    <p>Infelizmente, sua solicitação de cadastro não foi aprovada pela administração.</p>
+    
+    <h3>Motivo:</h3>
+    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
+        <em>{{ rejection_reason }}</em>
+    </div>
+    
+    <p>Se você acredita que houve um engano ou gostaria de mais informações, entre em contato com nosso suporte.</p>
+    
+    <p><strong>Email de suporte:</strong> suporte@sistema.com</p>
+{% endblock %}

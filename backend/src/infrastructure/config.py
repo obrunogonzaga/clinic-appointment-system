@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=[".env", "../.env", ".env.local"],
         env_file_encoding="utf-8",
         case_sensitive=False,
         # Map environment variables to field names
@@ -75,7 +75,8 @@ class Settings(BaseSettings):
     # Security settings
     secret_key: str = Field(
         default="your-secret-key-here-change-in-production",
-        description="Chave secreta para JWT",
+        description="Chave secreta principal",
+        validation_alias="JWT_SECRET_KEY",
     )
     algorithm: str = Field(
         default="HS256",
@@ -163,6 +164,83 @@ class Settings(BaseSettings):
         default=None,
         description="Email remetente padrão",
     )
+    smtp_from_name: str = Field(
+        default="Sistema de Coleta",
+        description="Nome do remetente de email",
+    )
+    
+    # Redis settings
+    redis_url: str = Field(
+        default="redis://localhost:6379",
+        description="URL de conexão do Redis",
+    )
+    redis_password: Optional[str] = Field(
+        default=None,
+        description="Senha do Redis",
+    )
+    redis_db: int = Field(
+        default=0,
+        description="Database do Redis",
+    )
+    
+    # Enhanced security settings
+    email_verification_expire_hours: int = Field(
+        default=24,
+        description="Tempo de expiração do token de verificação de email em horas",
+    )
+    password_reset_expire_hours: int = Field(
+        default=1,
+        description="Tempo de expiração do token de redefinição de senha em horas",
+    )
+    max_login_attempts: int = Field(
+        default=5,
+        description="Número máximo de tentativas de login antes do bloqueio",
+    )
+    account_lock_minutes: int = Field(
+        default=30,
+        description="Tempo de bloqueio da conta em minutos",
+    )
+    
+    # Rate limiting settings
+    rate_limit_enabled: bool = Field(
+        default=True,
+        description="Habilitar rate limiting",
+    )
+    login_rate_limit: str = Field(
+        default="5/minute",
+        description="Rate limit para endpoint de login",
+    )
+    register_rate_limit: str = Field(
+        default="3/hour",
+        description="Rate limit para endpoint de registro",
+    )
+    api_rate_limit: str = Field(
+        default="100/minute",
+        description="Rate limit global da API",
+    )
+    verification_rate_limit: str = Field(
+        default="2/hour",
+        description="Rate limit para verificação de email",
+    )
+    
+    # Frontend URL
+    frontend_url: str = Field(
+        default="http://localhost:3000",
+        description="URL do frontend para links em emails",
+    )
+    
+    # Admin notification settings
+    admin_notification_emails: Optional[str] = Field(
+        default=None,
+        description="Emails dos admins para notificações (separados por vírgula)",
+    )
+
+    # Admin email whitelist for security
+    admin_email_whitelist: Optional[List[str]] = Field(
+        default=None,
+        description="Lista de emails autorizados para criar contas administrativas",
+        validation_alias="ADMIN_EMAIL_WHITELIST",
+    )
 
     # OpenRouter API settings (for address normalization)
     openrouter_api_key: Optional[str] = Field(
@@ -211,6 +289,45 @@ class Settings(BaseSettings):
             return v
         else:
             return ["http://localhost:3000", "http://localhost:5173"]
+
+    @field_validator("admin_email_whitelist", mode="before")
+    @classmethod
+    def validate_admin_email_whitelist(cls, v) -> Optional[List[str]]:
+        """Validate and parse admin email whitelist from environment variable."""
+        if v is None or v == "":
+            return None
+
+        if isinstance(v, str):
+            try:
+                # Try to parse as JSON array
+                parsed = json.loads(v)
+                if isinstance(parsed, list):
+                    # Normalize emails to lowercase and strip whitespace
+                    return [
+                        email.lower().strip()
+                        for email in parsed
+                        if isinstance(email, str)
+                    ]
+                else:
+                    # If not a list, treat as single email
+                    return [v.lower().strip()]
+            except json.JSONDecodeError:
+                # If not valid JSON, split by comma
+                if "," in v:
+                    return [
+                        email.lower().strip()
+                        for email in v.split(",")
+                        if email.strip()
+                    ]
+                else:
+                    return [v.lower().strip()]
+        elif isinstance(v, list):
+            # Normalize emails to lowercase and strip whitespace
+            return [
+                email.lower().strip() for email in v if isinstance(email, str)
+            ]
+
+        return None
 
     @field_validator("environment")
     @classmethod
@@ -262,6 +379,7 @@ class Settings(BaseSettings):
             "smtp_password",
             "smtp_username",
             "openrouter_api_key",
+            "admin_email_whitelist",
         ]
         for field in sensitive_fields:
             if field in data:

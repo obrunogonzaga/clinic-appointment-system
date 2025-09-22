@@ -1,0 +1,76 @@
+{% extends "base_email.html" %}
+
+{% block title %}Conta Aprovada - Bem-vindo!{% endblock %}
+
+{% block header_subtitle %}
+<p style="margin: 10px 0 0 0; font-size: 18px; opacity: 0.9;">Sua conta foi aprovada!</p>
+{% endblock %}
+
+{% block content %}
+<h2>Parabéns, {{ user_name }}! 🎉</h2>
+
+<div class="success-box">
+    <strong>✅ Conta Aprovada com Sucesso!</strong>
+    <p style="margin: 5px 0;">Sua conta foi revisada e aprovada por nossa equipe administrativa.</p>
+</div>
+
+<p>Agora você tem acesso completo ao Sistema de Coleta e pode começar a utilizar todos os recursos disponíveis para sua função.</p>
+
+<p><strong>Detalhes da sua conta:</strong></p>
+<ul>
+    <li>E-mail: {{ user_email }}</li>
+    <li>Função: {{ user_role }}</li>
+    <li>Status: Ativo</li>
+    <li>Aprovado por: {{ approved_by }}</li>
+    <li>Data de Aprovação: {{ approved_at }}</li>
+</ul>
+
+<div class="info-box">
+    <strong>🚀 Próximos Passos:</strong>
+    <ol style="margin: 10px 0;">
+        <li>Acesse o sistema com seu e-mail e senha</li>
+        <li>Complete seu perfil com informações adicionais</li>
+        <li>Explore os recursos disponíveis para sua função</li>
+    </ol>
+</div>
+
+<div class="text-center">
+    <a href="{{ login_url }}" class="button">Acessar o Sistema</a>
+</div>
+
+<p><strong>Recursos disponíveis para {{ user_role }}:</strong></p>
+{% if user_role == "ADMIN" %}
+<ul>
+    <li>Gerenciamento completo de usuários</li>
+    <li>Aprovação de novos cadastros</li>
+    <li>Visualização de relatórios detalhados</li>
+    <li>Configuração do sistema</li>
+</ul>
+{% elif user_role == "MOTORISTA" %}
+<ul>
+    <li>Visualização de rotas atribuídas</li>
+    <li>Atualização de status de coletas</li>
+    <li>Registro de quilometragem</li>
+    <li>Comunicação com a central</li>
+</ul>
+{% elif user_role == "COLETOR" %}
+<ul>
+    <li>Visualização de tarefas do dia</li>
+    <li>Registro de coletas realizadas</li>
+    <li>Reportar problemas ou incidentes</li>
+    <li>Consulta de histórico</li>
+</ul>
+{% elif user_role == "COLABORADOR" %}
+<ul>
+    <li>Acesso a informações gerais</li>
+    <li>Visualização de relatórios básicos</li>
+    <li>Consulta de dados autorizados</li>
+</ul>
+{% endif %}
+
+<p style="margin-top: 30px;">
+    Se você tiver alguma dúvida ou precisar de assistência, não hesite em entrar em contato com nossa equipe de suporte.
+</p>
+
+<p><strong>Bem-vindo à equipe!</strong></p>
+{% endblock %}

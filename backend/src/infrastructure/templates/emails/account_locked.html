@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>⚠️ Conta Bloqueada Temporariamente</h2>
+    
+    <p>Olá {{ user_name }},</p>
+    
+    <div class="danger">
+        <strong>Sua conta foi bloqueada temporariamente devido a múltiplas tentativas de login falhadas.</strong>
+    </div>
+    
+    <h3>Detalhes:</h3>
+    <ul>
+        <li><strong>Número de tentativas:</strong> {{ attempts }}</li>
+        <li><strong>Horário do bloqueio:</strong> {{ locked_at }}</li>
+        <li><strong>Desbloqueio automático em:</strong> 30 minutos</li>
+    </ul>
+    
+    <p><strong>O que fazer agora?</strong></p>
+    <ul>
+        <li>Aguarde 30 minutos para tentar novamente</li>
+        <li>Certifique-se de usar a senha correta</li>
+        <li>Se esqueceu sua senha, solicite uma redefinição</li>
+    </ul>
+    
+    <div class="alert">
+        <strong>🔒 Importante:</strong> Se você não fez essas tentativas de login, 
+        sua conta pode estar comprometida. Entre em contato com o suporte imediatamente.
+    </div>
+    
+    <p><strong>Email de suporte:</strong> suporte@sistema.com</p>
+{% endblock %}

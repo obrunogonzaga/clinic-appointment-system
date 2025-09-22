@@ -7,6 +7,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DriverFilters } from '../components/DriverFilters';
 import { DriverForm } from '../components/DriverForm';
 import { DriverTable } from '../components/DriverTable';
@@ -21,6 +22,7 @@ import type {
 
 export const DriversPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<DriverFilter>({
     page: 1,
     page_size: 50
@@ -158,8 +160,7 @@ export const DriversPage: React.FC = () => {
         ? selectedDriver
         : (driversData.drivers.find(d => d.id === reportDriverId) || driversData.drivers[0]);
       const date = reportDate || new Date().toISOString().slice(0, 10);
-      const url = `/#/routes/driver?driverId=${encodeURIComponent(driver.id)}&date=${encodeURIComponent(date)}`;
-      window.open(url, '_blank');
+      navigate(`/routes/driver?driverId=${encodeURIComponent(driver.id)}&date=${encodeURIComponent(date)}`);
     } catch (err: any) {
       alert('Erro ao abrir página de rota');
     }
