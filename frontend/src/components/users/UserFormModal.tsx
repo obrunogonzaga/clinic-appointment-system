@@ -37,8 +37,8 @@ export function UserFormModal({
           email: user.email,
           name: user.name,
           password: '',
-          is_admin: user.is_admin,
-          is_active: user.is_active,
+          is_admin: user.is_admin ?? false,
+          is_active: user.is_active ?? true,
         });
       } else {
         setFormData({
