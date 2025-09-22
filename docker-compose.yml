@@ -56,6 +56,8 @@ services:
       - MONGODB_URL=mongodb://${MONGO_INITDB_ROOT_USERNAME:-admin}:${MONGO_INITDB_ROOT_PASSWORD:-changeme}@mongodb:27017/
       - DATABASE_NAME=${MONGO_INITDB_DATABASE:-clinic_db}
       - SECRET_KEY=${BACKEND_SECRET_KEY:-your-secret-key-here}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-jwt-secret-key-here-change-in-production}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
       - ENVIRONMENT=development
       - DEBUG=True
     volumes:
@@ -80,6 +82,7 @@ services:
       - "3000:5173"
     environment:
       - VITE_API_URL=http://localhost:8000
+      - API_URL=http://localhost:8000
       - NODE_ENV=development
     volumes:
       - ./frontend:/app

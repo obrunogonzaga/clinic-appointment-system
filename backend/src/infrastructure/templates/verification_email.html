@@ -1,0 +1,44 @@
+{% extends "base_email.html" %}
+
+{% block title %}Verifique seu E-mail{% endblock %}
+
+{% block header_subtitle %}
+<p style="margin: 10px 0 0 0; font-size: 18px; opacity: 0.9;">Verificação de E-mail</p>
+{% endblock %}
+
+{% block content %}
+<h2>Olá, {{ user_name }}!</h2>
+
+<p>Bem-vindo ao Sistema de Coleta! Estamos felizes em tê-lo conosco.</p>
+
+<div class="info-box">
+    <strong>📧 Verificação Necessária</strong>
+    <p style="margin: 5px 0;">Para ativar sua conta e começar a usar o sistema, você precisa verificar seu endereço de e-mail.</p>
+</div>
+
+<p>Clique no botão abaixo para verificar seu e-mail:</p>
+
+<div class="text-center">
+    <a href="{{ verification_link }}" class="button">Verificar E-mail</a>
+</div>
+
+<p class="text-muted">Ou copie e cole o link abaixo no seu navegador:</p>
+<p style="word-break: break-all; background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 14px;">
+    {{ verification_link }}
+</p>
+
+<div class="warning-box">
+    <strong>⏰ Atenção:</strong> Este link expira em {{ expire_hours }} horas.
+</div>
+
+<p><strong>Informações da sua conta:</strong></p>
+<ul>
+    <li>E-mail: {{ user_email }}</li>
+    <li>Função: {{ user_role }}</li>
+    <li>Status: Pendente de Verificação</li>
+</ul>
+
+<p class="text-muted" style="margin-top: 30px;">
+    <small>Se você não criou esta conta, pode ignorar este e-mail com segurança.</small>
+</p>
+{% endblock %}

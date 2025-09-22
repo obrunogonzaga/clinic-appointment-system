@@ -1,0 +1,54 @@
+{% extends "base_email.html" %}
+
+{% block title %}Solicitação de Cadastro{% endblock %}
+
+{% block header_subtitle %}
+<p style="margin: 10px 0 0 0; font-size: 18px; opacity: 0.9;">Atualização sobre seu cadastro</p>
+{% endblock %}
+
+{% block content %}
+<h2>Olá, {{ user_name }}</h2>
+
+<p>Agradecemos seu interesse em fazer parte do Sistema de Coleta.</p>
+
+<div class="danger-box">
+    <strong>Status da Solicitação</strong>
+    <p style="margin: 5px 0;">Após análise cuidadosa, sua solicitação de cadastro não pôde ser aprovada neste momento.</p>
+</div>
+
+<p><strong>Informações da solicitação:</strong></p>
+<ul>
+    <li>E-mail: {{ user_email }}</li>
+    <li>Função solicitada: {{ user_role }}</li>
+    <li>Data da solicitação: {{ created_at }}</li>
+    <li>Analisado por: {{ rejected_by }}</li>
+    <li>Data da análise: {{ rejected_at }}</li>
+</ul>
+
+{% if rejection_reason %}
+<div class="info-box">
+    <strong>Motivo:</strong>
+    <p style="margin: 5px 0;">{{ rejection_reason }}</p>
+</div>
+{% endif %}
+
+<p><strong>O que fazer agora?</strong></p>
+<ul>
+    <li>Verifique se todas as informações fornecidas estão corretas</li>
+    <li>Certifique-se de que você tem autorização para acessar o sistema</li>
+    <li>Entre em contato com o administrador do sistema se houver algum engano</li>
+</ul>
+
+<div class="warning-box">
+    <strong>💡 Importante:</strong>
+    <p style="margin: 5px 0;">Se você acredita que houve um erro ou precisa de esclarecimentos, entre em contato com o administrador do sistema através do e-mail de suporte.</p>
+</div>
+
+<p style="margin-top: 30px;">
+    Agradecemos sua compreensão e esperamos poder trabalhar juntos no futuro.
+</p>
+
+<p class="text-muted">
+    <small>Esta decisão foi tomada seguindo os critérios e políticas de segurança do sistema.</small>
+</p>
+{% endblock %}

@@ -16,9 +16,10 @@ class TestAddressNormalizationService:
 
     def test_init_with_api_key(self):
         """Test service initialization with API key."""
-        service = AddressNormalizationService(api_key="test-key")
-        assert service.api_key == "test-key"
-        assert service.model == "openai/gpt-oss-20b:free"
+        with patch.dict("os.environ", {}, clear=True):
+            service = AddressNormalizationService(api_key="test-key")
+            assert service.api_key == "test-key"
+            assert service.model == "openai/gpt-oss-20b:free"
 
     def test_init_without_api_key_raises_error(self):
         """Test service initialization without API key raises error."""
@@ -54,7 +55,9 @@ class TestAddressNormalizationService:
         }
         """
 
-        with patch("openai.OpenAI") as mock_openai:
+        with patch(
+            "src.application.services.address_normalization_service.OpenAI"
+        ) as mock_openai:
             mock_client = MagicMock()
             mock_client.chat.completions.create.return_value = mock_response
             mock_openai.return_value = mock_client
@@ -90,7 +93,9 @@ class TestAddressNormalizationService:
         mock_response.choices = [MagicMock()]
         mock_response.choices[0].message.content = "Invalid JSON response"
 
-        with patch("openai.OpenAI") as mock_openai:
+        with patch(
+            "src.application.services.address_normalization_service.OpenAI"
+        ) as mock_openai:
             mock_client = MagicMock()
             mock_client.chat.completions.create.return_value = mock_response
             mock_openai.return_value = mock_client
@@ -103,7 +108,9 @@ class TestAddressNormalizationService:
     @pytest.mark.asyncio
     async def test_normalize_address_openrouter_api_error(self):
         """Test handling of OpenRouter API errors."""
-        with patch("openai.OpenAI") as mock_openai:
+        with patch(
+            "src.application.services.address_normalization_service.OpenAI"
+        ) as mock_openai:
             mock_client = MagicMock()
             mock_client.chat.completions.create.side_effect = Exception(
                 "API Error"
@@ -129,7 +136,9 @@ class TestAddressNormalizationService:
         }
         """
 
-        with patch("openai.OpenAI") as mock_openai:
+        with patch(
+            "src.application.services.address_normalization_service.OpenAI"
+        ) as mock_openai:
             mock_client = MagicMock()
             mock_client.chat.completions.create.return_value = mock_response
             mock_openai.return_value = mock_client
@@ -275,7 +284,9 @@ class TestAddressNormalizationService:
         """Test service availability check - success."""
         mock_response = MagicMock()
 
-        with patch("openai.OpenAI") as mock_openai:
+        with patch(
+            "src.application.services.address_normalization_service.OpenAI"
+        ) as mock_openai:
             mock_client = MagicMock()
             mock_client.chat.completions.create.return_value = mock_response
             mock_openai.return_value = mock_client
