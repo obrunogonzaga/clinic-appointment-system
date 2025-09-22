@@ -123,7 +123,6 @@ export function UserTable({
             onClick={() => onDelete(user)}
             className="p-1 text-red-600 hover:text-red-800 hover:bg-red-100 rounded"
             title="Excluir usuário"
-            disabled={normalizeStatus(user) === 'inativo'}
           >
             <TrashIcon className="w-4 h-4" />
           </button>

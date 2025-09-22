@@ -168,10 +168,10 @@ class UserRepository(UserRepositoryInterface):
             return False
 
     async def exists_by_email(self, email: str) -> bool:
-        """Check if user exists by email."""
+        """Check if active user exists by email."""
         try:
             count = await self.collection.count_documents(
-                {"email": email.lower()}, limit=1
+                {"email": email.lower(), "is_active": {"$ne": False}}, limit=1
             )
             return count > 0
 
@@ -197,10 +197,10 @@ class UserRepository(UserRepositoryInterface):
             return 0
 
     async def list_users(self, limit: int = 10, offset: int = 0) -> list[User]:
-        """List users with pagination."""
+        """List active users with pagination."""
         try:
             cursor = (
-                self.collection.find({})
+                self.collection.find({"is_active": {"$ne": False}})  # Only active users
                 .sort("created_at", -1)  # Order by created_at desc
                 .skip(offset)
                 .limit(limit)
@@ -212,9 +212,9 @@ class UserRepository(UserRepositoryInterface):
             return []
 
     async def count_total_users(self) -> int:
-        """Count total number of users (active and inactive)."""
+        """Count total number of active users."""
         try:
-            return await self.collection.count_documents({})
+            return await self.collection.count_documents({"is_active": {"$ne": False}})
         except Exception:
             return 0
 
@@ -231,6 +231,46 @@ class UserRepository(UserRepositoryInterface):
             return result.modified_count > 0
         except Exception:
             return False
+    
+    async def get_inactive_by_email(self, email: str) -> Optional[User]:
+        """Get inactive user by email address."""
+        try:
+            doc = await self.collection.find_one(
+                {"email": email.lower(), "is_active": False}
+            )
+            return self._doc_to_user(doc) if doc else None
+        except Exception:
+            return None
+    
+    async def reactivate_user(
+        self, user_id: str, 
+        update_data: dict
+    ) -> Optional[User]:
+        """Reactivate a soft-deleted user with new data."""
+        try:
+            if not ObjectId.is_valid(user_id):
+                return None
+            
+            from src.domain.enums import UserStatus
+            
+            # Prepare update with reactivation
+            update_data["is_active"] = True
+            update_data["updated_at"] = datetime.now(timezone.utc)
+            
+            # Reset status fields for fresh start
+            if "status" not in update_data:
+                # Default to approved for reactivated users by admin
+                update_data["status"] = UserStatus.APROVADO
+            
+            result = await self.collection.find_one_and_update(
+                {"_id": ObjectId(user_id)},
+                {"$set": update_data},
+                return_document=True
+            )
+            
+            return self._doc_to_user(result) if result else None
+        except Exception as e:
+            raise DomainException(f"Erro ao reativar usuário: {str(e)}")
 
     def _doc_to_user(self, doc: dict) -> User:
         """Convert MongoDB document to User entity (supports both User and UserEnhanced)."""
@@ -263,10 +303,10 @@ class UserRepository(UserRepositoryInterface):
     async def get_pending_users(
         self, limit: int = 10, offset: int = 0
     ) -> List[User]:
-        """Get all users with PENDENTE status."""
+        """Get all active users with PENDENTE status."""
         try:
             cursor = self.collection.find(
-                {"status": UserStatus.PENDENTE}
+                {"status": UserStatus.PENDENTE, "is_active": {"$ne": False}}
             ).sort("created_at", -1).skip(offset).limit(limit)
             
             users = []
@@ -281,10 +321,10 @@ class UserRepository(UserRepositoryInterface):
     async def get_users_by_status(
         self, status: UserStatus, limit: int = 10, offset: int = 0
     ) -> List[User]:
-        """Get users by status."""
+        """Get active users by status."""
         try:
             cursor = self.collection.find(
-                {"status": status}
+                {"status": status, "is_active": {"$ne": False}}
             ).sort("created_at", -1).skip(offset).limit(limit)
             
             users = []
@@ -299,10 +339,10 @@ class UserRepository(UserRepositoryInterface):
     async def get_users_by_role(
         self, role: UserRole, limit: int = 10, offset: int = 0
     ) -> List[User]:
-        """Get users by role."""
+        """Get active users by role."""
         try:
             cursor = self.collection.find(
-                {"role": role}
+                {"role": role, "is_active": {"$ne": False}}
             ).sort("created_at", -1).skip(offset).limit(limit)
             
             users = []
@@ -315,16 +355,16 @@ class UserRepository(UserRepositoryInterface):
             return []
     
     async def count_pending_users(self) -> int:
-        """Count users with PENDENTE status."""
+        """Count active users with PENDENTE status."""
         try:
-            return await self.collection.count_documents({"status": UserStatus.PENDENTE})
+            return await self.collection.count_documents({"status": UserStatus.PENDENTE, "is_active": {"$ne": False}})
         except Exception:
             return 0
     
     async def count_users_by_status(self, status: UserStatus) -> int:
-        """Count users by status."""
+        """Count active users by status."""
         try:
-            return await self.collection.count_documents({"status": status})
+            return await self.collection.count_documents({"status": status, "is_active": {"$ne": False}})
         except Exception:
             return 0
     
