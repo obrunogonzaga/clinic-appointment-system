@@ -644,24 +644,47 @@ class AuthService:
 
     async def _create_user(self, request: UserCreateRequest) -> UserResponse:
         """
-        Create new user with validation.
+        Create new user with validation, or reactivate if soft-deleted.
 
         Args:
             request: User creation data
 
         Returns:
-            UserResponse: Created user data
+            UserResponse: Created or reactivated user data
 
         Raises:
             DomainException: If user creation fails
         """
-        # Check if user already exists
+        # Check if active user already exists
         if await self.user_repository.exists_by_email(request.email):
             raise DomainException(
                 f"Usuário com email '{request.email}' já existe"
             )
 
-        # Create user entity
+        # Check if there's an inactive user with this email
+        inactive_user = await self.user_repository.get_inactive_by_email(request.email)
+        
+        if inactive_user:
+            # Reactivate the user with new data
+            update_data = {
+                "name": request.name,
+                "password_hash": self.hash_password(request.password),
+                "is_admin": request.is_admin,
+                "is_active": True,
+                "updated_at": datetime.now(timezone.utc),
+                "status": UserStatus.APROVADO,  # Admin created users are auto-approved
+            }
+            
+            reactivated_user = await self.user_repository.reactivate_user(
+                inactive_user.id, update_data
+            )
+            
+            if reactivated_user:
+                return self._user_to_response(reactivated_user)
+            else:
+                raise DomainException("Erro ao reativar usuário")
+
+        # No existing user, create new one
         user = User(
             email=request.email,
             name=request.name,
@@ -771,23 +794,65 @@ class AuthService:
         """
         Register a new user through public registration (self-service).
         Creates user with PENDENTE status awaiting admin approval.
+        Reactivates if user was soft-deleted.
         
         Args:
             request: Public registration data
             
         Returns:
-            UserEnhancedResponse: Created user data
+            UserEnhancedResponse: Created or reactivated user data
             
         Raises:
             DomainException: If registration fails
         """
-        # Check if user already exists
+        # Check if active user already exists
         if await self.user_repository.exists_by_email(request.email):
             raise DomainException(
                 f"Usuário com email '{request.email}' já existe"
             )
         
-        # Create UserEnhanced entity with PENDENTE status
+        # Check if there's an inactive user with this email
+        inactive_user = await self.user_repository.get_inactive_by_email(request.email)
+        
+        if inactive_user:
+            # Reactivate with PENDENTE status (requires approval)
+            update_data = {
+                "name": request.name,
+                "password_hash": self.hash_password(request.password),
+                "role": request.role,
+                "status": UserStatus.PENDENTE,  # Requires approval
+                "is_active": True,
+                "updated_at": datetime.now(timezone.utc),
+                "metadata.phone": request.phone,
+                "metadata.cpf": request.cpf,
+                "metadata.department": request.department,
+                "security.email_verified": False,
+            }
+            
+            if request.role == UserRole.MOTORISTA and request.drivers_license:
+                update_data["metadata.drivers_license"] = request.drivers_license
+            
+            reactivated_user = await self.user_repository.reactivate_user(
+                inactive_user.id, update_data
+            )
+            
+            if reactivated_user:
+                # Send notification emails
+                if self.notification_manager:
+                    await self.notification_manager.create_user_pending_notification(
+                        reactivated_user
+                    )
+                    admin_emails = await self._get_admin_emails()
+                    if admin_emails:
+                        await self.notification_manager.notify_admins_of_pending_user(
+                            reactivated_user, admin_emails
+                        )
+                
+                return self._user_to_enhanced_response(reactivated_user)
+            else:
+                raise DomainException("Erro ao reativar usuário")
+        
+        # No existing user, create new one
         user = UserEnhanced(
             email=request.email,
             name=request.name,

@@ -80,16 +80,15 @@ export function useDeleteUser() {
   return useMutation({
     mutationFn: (userId: string) => authService.deleteUser(userId),
     onSuccess: (_, userId) => {
-      // Remove user from lists or mark as inactive
+      // Remove user from lists completely (soft-deleted users won't appear)
       queryClient.setQueriesData<UserListResponse>(
         { queryKey: userKeys.lists() },
         (old) => {
           if (!old) return old;
           return {
             ...old,
-            users: old.users.map((user) =>
-              user.id === userId ? { ...user, is_active: false } : user
-            ),
+            users: old.users.filter((user) => user.id !== userId),
+            total: old.total > 0 ? old.total - 1 : 0,
           };
         }
       );
