@@ -10,7 +10,7 @@ import {
     UserIcon,
 } from '@heroicons/react/24/outline';
 import React from 'react';
-import type { Appointment } from '../types/appointment';
+import type { AppointmentViewModel } from '../types/appointment';
 import type { ActiveCar } from '../types/car';
 import type { ActiveCollector } from '../types/collector';
 import type { ActiveDriver } from '../types/driver';
@@ -18,7 +18,7 @@ import { formatDate } from '../utils/dateUtils';
 import { getStatusBadgeClass } from '../utils/statusColors';
 
 interface AppointmentCardProps {
-  appointment: Appointment;
+  appointment: AppointmentViewModel;
   drivers: ActiveDriver[];
   collectors?: ActiveCollector[];
   cars?: ActiveCar[];
@@ -81,11 +81,25 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
     }
   };
 
+  const addressLabel = (() => {
+    const street = appointment.endereco_normalizado?.rua || appointment.endereco_coleta;
+    const number = appointment.endereco_normalizado?.numero;
+
+    if (street) {
+      return number ? `${street}, ${number}` : street;
+    }
+
+    return appointment.nome_unidade;
+  })();
+
+  const detailLabelClass = 'text-[11px] font-semibold uppercase tracking-wide text-gray-400';
+  const detailValueClass = `${compact ? 'text-xs' : 'text-sm'} text-gray-700`;
+
   return (
     <div className={`
-      bg-white border border-gray-200 rounded-lg shadow-sm transition-all duration-200
-      hover:shadow-md hover:border-gray-300
-      ${compact ? 'p-3' : 'p-4'}
+      rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-200
+      hover:shadow-md hover:border-gray-200
+      ${compact ? 'p-3' : 'p-5'}
     `}>
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
@@ -117,105 +131,90 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
       </div>
 
       {/* Body */}
-      <div className={`space-y-2 ${compact ? 'text-xs' : 'text-sm'} text-gray-600`}>
-        {/* Date and Time */}
-        <div className="flex items-center">
-          <CalendarIcon className="w-4 h-4 mr-2 flex-shrink-0" />
-          <span className="flex items-center">
-            {formatDate(appointment.data_agendamento)}
-            <ClockIcon className="w-3 h-3 mx-2 flex-shrink-0" />
-            {appointment.hora_agendamento}
-          </span>
-        </div>
-
-        {/* Address */}
-        <div className="flex items-center">
-          <BuildingOfficeIcon className="w-4 h-4 mr-2 flex-shrink-0" />
-          <span className="truncate">
-            {(() => {
-              const street = appointment.endereco_normalizado?.rua || appointment.endereco_coleta;
-              const number = appointment.endereco_normalizado?.numero;
-              
-              if (street) {
-                return number ? `${street}, ${number}` : street;
-              }
-              
-              return appointment.nome_unidade;
-            })()}
-          </span>
-        </div>
-
-        {/* Car */}
-        <div className="flex items-center">
-          <TruckIcon className="w-4 h-4 mr-2 flex-shrink-0" />
-          <span className="truncate">
-            {getCarInfo()}
-          </span>
-        </div>
-
-        {/* Convênio */}
-        {(appointment.nome_convenio || appointment.numero_convenio) && (
-          <div className="flex items-center">
-            <CreditCardIcon className="w-4 h-4 mr-2 flex-shrink-0" />
-            <span className="truncate">
-              {(() => {
-                if (appointment.nome_convenio && appointment.numero_convenio) {
-                  return `${appointment.nome_convenio} - ${appointment.numero_convenio}`;
-                }
-                return appointment.nome_convenio || appointment.numero_convenio;
-              })()}
-            </span>
-          </div>
-        )}
-
-        {/* CPF/RG */}
-        {(() => {
-          // Priorizar CPF/RG formatados dos campos normalizados
-          const cpfFormatted = appointment.documento_normalizado?.cpf_formatted;
-          const rgFormatted = appointment.documento_normalizado?.rg_formatted;
-          
-          // Se não houver documentos normalizados, não exibir
-          if (!cpfFormatted && !rgFormatted) {
-            return null;
-          }
-          
-          // Criar string com os documentos disponíveis
-          const documents = [];
-          if (cpfFormatted) {
-            documents.push(`CPF: ${cpfFormatted}`);
-          }
-          if (rgFormatted) {
-            documents.push(`RG: ${rgFormatted}`);
-          }
-          
-          return (
-            <div className="flex items-center">
-              <IdentificationIcon className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span className="truncate">{documents.join(' | ')}</span>
+      <div className={`mt-4 grid grid-cols-1 gap-4 ${compact ? '' : 'md:grid-cols-2'}`}>
+        <div className="space-y-4">
+          <div>
+            <p className={detailLabelClass}>Data e horário</p>
+            <div className={`mt-1 flex flex-wrap items-center gap-2 ${detailValueClass}`}>
+              <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2 py-1 font-medium text-gray-600">
+                <CalendarIcon className="w-3 h-3" />
+                {formatDate(appointment.data_agendamento)}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2 py-1 font-medium text-gray-600">
+                <ClockIcon className="w-3 h-3" />
+                {appointment.hora_agendamento}
+              </span>
             </div>
-          );
-        })()}
-
-        {/* Phone (only show if not compact and exists) */}
-        {!compact && appointment.telefone && (
-          <div className="flex items-center">
-            <PhoneIcon className="w-4 h-4 mr-2 flex-shrink-0" />
-            <span>{appointment.telefone}</span>
           </div>
-        )}
 
-        {/* Type of consultation (only show if not compact and exists) */}
-        {!compact && appointment.tipo_consulta && (
-          <div className="flex items-center">
-            <span className="w-4 h-4 mr-2 flex-shrink-0 text-center">📋</span>
-            <span className="truncate">{appointment.tipo_consulta}</span>
+          <div>
+            <p className={detailLabelClass}>Local</p>
+            <div className={`mt-1 flex items-start gap-2 ${detailValueClass}`}>
+              <BuildingOfficeIcon className="w-4 h-4 text-gray-400" />
+              <span className="leading-snug">{addressLabel}</span>
+            </div>
           </div>
-        )}
+
+          <div>
+            <p className={detailLabelClass}>Veículo</p>
+            <div className={`mt-1 flex items-start gap-2 ${detailValueClass}`}>
+              <TruckIcon className="w-4 h-4 text-gray-400" />
+              <span className="leading-snug">{getCarInfo()}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {appointment.cpfMasked && (
+            <div>
+              <p className={detailLabelClass}>CPF</p>
+              <div className={`mt-1 flex items-center gap-2 ${detailValueClass}`}>
+                <IdentificationIcon className="w-4 h-4 text-gray-400" />
+                <span className="leading-snug">{appointment.cpfMasked}</span>
+              </div>
+            </div>
+          )}
+
+          <div>
+            <p className={detailLabelClass}>Plano de saúde</p>
+            <div className={`mt-1 flex items-center gap-2 ${detailValueClass}`}>
+              <CreditCardIcon className="w-4 h-4 text-gray-400" />
+              <span className="leading-snug">{appointment.healthPlanLabel}</span>
+            </div>
+          </div>
+
+          {(() => {
+            const rgFormatted = appointment.documento_normalizado?.rg_formatted;
+            if (!rgFormatted) {
+              return null;
+            }
+
+            return (
+              <div>
+                <p className={detailLabelClass}>RG</p>
+                <div className={`mt-1 flex items-center gap-2 ${detailValueClass}`}>
+                  <IdentificationIcon className="w-4 h-4 text-gray-400" />
+                  <span className="leading-snug">{rgFormatted}</span>
+                </div>
+              </div>
+            );
+          })()}
+
+          {appointment.telefone && (
+            <div>
+              <p className={detailLabelClass}>Contato</p>
+              <div className={`mt-1 flex items-center gap-2 ${detailValueClass}`}>
+                <PhoneIcon className="w-4 h-4 text-gray-400" />
+                <span className="leading-snug">{appointment.telefone}</span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Footer */}
       <div className="mt-4 pt-3 border-t border-gray-100">
-        <div className="flex gap-2 mb-3">
+        <div className="flex flex-col gap-2 mb-3 md:flex-row">
           {/* Driver Selection */}
           <div className="flex-1">
             <select

@@ -7,6 +7,8 @@ interface SearchInputProps {
   placeholder?: string;
   debounceMs?: number;
   className?: string;
+  inputClassName?: string;
+  onKeyDown?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
 }
 
 export function SearchInput({
@@ -15,6 +17,8 @@ export function SearchInput({
   placeholder = 'Buscar...',
   debounceMs = 300,
   className = '',
+  inputClassName = '',
+  onKeyDown,
 }: SearchInputProps) {
   const [internalValue, setInternalValue] = useState(value);
 
@@ -48,7 +52,8 @@ export function SearchInput({
         value={internalValue}
         onChange={(e) => setInternalValue(e.target.value)}
         placeholder={placeholder}
-        className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+        onKeyDown={onKeyDown}
+        className={`block w-full rounded-md border border-gray-300 bg-white py-2 pl-10 pr-10 leading-5 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${inputClassName}`}
       />
       
       {internalValue && (

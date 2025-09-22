@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import type { AppointmentFilter } from '../types/appointment';
+import { SearchInput } from './ui/SearchInput';
+import type { DateShortcut } from '../utils/appointmentViewModel';
 
 interface AppointmentFiltersProps {
   filters: AppointmentFilter;
@@ -8,8 +10,19 @@ interface AppointmentFiltersProps {
   units: string[];
   brands: string[];
   statuses: string[];
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
+  dateShortcut: DateShortcut | null;
+  onDateShortcutChange: (shortcut: DateShortcut | null) => void;
   isLoading?: boolean;
 }
+
+const dateShortcutOptions: Array<{ label: string; value: DateShortcut }> = [
+  { label: 'Hoje', value: 'today' },
+  { label: 'Amanhã', value: 'tomorrow' },
+  { label: 'Esta semana', value: 'thisWeek' },
+  { label: 'Próxima semana', value: 'nextWeek' },
+];
 
 export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
   filters,
@@ -17,60 +30,122 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
   units,
   brands,
   statuses,
-  isLoading = false
+  searchTerm,
+  onSearchChange,
+  dateShortcut,
+  onDateShortcutChange,
+  isLoading = false,
 }) => {
+  const [localSearch, setLocalSearch] = useState(searchTerm);
+
+  useEffect(() => {
+    setLocalSearch(searchTerm);
+  }, [searchTerm]);
+
   const handleFilterChange = (key: keyof AppointmentFilter, value: string) => {
     onFiltersChange({
       ...filters,
       [key]: value || undefined,
-      page: 1 // Reset page when filters change
+      page: 1,
     });
   };
 
-  const clearAllFilters = () => {
+  const resetFilters = () => {
     onFiltersChange({
       page: 1,
-      page_size: filters.page_size || 50
+      page_size: filters.page_size || 50,
     });
+    setLocalSearch('');
+    onSearchChange('');
+    onDateShortcutChange(null);
   };
 
   const hasActiveFilters = Boolean(
-    filters.nome_unidade || 
-    filters.nome_marca || 
-    filters.data || 
-    filters.status
+    filters.nome_unidade ||
+    filters.nome_marca ||
+    filters.data ||
+    filters.status ||
+    searchTerm ||
+    dateShortcut
   );
 
+  const handleDateShortcut = (shortcut: DateShortcut) => {
+    if (dateShortcut === shortcut) {
+      onDateShortcutChange(null);
+      if (shortcut === 'today' || shortcut === 'tomorrow') {
+        handleFilterChange('data', '');
+      }
+      return;
+    }
+
+    onDateShortcutChange(shortcut);
+
+    if (shortcut === 'today' || shortcut === 'tomorrow') {
+      const targetDate = new Date();
+      if (shortcut === 'tomorrow') {
+        targetDate.setDate(targetDate.getDate() + 1);
+      }
+      const formatted = targetDate.toISOString().split('T')[0];
+      handleFilterChange('data', formatted);
+      return;
+    }
+
+    // Remove data filter for weekly ranges (handled client-side)
+    if (filters.data) {
+      handleFilterChange('data', '');
+    }
+  };
+
+  const handleDateInputChange = (value: string) => {
+    onDateShortcutChange(null);
+    handleFilterChange('data', value);
+  };
+
+  const handleApply = () => {
+    onSearchChange(localSearch);
+  };
+
+  const filterBadgeClass = hasActiveFilters
+    ? 'bg-indigo-100 text-indigo-700'
+    : 'bg-indigo-50 text-indigo-600';
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2">
-          <FunnelIcon className="w-5 h-5 text-gray-400" />
-          <h3 className="text-lg font-medium text-gray-900">Filtros</h3>
+    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${filterBadgeClass}`}>
+          <FunnelIcon className="h-4 w-4" />
+          Filtros
         </div>
-        
-        {hasActiveFilters && (
+        <div className="ml-auto flex items-center gap-2">
           <button
-            onClick={clearAllFilters}
-            className="flex items-center space-x-1 text-sm text-red-600 hover:text-red-800 transition-colors"
+            type="button"
+            onClick={resetFilters}
+            className="inline-flex items-center rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:border-gray-300 hover:text-gray-800"
           >
-            <XMarkIcon className="w-4 h-4" />
-            <span>Limpar filtros</span>
+            <XMarkIcon className="mr-1 h-4 w-4" />
+            Limpar
           </button>
-        )}
+          <button
+            type="button"
+            onClick={handleApply}
+            className="inline-flex items-center rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800"
+          >
+            Aplicar
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {/* Unit Filter */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <div className="lg:col-span-2">
+          <label htmlFor="filter-unit" className="text-xs font-semibold uppercase tracking-wide text-gray-500">
             Unidade
           </label>
           <select
+            id="filter-unit"
             value={filters.nome_unidade || ''}
-            onChange={(e) => handleFilterChange('nome_unidade', e.target.value)}
+            onChange={(event) => handleFilterChange('nome_unidade', event.target.value)}
             disabled={isLoading}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+            className="mt-2 w-full rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <option value="">Todas as unidades</option>
             {units.map((unit) => (
@@ -81,16 +156,16 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
           </select>
         </div>
 
-        {/* Brand Filter */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="lg:col-span-2">
+          <label htmlFor="filter-brand" className="text-xs font-semibold uppercase tracking-wide text-gray-500">
             Marca
           </label>
           <select
+            id="filter-brand"
             value={filters.nome_marca || ''}
-            onChange={(e) => handleFilterChange('nome_marca', e.target.value)}
+            onChange={(event) => handleFilterChange('nome_marca', event.target.value)}
             disabled={isLoading}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+            className="mt-2 w-full rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <option value="">Todas as marcas</option>
             {brands.map((brand) => (
@@ -101,16 +176,16 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
           </select>
         </div>
 
-        {/* Status Filter */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="lg:col-span-2">
+          <label htmlFor="filter-status" className="text-xs font-semibold uppercase tracking-wide text-gray-500">
             Status
           </label>
           <select
+            id="filter-status"
             value={filters.status || ''}
-            onChange={(e) => handleFilterChange('status', e.target.value)}
+            onChange={(event) => handleFilterChange('status', event.target.value)}
             disabled={isLoading}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+            className="mt-2 w-full rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <option value="">Todos os status</option>
             {statuses.map((status) => (
@@ -121,77 +196,64 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
           </select>
         </div>
 
-        {/* Date Filter */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="lg:col-span-2">
+          <label htmlFor="filter-date" className="text-xs font-semibold uppercase tracking-wide text-gray-500">
             Data
           </label>
           <input
+            id="filter-date"
             type="date"
             value={filters.data || ''}
-            onChange={(e) => handleFilterChange('data', e.target.value)}
+            onChange={(event) => handleDateInputChange(event.target.value)}
             disabled={isLoading}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+            className="mt-2 w-full rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
           />
+        </div>
+
+        <div className="lg:col-span-4">
+          <label className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Buscar por nome ou CPF
+          </label>
+          <div className="mt-2">
+            <SearchInput
+              value={localSearch}
+              onChange={(value) => setLocalSearch(value)}
+              placeholder="Buscar por nome/CPF"
+              className="rounded-full"
+              inputClassName="rounded-full border border-gray-200"
+              debounceMs={0}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  handleApply();
+                }
+              }}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Active Filters Display */}
-      {hasActiveFilters && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="flex flex-wrap gap-2">
-            <span className="text-sm text-gray-500">Filtros ativos:</span>
-            
-            {filters.nome_unidade && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                Unidade: {filters.nome_unidade}
-                <button
-                  onClick={() => handleFilterChange('nome_unidade', '')}
-                  className="ml-1 text-blue-600 hover:text-blue-800"
-                >
-                  <XMarkIcon className="w-3 h-3" />
-                </button>
-              </span>
-            )}
-            
-            {filters.nome_marca && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                Marca: {filters.nome_marca}
-                <button
-                  onClick={() => handleFilterChange('nome_marca', '')}
-                  className="ml-1 text-green-600 hover:text-green-800"
-                >
-                  <XMarkIcon className="w-3 h-3" />
-                </button>
-              </span>
-            )}
-            
-            {filters.status && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                Status: {filters.status}
-                <button
-                  onClick={() => handleFilterChange('status', '')}
-                  className="ml-1 text-yellow-600 hover:text-yellow-800"
-                >
-                  <XMarkIcon className="w-3 h-3" />
-                </button>
-              </span>
-            )}
-            
-            {filters.data && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                Data: {new Date(filters.data).toLocaleDateString('pt-BR')}
-                <button
-                  onClick={() => handleFilterChange('data', '')}
-                  className="ml-1 text-purple-600 hover:text-purple-800"
-                >
-                  <XMarkIcon className="w-3 h-3" />
-                </button>
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <span className="text-sm font-semibold text-gray-600">Atalhos:</span>
+        {dateShortcutOptions.map(({ label, value }) => {
+          const isActive = dateShortcut === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => handleDateShortcut(value)}
+              className={`rounded-full px-4 py-1 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 ${
+                isActive
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              aria-pressed={isActive}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 };
