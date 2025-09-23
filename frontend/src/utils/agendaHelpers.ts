@@ -12,7 +12,7 @@ import {
   startOfWeek,
   subMonths,
 } from './dateHelpers';
-import type { Appointment } from '../types/appointment';
+import type { AppointmentViewModel } from '../types/appointment';
 import type { CalendarDay, CalendarMonth, CalendarWeek, AppointmentsByDate } from '../types/agenda';
 
 /**
@@ -21,7 +21,7 @@ import type { CalendarDay, CalendarMonth, CalendarWeek, AppointmentsByDate } fro
 export function generateCalendarMonth(
   year: number,
   month: number, // 0-based
-  appointments: Appointment[] = [],
+  appointments: AppointmentViewModel[] = [],
   selectedDate?: Date
 ): CalendarMonth {
   const firstDay = new Date(year, month, 1);
@@ -70,7 +70,7 @@ export function generateCalendarMonth(
 /**
  * Agrupa agendamentos por data (YYYY-MM-DD)
  */
-export function groupAppointmentsByDate(appointments: Appointment[]): AppointmentsByDate {
+export function groupAppointmentsByDate(appointments: AppointmentViewModel[]): AppointmentsByDate {
   const grouped: AppointmentsByDate = {};
   
   appointments.forEach(appointment => {
@@ -187,7 +187,10 @@ export function getDayIndicatorColor(appointmentCount: number): string {
 /**
  * Filtra agendamentos para uma data específica
  */
-export function getAppointmentsForDate(appointments: Appointment[], date: Date): Appointment[] {
+export function getAppointmentsForDate(
+  appointments: AppointmentViewModel[],
+  date: Date
+): AppointmentViewModel[] {
   const dateKey = format(date, 'yyyy-MM-dd');
   const appointmentsByDate = groupAppointmentsByDate(appointments);
   return appointmentsByDate[dateKey] || [];
@@ -196,6 +199,6 @@ export function getAppointmentsForDate(appointments: Appointment[], date: Date):
 /**
  * Verifica se um dia tem agendamentos
  */
-export function hasAppointments(appointments: Appointment[], date: Date): boolean {
+export function hasAppointments(appointments: AppointmentViewModel[], date: Date): boolean {
   return getAppointmentsForDate(appointments, date).length > 0;
 }
