@@ -8,16 +8,41 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.application.dtos.appointment_dto import AppointmentResponseDTO
+from src.domain.entities.user import User
 from src.main import app
 from src.presentation.api.v1.endpoints.appointments import (
     get_appointment_service,
 )
+from src.presentation.dependencies.auth import get_current_active_user
 
 
 @pytest.fixture
-def client() -> TestClient:
+def active_user() -> User:
+    """Authenticated user injected into route dependencies."""
+
+    return User(
+        email="user@example.com",
+        name="Usuário Teste",
+        password_hash="hashed",
+        is_admin=True,
+        is_active=True,
+    )
+
+
+@pytest.fixture
+def client(active_user: User) -> TestClient:
     """Create test client for API interactions."""
-    return TestClient(app)
+
+    async def override_current_user() -> User:
+        return active_user
+
+    app.dependency_overrides[get_current_active_user] = override_current_user
+
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        app.dependency_overrides.pop(get_current_active_user, None)
 
 
 def _build_response_dto() -> AppointmentResponseDTO:

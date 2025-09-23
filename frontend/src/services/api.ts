@@ -80,7 +80,8 @@ export const appointmentAPI = {
   ): Promise<AppointmentCreateResponse> => {
     const response = await api.post<AppointmentCreateResponse>(
       '/appointments',
-      payload
+      payload,
+      { withCredentials: true }
     );
     return response.data;
   },
@@ -97,6 +98,7 @@ export const appointmentAPI = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        withCredentials: true,
         timeout: 180000, // 3 minutes timeout for Excel upload with address normalization
       }
     );
@@ -117,7 +119,8 @@ export const appointmentAPI = {
     if (filters.page_size) params.append('page_size', filters.page_size.toString());
     
     const response = await api.get<AppointmentListResponse>(
-      `/appointments/?${params.toString()}`
+      `/appointments/?${params.toString()}`,
+      { withCredentials: true }
     );
     
     return response.data;
@@ -125,36 +128,53 @@ export const appointmentAPI = {
 
   // Get filter options
   getFilterOptions: async (): Promise<FilterOptions> => {
-    const response = await api.get<FilterOptions>('/appointments/filter-options');
+    const response = await api.get<FilterOptions>(
+      '/appointments/filter-options',
+      { withCredentials: true }
+    );
     return response.data;
   },
 
   // Get dashboard statistics
   getDashboardStats: async (): Promise<DashboardStats> => {
-    const response = await api.get<DashboardStats>('/appointments/stats');
+    const response = await api.get<DashboardStats>('/appointments/stats', {
+      withCredentials: true,
+    });
     return response.data;
   },
 
   // Update appointment status
   updateAppointmentStatus: async (id: string, status: string): Promise<void> => {
-    await api.put(`/appointments/${id}/status?new_status=${status}`);
+    await api.put(`/appointments/${id}/status?new_status=${status}`, null, {
+      withCredentials: true,
+    });
   },
 
   // Delete appointment
   deleteAppointment: async (id: string): Promise<void> => {
-    await api.delete(`/appointments/${id}`);
+    await api.delete(`/appointments/${id}`, {
+      withCredentials: true,
+    });
   },
 
   // Update appointment driver
   updateAppointmentDriver: async (appointmentId: string, driverId: string): Promise<void> => {
-    await api.put(`/appointments/${appointmentId}`, {
-      driver_id: driverId || null
-    });
+    await api.put(
+      `/appointments/${appointmentId}`,
+      {
+        driver_id: driverId || null
+      },
+      { withCredentials: true }
+    );
   },
 
   // Update appointment collector
   updateAppointmentCollector: async (appointmentId: string, collectorId: string): Promise<void> => {
-    await api.put(`/appointments/${appointmentId}/collector?collector_id=${collectorId || ''}`);
+    await api.put(
+      `/appointments/${appointmentId}/collector?collector_id=${collectorId || ''}`,
+      null,
+      { withCredentials: true }
+    );
   },
 };
 

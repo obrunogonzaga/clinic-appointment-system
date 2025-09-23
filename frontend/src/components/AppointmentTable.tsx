@@ -81,6 +81,15 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
         ),
       },
       {
+        accessorKey: 'cip',
+        header: 'CIP',
+        cell: ({ row }) => (
+          <div className="text-sm text-gray-600 font-mono">
+            {row.original.cip || '-'}
+          </div>
+        ),
+      },
+      {
         id: 'healthPlanLabel',
         header: 'Plano',
         cell: ({ row }) => (
@@ -159,6 +168,24 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
             </select>
           );
         },
+      },
+      {
+        accessorKey: 'cadastrado_por',
+        header: 'Cadastrado por',
+        cell: ({ row }) => (
+          <div className="text-sm text-gray-600">
+            {row.original.cadastrado_por || '-'}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'agendado_por',
+        header: 'Agendado por',
+        cell: ({ row }) => (
+          <div className="text-sm text-gray-600">
+            {row.original.agendado_por || '-'}
+          </div>
+        ),
       },
       {
         accessorKey: 'telefone',
