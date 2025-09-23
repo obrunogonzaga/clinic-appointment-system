@@ -160,11 +160,15 @@ export function isSameDate(date1: Date, date2: Date): boolean {
  */
 export function getStatusColor(status: string): string {
   const statusColors: Record<string, string> = {
+    'Pendente': 'bg-yellow-100 text-yellow-800',
+    'Autorização': 'bg-indigo-100 text-indigo-800',
+    'Cadastrar': 'bg-blue-100 text-blue-800',
+    'Agendado': 'bg-sky-100 text-sky-800',
     'Confirmado': 'bg-green-100 text-green-800',
+    'Coletado': 'bg-emerald-100 text-emerald-800',
+    'Alterar': 'bg-purple-100 text-purple-800',
     'Cancelado': 'bg-red-100 text-red-800',
-    'Reagendado': 'bg-yellow-100 text-yellow-800',
-    'Concluído': 'bg-blue-100 text-blue-800',
-    'Não Compareceu': 'bg-gray-100 text-gray-800',
+    'Recoleta': 'bg-orange-100 text-orange-800',
   };
   
   return statusColors[status] || 'bg-gray-100 text-gray-800';

@@ -85,16 +85,19 @@ class ExcelParserService:
 
     # Status mapping from Excel to our domain model
     STATUS_MAPPING = {
-        "Confirmado": "Confirmado",
-        "Cancelado": "Cancelado",
-        "Reagendado": "Reagendado",
-        "Realizado": "Concluído",
-        "Não Compareceu": "Não Compareceu",
-        "Agendado": "Confirmado",
-        "Efetivado": "Confirmado",
-        # Novos mapeamentos
-        "Em atendimento": "Em Atendimento",
-        "Em Atendimento": "Em Atendimento",
+        "pendente": "Pendente",
+        "autorição": "Autorização",
+        "autorização": "Autorização",
+        "autorizacao": "Autorização",
+        "cadastrar": "Cadastrar",
+        "agendado": "Agendado",
+        "confirmado": "Confirmado",
+        "coletado": "Coletado",
+        "alterar": "Alterar",
+        "cancelado": "Cancelado",
+        "recoleta": "Recoleta",
+        "não confirmado": "Pendente",
+        "nao confirmado": "Pendente",
     }
 
     def __init__(
@@ -532,10 +535,14 @@ class ExcelParserService:
             str: Mapped status
         """
         if pd.isna(value) or value is None:
-            return "Confirmado"  # Default status mantém compatibilidade
+            return "Pendente"
 
         status = str(value).strip()
-        return self.STATUS_MAPPING.get(status, "Confirmado")
+        if not status:
+            return "Pendente"
+
+        mapped_status = self.STATUS_MAPPING.get(status.lower())
+        return mapped_status or "Pendente"
 
     def _parse_optional_date(self, value: Any) -> Optional[datetime]:
         """Parse optional date without time, returning midnight."""
@@ -719,36 +726,16 @@ class ExcelParserService:
 
     def _decide_status(self, row: pd.Series) -> str:
         """Decide final status based on explicit and confirmation fields."""
-        status_agendamento = self._map_status(row.get("Status Agendamento"))
-        status_confirmacao = self._clean_string(row.get("Status Confirmação"))
-
-        # Priorizar "Status Confirmação" se existir
-        if status_confirmacao:
-            if status_confirmacao.lower() == "confirmado":
-                return "Confirmado"
-            elif status_confirmacao.lower() == "não confirmado":
-                # Se não foi confirmado, usar o status do agendamento
-                return status_agendamento
-
-        # Fallback: verificar campos de confirmação para casos antigos
-        canal = self._clean_string(
-            row.get("Canal Confirmação") or row.get("Canal de Confirmação")
-        )
-        data_hora_conf = row.get("Data/Hora Confirmação")
-
-        has_confirmation = canal is not None or (
-            not pd.isna(data_hora_conf)
-            and data_hora_conf is not None
-            and str(data_hora_conf).strip() != ""
+        status_confirmacao = self._clean_string(
+            row.get("Status Confirmação")
+            or row.get("Status Confirmacao")
+            or row.get("Status de Confirmação")
         )
 
-        if has_confirmation and status_agendamento not in {
-            "Cancelado",
-            "Não Compareceu",
-        }:
+        if status_confirmacao and status_confirmacao.lower() == "confirmado":
             return "Confirmado"
 
-        return status_agendamento
+        return "Pendente"
 
     def get_file_info(self, file_content: BinaryIO, filename: str) -> Dict:
         """

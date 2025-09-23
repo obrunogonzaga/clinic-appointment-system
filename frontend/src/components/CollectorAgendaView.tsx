@@ -289,18 +289,28 @@ export const CollectorAgendaView: React.FC<CollectorAgendaViewProps> = ({
                           {displayAppointments.map(appointment => {
                             const getStatusColor = (status: string) => {
                               switch (status.toLowerCase()) {
+                                case 'pendente':
+                                  return 'bg-yellow-100 border-yellow-200 text-yellow-900';
+                                case 'autorição':
+                                case 'autorização':
+                                case 'autorizacao':
+                                  return 'bg-indigo-100 border-indigo-200 text-indigo-900';
+                                case 'cadastrar':
+                                  return 'bg-blue-100 border-blue-200 text-blue-900';
+                                case 'agendado':
+                                  return 'bg-sky-100 border-sky-200 text-sky-900';
                                 case 'confirmado':
                                   return 'bg-green-100 border-green-200 text-green-900';
+                                case 'coletado':
+                                  return 'bg-emerald-100 border-emerald-200 text-emerald-900';
+                                case 'alterar':
+                                  return 'bg-purple-100 border-purple-200 text-purple-900';
                                 case 'cancelado':
                                   return 'bg-red-100 border-red-200 text-red-900';
-                                case 'reagendado':
-                                  return 'bg-yellow-100 border-yellow-200 text-yellow-900';
-                                case 'concluído':
-                                  return 'bg-blue-100 border-blue-200 text-blue-900';
-                                case 'não compareceu':
-                                  return 'bg-gray-100 border-gray-200 text-gray-900';
+                                case 'recoleta':
+                                  return 'bg-orange-100 border-orange-200 text-orange-900';
                                 default:
-                                  return 'bg-purple-100 border-purple-200 text-purple-900';
+                                  return 'bg-gray-100 border-gray-200 text-gray-900';
                               }
                             };
 

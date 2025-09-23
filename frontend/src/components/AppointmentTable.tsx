@@ -25,21 +25,27 @@ interface AppointmentTableProps {
 }
 
 const statusColors = {
+  'Pendente': 'bg-yellow-50 text-yellow-700 border-yellow-200',
+  'Autorização': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'Cadastrar': 'bg-blue-50 text-blue-700 border-blue-200',
+  'Agendado': 'bg-sky-50 text-sky-700 border-sky-200',
   'Confirmado': 'bg-green-50 text-green-700 border-green-200',
+  'Coletado': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Alterar': 'bg-purple-50 text-purple-700 border-purple-200',
   'Cancelado': 'bg-red-50 text-red-700 border-red-200',
-  'Reagendado': 'bg-yellow-50 text-yellow-700 border-yellow-200',
-  'Concluído': 'bg-blue-50 text-blue-700 border-blue-200',
-  'Não Compareceu': 'bg-gray-50 text-gray-700 border-gray-200',
-  'Em Atendimento': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'Recoleta': 'bg-orange-50 text-orange-700 border-orange-200',
 };
 
 const statusOptions = [
+  'Pendente',
+  'Autorização',
+  'Cadastrar',
+  'Agendado',
   'Confirmado',
-  'Cancelado', 
-  'Reagendado',
-  'Concluído',
-  'Não Compareceu',
-  'Em Atendimento'
+  'Coletado',
+  'Alterar',
+  'Cancelado',
+  'Recoleta'
 ];
 
 export const AppointmentTable: React.FC<AppointmentTableProps> = ({

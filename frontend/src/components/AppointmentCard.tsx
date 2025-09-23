@@ -31,12 +31,15 @@ interface AppointmentCardProps {
 }
 
 const statusOptions = [
+  'Pendente',
+  'Autorização',
+  'Cadastrar',
+  'Agendado',
   'Confirmado',
-  'Cancelado', 
-  'Reagendado',
-  'Concluído',
-  'Não Compareceu',
-  'Em Atendimento'
+  'Coletado',
+  'Alterar',
+  'Cancelado',
+  'Recoleta'
 ];
 
 export const AppointmentCard: React.FC<AppointmentCardProps> = ({
