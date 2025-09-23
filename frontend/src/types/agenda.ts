@@ -1,8 +1,8 @@
-import type { Appointment } from './appointment';
+import type { AppointmentViewModel } from './appointment';
 
 export interface CalendarDay {
   date: Date;
-  appointments: Appointment[];
+  appointments: AppointmentViewModel[];
   isCurrentMonth: boolean;
   isToday: boolean;
   isSelected: boolean;
@@ -21,7 +21,7 @@ export interface CalendarMonth {
 }
 
 export interface CalendarViewProps {
-  appointments: Appointment[];
+  appointments: AppointmentViewModel[];
   currentDate: Date;
   selectedDate?: Date;
   onDateSelect: (date: Date) => void;
@@ -39,7 +39,7 @@ export interface DayModalProps {
   isOpen: boolean;
   onClose: () => void;
   date: Date;
-  appointments: Appointment[];
+  appointments: AppointmentViewModel[];
   onStatusChange?: (id: string, status: string) => void;
   onDriverChange?: (appointmentId: string, driverId: string) => void;
   onCollectorChange?: (appointmentId: string, collectorId: string) => void;
@@ -62,5 +62,5 @@ export interface CalendarDayProps {
 }
 
 export interface AppointmentsByDate {
-  [dateKey: string]: Appointment[]; // dateKey format: YYYY-MM-DD
+  [dateKey: string]: AppointmentViewModel[]; // dateKey format: YYYY-MM-DD
 }

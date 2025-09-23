@@ -5,13 +5,13 @@ import {
     UserIcon,
 } from '@heroicons/react/24/outline';
 import React, { useMemo } from 'react';
-import type { Appointment } from '../types/appointment';
+import type { AppointmentViewModel } from '../types/appointment';
 import type { ActiveCollector } from '../types/collector';
 import type { ActiveDriver } from '../types/driver';
 import { AppointmentCard } from './AppointmentCard';
 
 interface CollectorAgendaViewProps {
-  appointments: Appointment[];
+  appointments: AppointmentViewModel[];
   collectors: ActiveCollector[];
   drivers: ActiveDriver[];
   selectedDate: Date;
@@ -25,7 +25,7 @@ interface CollectorAgendaViewProps {
 
 interface CollectorAppointments {
   collector: ActiveCollector;
-  appointments: Appointment[];
+  appointments: AppointmentViewModel[];
 }
 
 const TIME_SLOTS = [
@@ -132,7 +132,10 @@ export const CollectorAgendaView: React.FC<CollectorAgendaViewProps> = ({
     }
   };
 
-  const getAppointmentsForTimeSlot = (collectorId: string, timeSlot: string): Appointment[] => {
+  const getAppointmentsForTimeSlot = (
+    collectorId: string,
+    timeSlot: string
+  ): AppointmentViewModel[] => {
     const collectorData = collectorAppointments.find(ca => ca.collector.id === collectorId);
     if (!collectorData) return [];
 
