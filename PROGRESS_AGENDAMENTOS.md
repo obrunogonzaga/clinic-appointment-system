@@ -13,6 +13,8 @@
 - [x] A11y (focus, ESC, aria, tab trap)
 - [x] Testes smoke/interação (abrir modal, trocar views, aplicar filtro)
 - [x] Atualização do PROGRESS_AGENDAMENTOS.md com evidências
+- [x] Botão “Adicionar Agendamento” + modal de cadastro manual
+- [x] Integração `POST /appointments` com invalidação de cache e toasts de feedback
 
 ## Arquitetura & Convenções (anotações iniciais)
 - Frontend em React + Vite, TypeScript, TailwindCSS; estado remoto via TanStack Query; formulários e componentes com Heroicons.
@@ -34,6 +36,9 @@
 - Adaptador `toAppointmentViewModel` criado para mascarar CPF e montar rótulo do plano com campos existentes.
 - Toggle ampliado para incluir visualização em tabela, mantendo calendário/agenda originais.
 - Modal agora usa `Modal` do design system com trap de foco; revisar contrastes e aria após testes.
+- Novo modal de criação manual reaproveita listas existentes; telefonemas normalizados no client antes do envio.
+- Toasts globais (`useToast`) adotados para padronizar feedback de upload e criação manual.
+- Validação reforçada: telefone passa a ser obrigatório no fluxo manual (frontend + API) com exigência de 10 ou 11 dígitos.
 - Testes automatizados rodam via `npm test` usando `esbuild` + `node:test` (sem dependências extras).
 - Pendente: registrar evidências finais (prints/resultados) e capturar status do lint com falsos positivos herdados.
 - Layout ajustado para botões/atalhos arredondados, KPIs minimalistas e tabela mais próxima do mock fornecido.
@@ -45,6 +50,7 @@
 4. Usar busca por nome/CPF → lista/cards filtram localmente.
 5. Alternar entre Cards ↔ Lista ↔ outras visualizações existentes → campos de CPF/Plano visíveis.
 6. Validar acessibilidade: fechar modal com ESC, foco contido no modal e restaurado ao fechar.
+7. Abrir modal "Adicionar Agendamento", preencher campos mínimos e salvar → novo registro deve aparecer na listagem/cards e toasts devem indicar o resultado.
 
 ## Notas de Acessibilidade
 - Garantir foco inicial no primeiro elemento interativo do modal e trap de tab até o fechamento.
@@ -56,5 +62,5 @@
 - PR: _pendente_
 - Commits: _pendente_
 - Capturas: _pendente_
-- Testes: `npm test` (ok - smoke suite)
+- Testes: `PYTEST_ADDOPTS="--no-cov" pytest backend/tests/test_appointment_service.py backend/tests/test_appointment_api.py` (ok) e `npm test` (ok - smoke suite)
 - Lint: `npm run lint` (falhou em pendências pré-existentes fora do escopo desta feature)

@@ -4,12 +4,19 @@ Appointment API endpoints.
 
 import io
 import time
-from typing import Dict, List
+from typing import List
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
-from fastapi.responses import JSONResponse
-
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    UploadFile,
+    status,
+)
 from src.application.dtos.appointment_dto import (
+    AppointmentCreateDTO,
     AppointmentFilterDTO,
     AppointmentListResponseDTO,
     AppointmentResponseDTO,
@@ -77,6 +84,43 @@ async def get_appointment_service(
         # OpenRouter not configured, continue without normalization services
         excel_parser = ExcelParserService(car_service=car_service)
     return AppointmentService(appointment_repository, excel_parser)
+
+
+@router.post(
+    "/",
+    response_model=DataResponse[AppointmentResponseDTO],
+    status_code=status.HTTP_201_CREATED,
+    summary="Create appointment",
+    description="Cria um agendamento manualmente com base nos dados informados",
+)
+async def create_appointment_endpoint(
+    appointment_data: AppointmentCreateDTO,
+    service: AppointmentService = Depends(get_appointment_service),
+) -> DataResponse[AppointmentResponseDTO]:
+    """Create a new appointment manually."""
+
+    result = await service.create_appointment(appointment_data)
+    if not result["success"]:
+        error_code = result.get("error_code")
+        if error_code == "duplicate":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail=result["message"]
+            )
+        if error_code == "validation":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=result["message"],
+            )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=result["message"],
+        )
+
+    return DataResponse(
+        success=True,
+        message=result["message"],
+        data=result["appointment"],
+    )
 
 
 @router.post(

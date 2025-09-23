@@ -1,19 +1,28 @@
 import {
     CheckCircleIcon,
+    PlusIcon,
     XCircleIcon,
 } from '@heroicons/react/24/outline';
+import { isAxiosError } from 'axios';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useMemo, useState } from 'react';
 import { AppointmentCardList } from '../components/AppointmentCardList';
 import { AppointmentCalendarView } from '../components/AppointmentCalendarView';
+import { AppointmentFormModal } from '../components/AppointmentFormModal';
 import { AppointmentFilters } from '../components/AppointmentFilters';
 import { CollectorAgendaView } from '../components/CollectorAgendaView';
 import { FileUpload } from '../components/FileUpload';
+import { ToastContainer } from '../components/ui/Toast';
 import { ViewModeToggle, type ViewMode } from '../components/ViewModeToggle';
 import { AppointmentTable } from '../components/AppointmentTable';
 import { AppointmentKpiCards } from '../components/AppointmentKpiCards';
 import { appointmentAPI, collectorAPI, driverAPI } from '../services/api';
-import type { AppointmentFilter, ExcelUploadResponse } from '../types/appointment';
+import { useToast } from '../hooks/useToast';
+import type {
+  AppointmentCreateRequest,
+  AppointmentFilter,
+  ExcelUploadResponse
+} from '../types/appointment';
 import {
   countAppointmentsByStatus,
   filterAppointmentsByDateRange,
@@ -26,6 +35,7 @@ import {
 
 export const AppointmentsPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const { toasts, success: showToastSuccess, error: showToastError, removeToast } = useToast();
   
   const [filters, setFilters] = useState<AppointmentFilter>({
     page: 1,
@@ -38,6 +48,8 @@ export const AppointmentsPage: React.FC = () => {
   const [dateShortcut, setDateShortcut] = useState<DateShortcut | null>(null);
   const [currentCalendarDate, setCurrentCalendarDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreatingAppointment, setIsCreatingAppointment] = useState(false);
   const [selectedAgendaDate, setSelectedAgendaDate] = useState<Date>(new Date());
 
   // Fetch appointments
@@ -97,6 +109,30 @@ export const AppointmentsPage: React.FC = () => {
     setTimeout(() => {
       setUploadError(null);
     }, 5000);
+  };
+
+  const handleCreateAppointment = async (formData: AppointmentCreateRequest) => {
+    try {
+      setIsCreatingAppointment(true);
+      const response = await appointmentAPI.createAppointment(formData);
+
+      showToastSuccess(response.message || 'Agendamento criado com sucesso');
+      setIsCreateModalOpen(false);
+
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['filterOptions'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+    } catch (error) {
+      const fallbackMessage = 'Não foi possível criar o agendamento.';
+      if (isAxiosError(error)) {
+        const data = error.response?.data as { message?: string; detail?: string } | undefined;
+        showToastError(data?.message || data?.detail || fallbackMessage);
+      } else {
+        showToastError(fallbackMessage);
+      }
+    } finally {
+      setIsCreatingAppointment(false);
+    }
   };
 
   const handleStatusChange = async (id: string, status: string) => {
@@ -183,7 +219,21 @@ export const AppointmentsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+      <AppointmentFormModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreateAppointment}
+        isSubmitting={isCreatingAppointment}
+        brands={filterOptions?.brands || []}
+        units={filterOptions?.units || []}
+        statuses={filterOptions?.statuses}
+        drivers={driversData?.drivers || []}
+        collectors={collectorsData?.collectors || []}
+      />
+
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div>
@@ -196,6 +246,15 @@ export const AppointmentsPage: React.FC = () => {
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
+            disabled={isCreatingAppointment}
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            Adicionar Agendamento
+          </button>
           <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 shadow-sm">
             <span className="text-sm font-medium text-gray-600">Mostrar:</span>
             <ViewModeToggle
@@ -397,5 +456,6 @@ export const AppointmentsPage: React.FC = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };

@@ -1,5 +1,7 @@
 import axios from 'axios';
 import type {
+    AppointmentCreateRequest,
+    AppointmentCreateResponse,
     AppointmentFilter,
     AppointmentListResponse,
     DashboardStats,
@@ -72,11 +74,22 @@ api.interceptors.response.use(
 );
 
 export const appointmentAPI = {
+  // Create appointment manually
+  createAppointment: async (
+    payload: AppointmentCreateRequest
+  ): Promise<AppointmentCreateResponse> => {
+    const response = await api.post<AppointmentCreateResponse>(
+      '/appointments',
+      payload
+    );
+    return response.data;
+  },
+
   // Upload Excel file
   uploadExcel: async (file: File, replaceExisting = false): Promise<ExcelUploadResponse> => {
     const formData = new FormData();
     formData.append('file', file);
-    
+
     const response = await api.post<ExcelUploadResponse>(
       `/appointments/upload?replace_existing=${replaceExisting}`,
       formData,

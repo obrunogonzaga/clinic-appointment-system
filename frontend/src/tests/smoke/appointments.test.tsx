@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { describe, test } from 'node:test';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { AppointmentFormModal } from '../../components/AppointmentFormModal';
 import { Modal } from '../../components/ui/Modal';
 import { ViewModeToggle } from '../../components/ViewModeToggle';
 import {
@@ -60,6 +61,25 @@ describe('Appointments smoke tests', () => {
 
     assert.ok(markup.includes('Lista'));
     assert.ok(markup.includes('aria-pressed="true"'));
+  });
+
+  test('AppointmentFormModal renders required inputs when opened', () => {
+    const markup = renderToStaticMarkup(
+      <AppointmentFormModal
+        isOpen
+        onClose={() => undefined}
+        onSubmit={async () => undefined}
+        brands={['Marca X']}
+        units={['Unidade Centro']}
+        statuses={['Confirmado', 'Pendente']}
+        drivers={[]}
+        collectors={[]}
+      />
+    );
+
+    assert.ok(markup.includes('Adicionar Agendamento'));
+    assert.ok(markup.includes('name="nome_paciente"'));
+    assert.ok(markup.includes('Confirmado'));
   });
 
   test('filterAppointmentsBySearch finds matches by CPF digits and name', () => {
