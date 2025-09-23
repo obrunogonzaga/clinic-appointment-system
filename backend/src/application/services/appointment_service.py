@@ -5,7 +5,12 @@ Service for managing appointments business logic.
 from datetime import datetime, timedelta
 from typing import Any, BinaryIO, Dict, Optional
 
+from src.application.dtos.appointment_dto import (
+    AppointmentCreateDTO,
+    AppointmentResponseDTO,
+)
 from src.application.services.excel_parser_service import ExcelParserService
+from src.domain.entities.appointment import Appointment
 from src.domain.repositories.appointment_repository_interface import (
     AppointmentRepositoryInterface,
 )
@@ -225,6 +230,70 @@ class AppointmentService:
                     "has_next": False,
                     "has_previous": False,
                 },
+            }
+
+    async def create_appointment(
+        self, appointment_data: AppointmentCreateDTO
+    ) -> Dict:
+        """Create a single appointment entry."""
+
+        try:
+            phone = (appointment_data.telefone or "").strip()
+            if not phone:
+                return {
+                    "success": False,
+                    "message": "Telefone é obrigatório para novo agendamento.",
+                    "error_code": "validation",
+                }
+            appointment = Appointment(
+                nome_marca=appointment_data.nome_marca,
+                nome_unidade=appointment_data.nome_unidade,
+                nome_paciente=appointment_data.nome_paciente,
+                data_agendamento=appointment_data.data_agendamento,
+                hora_agendamento=appointment_data.hora_agendamento,
+                tipo_consulta=appointment_data.tipo_consulta,
+                status=appointment_data.status,
+                telefone=phone,
+                carro=appointment_data.carro,
+                observacoes=appointment_data.observacoes,
+                driver_id=appointment_data.driver_id,
+                collector_id=appointment_data.collector_id,
+                numero_convenio=appointment_data.numero_convenio,
+                nome_convenio=appointment_data.nome_convenio,
+                carteira_convenio=appointment_data.carteira_convenio,
+            )
+
+            duplicate_ids = await self.appointment_repository.find_duplicates(
+                [appointment]
+            )
+            if duplicate_ids:
+                return {
+                    "success": False,
+                    "message": "Já existe um agendamento para este paciente nesta data e horário.",
+                    "error_code": "duplicate",
+                }
+
+            created = await self.appointment_repository.create(appointment)
+
+            return {
+                "success": True,
+                "message": "Agendamento criado com sucesso",
+                "appointment": AppointmentResponseDTO(
+                    **created.model_dump()
+                ),
+            }
+
+        except ValueError as exc:
+            return {
+                "success": False,
+                "message": str(exc),
+                "error_code": "validation",
+            }
+        except Exception as exc:  # pragma: no cover - defensive
+            return {
+                "success": False,
+                "message": f"Erro ao criar agendamento: {str(exc)}",
+                "error_code": "internal",
             }
 
     async def get_filter_options(self) -> Dict:

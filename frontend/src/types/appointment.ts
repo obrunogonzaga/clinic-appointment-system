@@ -47,6 +47,24 @@ export interface AppointmentViewModel extends Appointment {
   healthPlanLabel: string;
 }
 
+export interface AppointmentCreateRequest {
+  nome_marca: string;
+  nome_unidade: string;
+  nome_paciente: string;
+  data_agendamento: string;
+  hora_agendamento: string;
+  tipo_consulta?: string;
+  status?: string;
+  telefone: string;
+  carro?: string;
+  observacoes?: string;
+  driver_id?: string;
+  collector_id?: string;
+  numero_convenio?: string;
+  nome_convenio?: string;
+  carteira_convenio?: string;
+}
+
 export interface AppointmentFilter {
   nome_unidade?: string;
   nome_marca?: string;
@@ -104,4 +122,10 @@ export interface DashboardStats {
     total_units: number;
     total_brands: number;
   };
+}
+
+export interface AppointmentCreateResponse {
+  success: boolean;
+  message: string;
+  data: Appointment;
 }

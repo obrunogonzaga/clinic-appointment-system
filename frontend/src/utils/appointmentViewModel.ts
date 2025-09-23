@@ -7,6 +7,18 @@ export interface DateRange {
   end: Date;
 }
 
+export const APPOINTMENT_STATUS_OPTIONS = [
+  'Pendente',
+  'Autorização',
+  'Cadastrar',
+  'Agendado',
+  'Confirmado',
+  'Coletado',
+  'Alterar',
+  'Cancelado',
+  'Recoleta',
+] as const;
+
 const onlyDigits = (value: string | null | undefined): string => value ? value.replace(/\D/g, '') : '';
 
 export const maskCpf = (cpf: string | null | undefined): string => {

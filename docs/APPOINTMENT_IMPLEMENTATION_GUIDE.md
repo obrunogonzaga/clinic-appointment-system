@@ -584,3 +584,13 @@ export const formatDateTime = (dateString: string, timeString: string) => {
 ---
 
 **🎯 Resultado:** Interface moderna, responsiva e user-friendly para gestão de agendamentos.
+
+---
+
+## ✏️ Cadastro Manual de Agendamentos (2025)
+
+- Botão "Adicionar Agendamento" disponível no header da página principal abre modal com componente `Modal` do design system (focus trap, ESC, scroll lock).
+- Formulário consome listas já expostas pela API (`filter-options`, `drivers/active`, `collectors/active`) e aplica validações client-side alinhadas ao backend (campos obrigatórios, horário HH:MM, telefone com 10-11 dígitos).
+- Submissão aciona `appointmentAPI.createAppointment` (`POST /api/v1/appointments`) e, em caso de sucesso, invalida caches de `appointments`, `filterOptions` e `dashboardStats` via TanStack Query para refletir o novo registro.
+- Feedback visual unificado via `useToast` (sucesso/erro) e fechamento automático do modal; mensagens de conflito (409) retornadas pelo backend são exibidas diretamente ao usuário.
+- Modal organizado por seções: dados principais, contato, logística (motorista/coletora), convênio e observações, mantendo consistência com o modelo importado da planilha.
