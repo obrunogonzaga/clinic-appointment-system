@@ -6,6 +6,7 @@ export interface Appointment {
   data_agendamento: string;
   hora_agendamento: string;
   tipo_consulta?: string;
+  cip?: string;
   status: string;
   telefone?: string;
   carro?: string;
@@ -40,6 +41,8 @@ export interface Appointment {
   nome_convenio?: string;
   created_at: string;
   updated_at?: string;
+  cadastrado_por?: string;
+  agendado_por?: string;
 }
 
 export interface AppointmentViewModel extends Appointment {
@@ -54,6 +57,7 @@ export interface AppointmentCreateRequest {
   data_agendamento: string;
   hora_agendamento: string;
   tipo_consulta?: string;
+  cip?: string;
   status?: string;
   telefone: string;
   carro?: string;

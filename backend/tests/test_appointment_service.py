@@ -14,17 +14,8 @@ from src.domain.entities.appointment import Appointment
 async def test_create_appointment_success() -> None:
     """Service should persist appointment when no duplicate exists."""
     repository = MagicMock()
-    created_entity = Appointment(
-        nome_marca="Marca",
-        nome_unidade="Unidade",
-        nome_paciente="Paciente",
-        data_agendamento=datetime(2025, 1, 10, 9, 0),
-        hora_agendamento="09:00",
-        status="Confirmado",
-        telefone="11999988888",
-    )
     repository.find_duplicates = AsyncMock(return_value=[])
-    repository.create = AsyncMock(return_value=created_entity)
+    repository.create = AsyncMock(side_effect=lambda appointment: appointment)
 
     service = AppointmentService(repository, excel_parser=MagicMock())
 
@@ -38,10 +29,11 @@ async def test_create_appointment_success() -> None:
         telefone="11999988888",
     )
 
-    result = await service.create_appointment(dto)
+    result = await service.create_appointment(dto, created_by="Ana Admin")
 
     assert result["success"] is True
     assert result["appointment"].nome_paciente == "Paciente"
+    assert result["appointment"].cadastrado_por == "Ana Admin"
     repository.create.assert_awaited_once()
 
 
@@ -64,7 +56,7 @@ async def test_create_appointment_duplicate() -> None:
         telefone="11999988888",
     )
 
-    result = await service.create_appointment(dto)
+    result = await service.create_appointment(dto, created_by="Ana Admin")
 
     assert result["success"] is False
     assert result["error_code"] == "duplicate"
@@ -89,7 +81,7 @@ async def test_create_appointment_validation_error() -> None:
         telefone="11999988888",
     )
 
-    result = await service.create_appointment(dto)
+    result = await service.create_appointment(dto, created_by="Ana Admin")
 
     assert result["success"] is False
     assert result["error_code"] == "validation"
@@ -115,7 +107,7 @@ async def test_create_appointment_internal_error() -> None:
         telefone="11999988888",
     )
 
-    result = await service.create_appointment(dto)
+    result = await service.create_appointment(dto, created_by="Ana Admin")
 
     assert result["success"] is False
     assert result["error_code"] == "internal"
@@ -138,8 +130,33 @@ async def test_create_appointment_missing_phone() -> None:
         status="Confirmado",
     )
 
-    result = await service.create_appointment(dto)
+    result = await service.create_appointment(dto, created_by="Ana Admin")
 
     assert result["success"] is False
     assert result["error_code"] == "validation"
     repository.find_duplicates.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_create_appointment_sets_agendado_por_when_status_agendado() -> None:
+    """Agendado_por should capture creator when status starts as Agendado."""
+    repository = MagicMock()
+    repository.find_duplicates = AsyncMock(return_value=[])
+    repository.create = AsyncMock(side_effect=lambda appointment: appointment)
+
+    service = AppointmentService(repository, excel_parser=MagicMock())
+
+    dto = AppointmentCreateDTO(
+        nome_marca="Marca",
+        nome_unidade="Unidade",
+        nome_paciente="Paciente",
+        data_agendamento=datetime(2025, 1, 10, 9, 0),
+        hora_agendamento="09:00",
+        status="Agendado",
+        telefone="11999988888",
+    )
+
+    result = await service.create_appointment(dto, created_by="Ana Admin")
+
+    assert result["success"] is True
+    assert result["appointment"].agendado_por == "Ana Admin"

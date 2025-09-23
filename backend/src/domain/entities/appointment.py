@@ -31,6 +31,10 @@ class Appointment(Entity):
     tipo_consulta: Optional[str] = Field(
         None, description="Tipo de consulta médica"
     )
+    cip: Optional[str] = Field(
+        None,
+        description="Código CIP (Classificação Internacional de Procedimentos)",
+    )
     status: Optional[str] = Field(
         "Pendente", description="Status do agendamento"
     )
@@ -83,6 +87,12 @@ class Appointment(Entity):
     nome_convenio: Optional[str] = Field(None, description="Nome do convênio")
     carteira_convenio: Optional[str] = Field(
         None, description="Número da carteira do convênio"
+    )
+    cadastrado_por: Optional[str] = Field(
+        None, description="Usuário responsável pelo cadastro do agendamento"
+    )
+    agendado_por: Optional[str] = Field(
+        None, description="Usuário responsável por mover o status para Agendado"
     )
     canal_confirmacao: Optional[str] = Field(
         None,

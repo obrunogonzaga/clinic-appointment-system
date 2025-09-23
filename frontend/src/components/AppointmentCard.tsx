@@ -168,6 +168,16 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
         </div>
 
         <div className="space-y-4">
+          {appointment.cip && (
+            <div>
+              <p className={detailLabelClass}>CIP</p>
+              <div className={`mt-1 flex items-center gap-2 ${detailValueClass}`}>
+                <IdentificationIcon className="w-4 h-4 text-gray-400" />
+                <span className="leading-snug">{appointment.cip}</span>
+              </div>
+            </div>
+          )}
+
           {appointment.cpfMasked && (
             <div>
               <p className={detailLabelClass}>CPF</p>
@@ -209,6 +219,26 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
               <div className={`mt-1 flex items-center gap-2 ${detailValueClass}`}>
                 <PhoneIcon className="w-4 h-4 text-gray-400" />
                 <span className="leading-snug">{appointment.telefone}</span>
+              </div>
+            </div>
+          )}
+
+          {(appointment.cadastrado_por || appointment.agendado_por) && (
+            <div>
+              <p className={detailLabelClass}>Responsáveis</p>
+              <div className={`mt-1 flex flex-col gap-1 ${detailValueClass}`}>
+                {appointment.cadastrado_por && (
+                  <span className="inline-flex items-center gap-1">
+                    <UserIcon className="w-4 h-4 text-gray-400" />
+                    <span className="leading-snug">Cadastrado por {appointment.cadastrado_por}</span>
+                  </span>
+                )}
+                {appointment.agendado_por && (
+                  <span className="inline-flex items-center gap-1">
+                    <UserIcon className="w-4 h-4 text-gray-400" />
+                    <span className="leading-snug">Agendado por {appointment.agendado_por}</span>
+                  </span>
+                )}
               </div>
             </div>
           )}

@@ -31,6 +31,7 @@ const formSchema = z.object({
     .trim()
     .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Hora inválida (use HH:MM)'),
   tipo_consulta: z.string().trim().default(''),
+  cip: z.string().trim().max(60, 'CIP deve ter no máximo 60 caracteres').default(''),
   status: z.string().trim().min(1, 'Selecione o status'),
   telefone: z
     .string()
@@ -85,6 +86,7 @@ export function AppointmentFormModal({
       date: '',
       time: '',
       tipo_consulta: '',
+      cip: '',
       status: defaultStatus,
       telefone: '',
       carro: '',
@@ -134,6 +136,7 @@ export function AppointmentFormModal({
       data_agendamento: iso.toISOString(),
       hora_agendamento: values.time,
       tipo_consulta: values.tipo_consulta.trim() || undefined,
+      cip: values.cip.trim() || undefined,
       status: values.status,
       telefone: phoneDigits,
       carro: values.carro.trim() || undefined,
@@ -220,6 +223,20 @@ export function AppointmentFormModal({
               placeholder="Ex.: Coleta domiciliar"
               disabled={isSubmitting}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">CIP</label>
+            <input
+              type="text"
+              {...register('cip')}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              placeholder="Ex.: 123456"
+              disabled={isSubmitting}
+            />
+            {errors.cip && (
+              <p className="mt-1 text-sm text-red-600">{errors.cip.message}</p>
+            )}
           </div>
         </div>
 

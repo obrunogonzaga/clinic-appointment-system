@@ -18,6 +18,9 @@ class AppointmentCreateDTO(BaseModel):
     data_agendamento: datetime = Field(..., description="Data do Agendamento")
     hora_agendamento: str = Field(..., description="Hora do Agendamento")
     tipo_consulta: Optional[str] = Field(None, description="Tipo de Consulta")
+    cip: Optional[str] = Field(
+        None, description="Código CIP (Classificação Internacional de Procedimentos)"
+    )
     status: str = Field("Confirmado", description="Status do Agendamento")
     telefone: Optional[str] = Field(None, description="Telefone do Paciente")
     carro: Optional[str] = Field(
@@ -52,13 +55,14 @@ class AppointmentResponseDTO(BaseModel):
     nome_paciente: str
     data_agendamento: datetime
     hora_agendamento: str
-    tipo_consulta: Optional[str]
+    tipo_consulta: Optional[str] = None
+    cip: Optional[str] = None
     status: str
-    telefone: Optional[str]
-    carro: Optional[str]
-    observacoes: Optional[str]
-    driver_id: Optional[str]
-    collector_id: Optional[str]
+    telefone: Optional[str] = None
+    carro: Optional[str] = None
+    observacoes: Optional[str] = None
+    driver_id: Optional[str] = None
+    collector_id: Optional[str] = None
     # Campos de endereço
     cep: Optional[str] = Field(None, description="CEP do endereço de coleta")
     endereco_coleta: Optional[str] = Field(
@@ -84,9 +88,11 @@ class AppointmentResponseDTO(BaseModel):
         None, description="RG do paciente (apenas dígitos)"
     )
     # Campos de convênio
-    numero_convenio: Optional[str]
-    nome_convenio: Optional[str]
-    carteira_convenio: Optional[str]
+    numero_convenio: Optional[str] = None
+    nome_convenio: Optional[str] = None
+    carteira_convenio: Optional[str] = None
+    cadastrado_por: Optional[str] = None
+    agendado_por: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime]
 

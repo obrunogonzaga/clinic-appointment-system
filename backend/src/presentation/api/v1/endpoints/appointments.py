@@ -34,6 +34,7 @@ from src.application.services.document_normalization_service import (
     DocumentNormalizationService,
 )
 from src.application.services.excel_parser_service import ExcelParserService
+from src.domain.entities.user import User
 from src.infrastructure.config import Settings, get_settings
 from src.infrastructure.container import (
     get_appointment_repository,
@@ -42,6 +43,7 @@ from src.infrastructure.container import (
 from src.infrastructure.repositories.appointment_repository import (
     AppointmentRepository,
 )
+from src.presentation.dependencies.auth import get_current_active_user
 from src.presentation.api.responses import (
     BaseResponse,
     DataResponse,
@@ -96,10 +98,13 @@ async def get_appointment_service(
 async def create_appointment_endpoint(
     appointment_data: AppointmentCreateDTO,
     service: AppointmentService = Depends(get_appointment_service),
+    current_user: User = Depends(get_current_active_user),
 ) -> DataResponse[AppointmentResponseDTO]:
     """Create a new appointment manually."""
 
-    result = await service.create_appointment(appointment_data)
+    result = await service.create_appointment(
+        appointment_data, created_by=current_user.name
+    )
     if not result["success"]:
         error_code = result.get("error_code")
         if error_code == "duplicate":
@@ -135,6 +140,7 @@ async def upload_excel_file(
         False, description="Replace existing appointments"
     ),
     service: AppointmentService = Depends(get_appointment_service),
+    current_user: User = Depends(get_current_active_user),
 ) -> ExcelUploadResponseDTO:
     """
     Upload Excel file with appointments.
@@ -179,7 +185,10 @@ async def upload_excel_file(
 
         # Process file
         result = await service.import_appointments_from_excel(
-            file_stream, file.filename, replace_existing
+            file_stream,
+            file.filename,
+            replace_existing,
+            uploaded_by=current_user.name,
         )
 
         # Calculate processing time
@@ -387,6 +396,7 @@ async def update_appointment_status(
     appointment_id: str,
     new_status: str = Query(..., description="Novo status"),
     service: AppointmentService = Depends(get_appointment_service),
+    current_user: User = Depends(get_current_active_user),
 ) -> DataResponse[AppointmentResponseDTO]:
     """
     Update appointment status.
@@ -401,7 +411,7 @@ async def update_appointment_status(
     """
     try:
         result = await service.update_appointment_status(
-            appointment_id, new_status
+            appointment_id, new_status, updated_by=current_user.name
         )
 
         if not result["success"]:

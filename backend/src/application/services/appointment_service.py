@@ -44,6 +44,7 @@ class AppointmentService:
         file_content: BinaryIO,
         filename: str,
         replace_existing: bool = False,
+        uploaded_by: Optional[str] = None,
     ) -> Dict:
         """
         Import appointments from Excel file.
@@ -52,6 +53,7 @@ class AppointmentService:
             file_content: Binary content of the Excel file
             filename: Name of the uploaded file
             replace_existing: Whether to replace existing appointments
+            uploaded_by: Name of the authenticated user performing the upload
 
         Returns:
             Dict: Import result with statistics
@@ -73,6 +75,15 @@ class AppointmentService:
                     "imported_appointments": 0,
                     "duplicates_found": 0,
                 }
+
+            uploader_name = uploaded_by.strip() if uploaded_by else None
+
+            # Propagate metadata about the uploader before any persistence logic
+            if uploader_name and parse_result.appointments:
+                for appointment in parse_result.appointments:
+                    appointment.cadastrado_por = uploader_name
+                    if appointment.status == "Agendado":
+                        appointment.agendado_por = uploader_name
 
             # Handle existing appointments if needed
             if replace_existing:
@@ -233,9 +244,11 @@ class AppointmentService:
             }
 
     async def create_appointment(
-        self, appointment_data: AppointmentCreateDTO
+        self,
+        appointment_data: AppointmentCreateDTO,
+        created_by: Optional[str] = None,
     ) -> Dict:
-        """Create a single appointment entry."""
+        """Create a single appointment entry with metadata."""
 
         try:
             phone = (appointment_data.telefone or "").strip()
@@ -245,6 +258,18 @@ class AppointmentService:
                     "message": "Telefone é obrigatório para novo agendamento.",
                     "error_code": "validation",
                 }
+            cip_value = (
+                appointment_data.cip.strip()
+                if appointment_data.cip and appointment_data.cip.strip()
+                else None
+            )
+            creator_name = created_by.strip() if created_by else None
+            agendado_por = (
+                creator_name
+                if appointment_data.status == "Agendado" and creator_name
+                else None
+            )
+
             appointment = Appointment(
                 nome_marca=appointment_data.nome_marca,
                 nome_unidade=appointment_data.nome_unidade,
@@ -252,6 +277,7 @@ class AppointmentService:
                 data_agendamento=appointment_data.data_agendamento,
                 hora_agendamento=appointment_data.hora_agendamento,
                 tipo_consulta=appointment_data.tipo_consulta,
+                cip=cip_value,
                 status=appointment_data.status,
                 telefone=phone,
                 carro=appointment_data.carro,
@@ -261,6 +287,8 @@ class AppointmentService:
                 numero_convenio=appointment_data.numero_convenio,
                 nome_convenio=appointment_data.nome_convenio,
                 carteira_convenio=appointment_data.carteira_convenio,
+                cadastrado_por=creator_name,
+                agendado_por=agendado_por,
             )
 
             duplicate_ids = await self.appointment_repository.find_duplicates(
@@ -408,7 +436,10 @@ class AppointmentService:
             }
 
     async def update_appointment_status(
-        self, appointment_id: str, new_status: str
+        self,
+        appointment_id: str,
+        new_status: str,
+        updated_by: Optional[str] = None,
     ) -> Dict:
         """
         Update appointment status.
@@ -416,6 +447,7 @@ class AppointmentService:
         Args:
             appointment_id: ID of the appointment
             new_status: New status value
+            updated_by: Name of the user performing the status change
 
         Returns:
             Dict: Update result
@@ -439,9 +471,12 @@ class AppointmentService:
                     "message": f"Status inválido. Valores permitidos: {', '.join(valid_statuses)}",
                 }
 
-            # Update appointment
+            update_payload = {"status": new_status}
+            if new_status == "Agendado" and updated_by:
+                update_payload["agendado_por"] = updated_by.strip()
+
             updated = await self.appointment_repository.update(
-                appointment_id, {"status": new_status}
+                appointment_id, update_payload
             )
 
             if updated:
