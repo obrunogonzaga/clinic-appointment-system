@@ -71,3 +71,32 @@ export const isTomorrow = (dateString: string): boolean => {
     return false;
   }
 };
+
+/**
+ * Parses a date input string into a local Date at midnight.
+ * - Supports 'yyyy-MM-dd' (HTML date input) and 'dd/MM/yyyy' (pt-BR)
+ * - Returns null when invalid
+ */
+export const parseLocalDateFromInput = (value: string | undefined | null): Date | null => {
+  if (!value) return null;
+
+  const trimmed = value.trim();
+
+  // dd/MM/yyyy
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+    const [d, m, y] = trimmed.split('/').map(Number);
+    if (!y || !m || !d) return null;
+    return new Date(y, m - 1, d, 0, 0, 0, 0); // local midnight
+  }
+
+  // yyyy-MM-dd
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const [y, m, d] = trimmed.split('-').map(Number);
+    if (!y || !m || !d) return null;
+    return new Date(y, m - 1, d, 0, 0, 0, 0); // local midnight
+  }
+
+  // Fallback: attempt native Date, but beware of timezone shifts
+  const dt = new Date(trimmed);
+  return Number.isNaN(dt.getTime()) ? null : dt;
+};

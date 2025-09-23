@@ -4,7 +4,7 @@ Appointment API endpoints.
 
 import io
 import time
-from typing import List
+from typing import List, Optional
 
 from fastapi import (
     APIRouter,
@@ -222,7 +222,10 @@ async def upload_excel_file(
 async def get_appointments(
     nome_unidade: str = Query(None, description="Filtrar por nome da unidade"),
     nome_marca: str = Query(None, description="Filtrar por nome da marca"),
-    data: str = Query(None, description="Data específica (YYYY-MM-DD)"),
+    data: Optional[str] = Query(
+        None,
+        description="Data específica (YYYY-MM-DD ou DD/MM/YYYY)",
+    ),
     status: str = Query(None, description="Filtrar por status"),
     driver_id: str = Query(None, description="Filtrar por ID do motorista"),
     page: int = Query(1, ge=1, description="Número da página"),

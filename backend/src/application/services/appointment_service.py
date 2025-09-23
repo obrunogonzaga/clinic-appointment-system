@@ -594,20 +594,35 @@ class AppointmentService:
     def _parse_filter_date(
         self, data: Optional[str]
     ) -> tuple[Optional[datetime], Optional[datetime]]:
-        """Parse filter date (YYYY-MM-DD) and normalize to full-day range.
+        """Parse filter date and normalize to a full-day range.
 
-        Args:
-            data: Date string in YYYY-MM-DD format
+        Accepts common formats used in the UI:
+        - "YYYY-MM-DD" (HTML date input/ISO)
+        - "DD/MM/YYYY" (pt-BR locale)
 
-        Returns:
-            Tuple of (start_of_day, end_of_day) for the specified date
+        Returns a tuple of (start_of_day, start_of_next_day) so that
+        repository queries can use "$gte" for the start and "$lt" for the end.
         """
 
         if not data:
             return None, None
 
-        parsed_date = datetime.strptime(data, "%Y-%m-%d")
-        # Return start of day and start of next day (exclusive end)
+        value = data.strip()
+
+        parsed_date: Optional[datetime] = None
+        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d"):
+            try:
+                parsed_date = datetime.strptime(value, fmt)
+                break
+            except ValueError:
+                continue
+
+        if parsed_date is None:
+            # Re-raise with a clearer message so the API returns a helpful error
+            raise ValueError(
+                "Formato de data inválido. Use YYYY-MM-DD ou DD/MM/YYYY"
+            )
+
         start_of_day = parsed_date
         end_of_day = parsed_date + timedelta(days=1)
 
@@ -629,10 +644,12 @@ class AppointmentService:
         if status:
             filters["status"] = status
         if parsed_dates[0] or parsed_dates[1]:
+            # Use "$lt" for the upper bound to match the repository behavior
+            # (start inclusive, end exclusive).
             date_filter: Dict[str, Any] = {}
             if parsed_dates[0]:
                 date_filter["$gte"] = parsed_dates[0]
             if parsed_dates[1]:
-                date_filter["$lte"] = parsed_dates[1]
+                date_filter["$lt"] = parsed_dates[1]
             filters["data_agendamento"] = date_filter
         return filters
