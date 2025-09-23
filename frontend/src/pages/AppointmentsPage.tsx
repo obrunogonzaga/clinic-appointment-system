@@ -32,6 +32,7 @@ import {
   type DateRange,
   type DateShortcut,
 } from '../utils/appointmentViewModel';
+import { parseLocalDateFromInput } from '../utils/dateUtils';
 
 export const AppointmentsPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -168,12 +169,27 @@ export const AppointmentsPage: React.FC = () => {
 
   const dateRange = useMemo<DateRange | null>(() => {
     if (filters.data) {
-      const date = new Date(filters.data);
-      if (!Number.isNaN(date.getTime())) {
-        const start = new Date(date);
-        start.setHours(0, 0, 0, 0);
-        const end = new Date(date);
-        end.setHours(23, 59, 59, 999);
+      // Parse as local date to avoid timezone shift from Date('yyyy-MM-dd')
+      const localDate = parseLocalDateFromInput(filters.data);
+      if (localDate && !Number.isNaN(localDate.getTime())) {
+        const start = new Date(
+          localDate.getFullYear(),
+          localDate.getMonth(),
+          localDate.getDate(),
+          0,
+          0,
+          0,
+          0
+        );
+        const end = new Date(
+          localDate.getFullYear(),
+          localDate.getMonth(),
+          localDate.getDate(),
+          23,
+          59,
+          59,
+          999
+        );
         return { start, end };
       }
     }
