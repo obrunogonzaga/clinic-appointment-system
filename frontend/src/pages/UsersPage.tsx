@@ -698,7 +698,7 @@ export function UsersPage() {
       </div>
 
       {/* Filters & Search */}
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 space-y-4">
+      <div className="bg-white dark:bg-slate-950/70 border border-gray-200 dark:border-slate-800 rounded-lg shadow-sm p-4 space-y-4 transition-colors">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <SearchInput
             value={searchQuery}
@@ -706,17 +706,17 @@ export function UsersPage() {
             placeholder="Buscar por nome ou email..."
             className="w-full lg:max-w-md"
           />
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-500 dark:text-slate-300">
             {totalFilteredUsers} de {totalUsersCount} usuário{totalUsersCount !== 1 ? 's' : ''}
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">Status</label>
             <select
               value={statusFilter}
               onChange={(event) => handleStatusSelect(event.target.value as UserStatus | 'all')}
-              className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+              className="block w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 dark:focus:border-indigo-400 focus:ring-blue-500 dark:focus:ring-indigo-400 text-sm transition-colors"
             >
               {STATUS_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -726,11 +726,11 @@ export function UsersPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Perfil</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">Perfil</label>
             <select
               value={roleFilter}
               onChange={(event) => handleRoleSelect(event.target.value as UserRole | 'all')}
-              className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+              className="block w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 dark:focus:border-indigo-400 focus:ring-blue-500 dark:focus:ring-indigo-400 text-sm transition-colors"
             >
               {ROLE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -740,21 +740,21 @@ export function UsersPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Criado a partir de</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">Criado a partir de</label>
             <input
               type="date"
               value={createdAfter}
               onChange={(event) => handleCreatedAfterChange(event.target.value)}
-              className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+              className="block w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 dark:focus:border-indigo-400 focus:ring-blue-500 dark:focus:ring-indigo-400 text-sm transition-colors"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Criado até</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">Criado até</label>
             <input
               type="date"
               value={createdBefore}
               onChange={(event) => handleCreatedBeforeChange(event.target.value)}
-              className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+              className="block w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 dark:focus:border-indigo-400 focus:ring-blue-500 dark:focus:ring-indigo-400 text-sm transition-colors"
             />
           </div>
         </div>
