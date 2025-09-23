@@ -9,12 +9,12 @@ import {
     type SortingState,
 } from '@tanstack/react-table';
 import React from 'react';
-import type { Appointment } from '../types/appointment.ts';
+import type { AppointmentViewModel } from '../types/appointment.ts';
 import type { ActiveCollector } from '../types/collector.ts';
 import type { ActiveDriver } from '../types/driver.ts';
 
 interface AppointmentTableProps {
-  appointments: Appointment[];
+  appointments: AppointmentViewModel[];
   drivers?: ActiveDriver[];
   collectors?: ActiveCollector[];
   isLoading?: boolean;
@@ -25,21 +25,27 @@ interface AppointmentTableProps {
 }
 
 const statusColors = {
+  'Pendente': 'bg-yellow-50 text-yellow-700 border-yellow-200',
+  'Autorização': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'Cadastrar': 'bg-blue-50 text-blue-700 border-blue-200',
+  'Agendado': 'bg-sky-50 text-sky-700 border-sky-200',
   'Confirmado': 'bg-green-50 text-green-700 border-green-200',
+  'Coletado': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Alterar': 'bg-purple-50 text-purple-700 border-purple-200',
   'Cancelado': 'bg-red-50 text-red-700 border-red-200',
-  'Reagendado': 'bg-yellow-50 text-yellow-700 border-yellow-200',
-  'Concluído': 'bg-blue-50 text-blue-700 border-blue-200',
-  'Não Compareceu': 'bg-gray-50 text-gray-700 border-gray-200',
-  'Em Atendimento': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'Recoleta': 'bg-orange-50 text-orange-700 border-orange-200',
 };
 
 const statusOptions = [
+  'Pendente',
+  'Autorização',
+  'Cadastrar',
+  'Agendado',
   'Confirmado',
-  'Cancelado', 
-  'Reagendado',
-  'Concluído',
-  'Não Compareceu',
-  'Em Atendimento'
+  'Coletado',
+  'Alterar',
+  'Cancelado',
+  'Recoleta'
 ];
 
 export const AppointmentTable: React.FC<AppointmentTableProps> = ({
@@ -54,7 +60,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
 }) => {
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
-  const columns = React.useMemo<ColumnDef<Appointment>[]>(
+  const columns = React.useMemo<ColumnDef<AppointmentViewModel>[]>(
     () => [
       {
         accessorKey: 'nome_paciente',
@@ -66,36 +72,20 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
         ),
       },
       {
-        accessorKey: 'nome_unidade',
-        header: 'Unidade',
+        id: 'cpfMasked',
+        header: 'CPF',
         cell: ({ row }) => (
-          <div className="text-sm text-gray-600">
-            {row.original.nome_unidade}
+          <div className="text-sm text-gray-600 font-mono">
+            {row.original.cpfMasked || '-'}
           </div>
         ),
       },
       {
-        id: 'carro',
-        header: 'Carro',
-        cell: ({ row }) => {
-          // Extrai informação do carro
-          const carroInfo = row.original.carro || '';
-          const carroMatch = carroInfo.match(/Carro:\s*([^|]+)/);
-          const carro = carroMatch ? carroMatch[1].trim() : carroInfo;
-          
-          return (
-            <div className="text-sm text-gray-600 font-mono">
-              {carro || '-'}
-            </div>
-          );
-        },
-      },
-      {
-        accessorKey: 'nome_marca',
-        header: 'Marca',
+        id: 'healthPlanLabel',
+        header: 'Plano',
         cell: ({ row }) => (
           <div className="text-sm text-gray-600">
-            {row.original.nome_marca}
+            {row.original.healthPlanLabel}
           </div>
         ),
       },
@@ -104,33 +94,46 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
         header: 'Data',
         cell: ({ row }) => {
           const iso = row.original.data_agendamento ?? '';
-          const ymd = iso.split('T')[0] || iso; // "YYYY-MM-DD"
+          const ymd = iso.split('T')[0] || iso;
           const [y, m, d] = ymd.split('-');
           const formatted = y && m && d ? `${d}/${m}/${y}` : '';
+          const time = row.original.hora_agendamento;
+          const label = formatted && time ? `${formatted} · ${time}` : formatted || time || '-';
           return (
-            <div className="text-sm text-gray-900">
-              {formatted || '-'}
+            <div className="text-sm font-semibold text-gray-900">
+              {label}
             </div>
           );
         },
       },
       {
-        accessorKey: 'hora_agendamento',
-        header: 'Hora',
-        cell: ({ row }) => (
-          <div className="text-sm text-gray-900">
-            {row.original.hora_agendamento}
-          </div>
-        ),
+        id: 'unitBrand',
+        header: 'Unidade / Marca',
+        cell: ({ row }) => {
+          const unit = row.original.nome_unidade;
+          const brand = row.original.nome_marca;
+          const label = unit && brand ? `${unit} · ${brand}` : unit || brand || '-';
+          return (
+            <div className="text-sm font-medium text-gray-700">
+              {label}
+            </div>
+          );
+        },
       },
       {
-        accessorKey: 'tipo_consulta',
-        header: 'Tipo',
-        cell: ({ row }) => (
-          <div className="text-sm text-gray-600">
-            {row.original.tipo_consulta || '-'}
-          </div>
-        ),
+        id: 'address',
+        header: 'Endereço',
+        cell: ({ row }) => {
+          const normalized = row.original.endereco_normalizado;
+          const street = normalized?.rua || row.original.endereco_coleta || row.original.nome_unidade;
+          const number = normalized?.numero ? `, ${normalized.numero}` : '';
+          const city = normalized?.cidade ? ` - ${normalized.cidade}` : '';
+          return (
+            <div className="text-sm text-gray-600">
+              {street ? `${street}${number}${city}` : '-'}
+            </div>
+          );
+        },
       },
       {
         accessorKey: 'status',
@@ -138,15 +141,14 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
         cell: ({ row }) => {
           const status = row.original.status;
           const colorClass = statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800';
-          
+
           return (
             <select
               value={status}
               onChange={(e) => onStatusChange?.(row.original.id, e.target.value)}
               className={`
-                px-3 py-1.5 rounded-lg text-xs font-medium border cursor-pointer transition-all
+                rounded-full border bg-white px-3 py-1 text-xs font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1
                 ${colorClass}
-                hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500
               `}
             >
               {statusOptions.map((option) => (
@@ -172,7 +174,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
         header: 'Motorista',
         cell: ({ row }) => {
           const appointment = row.original;
-          
+
           return (
             <select
               value={appointment.driver_id || ''}
@@ -208,6 +210,21 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
                 </option>
               ))}
             </select>
+          );
+        },
+      },
+      {
+        id: 'carro',
+        header: 'Carro',
+        cell: ({ row }) => {
+          const carroInfo = row.original.carro || '';
+          const carroMatch = carroInfo.match(/Carro:\s*([^|]+)/);
+          const carro = carroMatch ? carroMatch[1].trim() : carroInfo;
+
+          return (
+            <div className="text-sm text-gray-600 font-mono">
+              {carro || '-'}
+            </div>
           );
         },
       },
@@ -266,15 +283,15 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-        <thead className="bg-gray-50 border-b border-gray-200">
+    <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <table className="min-w-full overflow-hidden rounded-2xl">
+        <thead className="bg-gray-50">
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"
                 >
                   {header.isPlaceholder ? null : (
                     <div
@@ -305,13 +322,13 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
             </tr>
           ))}
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="divide-y divide-gray-100">
           {table.getRowModel().rows.map((row) => (
             <tr key={row.id} className="hover:bg-gray-50">
               {row.getVisibleCells().map((cell) => (
                 <td
                   key={cell.id}
-                  className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                  className="px-6 py-4 text-sm text-gray-700"
                 >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>

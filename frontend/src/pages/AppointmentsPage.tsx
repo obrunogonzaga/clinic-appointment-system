@@ -1,18 +1,28 @@
 import {
     CheckCircleIcon,
-    DocumentArrowUpIcon,
     XCircleIcon,
 } from '@heroicons/react/24/outline';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { AppointmentCardList } from '../components/AppointmentCardList';
 import { AppointmentCalendarView } from '../components/AppointmentCalendarView';
 import { AppointmentFilters } from '../components/AppointmentFilters';
 import { CollectorAgendaView } from '../components/CollectorAgendaView';
 import { FileUpload } from '../components/FileUpload';
 import { ViewModeToggle, type ViewMode } from '../components/ViewModeToggle';
+import { AppointmentTable } from '../components/AppointmentTable';
+import { AppointmentKpiCards } from '../components/AppointmentKpiCards';
 import { appointmentAPI, collectorAPI, driverAPI } from '../services/api';
 import type { AppointmentFilter, ExcelUploadResponse } from '../types/appointment';
+import {
+  countAppointmentsByStatus,
+  filterAppointmentsByDateRange,
+  filterAppointmentsBySearch,
+  getDateRangeForShortcut,
+  toAppointmentViewModel,
+  type DateRange,
+  type DateShortcut,
+} from '../utils/appointmentViewModel';
 
 export const AppointmentsPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -24,6 +34,8 @@ export const AppointmentsPage: React.FC = () => {
   const [uploadResult, setUploadResult] = useState<ExcelUploadResponse | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateShortcut, setDateShortcut] = useState<DateShortcut | null>(null);
   const [currentCalendarDate, setCurrentCalendarDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedAgendaDate, setSelectedAgendaDate] = useState<Date>(new Date());
@@ -118,6 +130,40 @@ export const AppointmentsPage: React.FC = () => {
     }));
   };
 
+  const dateRange = useMemo<DateRange | null>(() => {
+    if (filters.data) {
+      const date = new Date(filters.data);
+      if (!Number.isNaN(date.getTime())) {
+        const start = new Date(date);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(date);
+        end.setHours(23, 59, 59, 999);
+        return { start, end };
+      }
+    }
+
+    return dateShortcut ? getDateRangeForShortcut(dateShortcut) : null;
+  }, [filters.data, dateShortcut]);
+
+  const appointmentsViewModel = useMemo(() => {
+    return (appointmentsData?.appointments || []).map(toAppointmentViewModel);
+  }, [appointmentsData?.appointments]);
+
+  const appointmentsAfterDate = useMemo(
+    () => filterAppointmentsByDateRange(appointmentsViewModel, dateRange),
+    [appointmentsViewModel, dateRange]
+  );
+
+  const filteredAppointments = useMemo(
+    () => filterAppointmentsBySearch(appointmentsAfterDate, searchTerm),
+    [appointmentsAfterDate, searchTerm]
+  );
+
+  const kpiStats = useMemo(
+    () => countAppointmentsByStatus(filteredAppointments),
+    [filteredAppointments]
+  );
+
   const handleDriverChange = async (appointmentId: string, driverId: string) => {
     try {
       await appointmentAPI.updateAppointmentDriver(appointmentId, driverId);
@@ -139,82 +185,64 @@ export const AppointmentsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-semibold text-gray-900">
             Gerenciamento de Agendamentos
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="mt-2 text-gray-500">
             Faça upload de arquivos Excel e gerencie agendamentos
           </p>
         </div>
-        
-        <div className="mt-4 sm:mt-0">
-          <ViewModeToggle 
-            viewMode={viewMode} 
-            onViewChange={setViewMode}
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 shadow-sm">
+            <span className="text-sm font-medium text-gray-600">Mostrar:</span>
+            <ViewModeToggle
+              viewMode={viewMode}
+              onViewChange={setViewMode}
+              variant="minimal"
+              className="gap-1"
+            />
+          </div>
+          <FileUpload
+            onUploadSuccess={handleUploadSuccess}
+            onUploadError={handleUploadError}
           />
         </div>
       </div>
 
-      {/* Upload Section */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <div className="flex items-center space-x-2 mb-6">
-          <DocumentArrowUpIcon className="w-6 h-6 text-gray-400" />
-          <h2 className="text-xl font-semibold text-gray-900">Upload de Arquivo</h2>
-        </div>
-        
-        <FileUpload
-          onUploadSuccess={handleUploadSuccess}
-          onUploadError={handleUploadError}
-        />
-
-        {/* Upload Result Messages */}
-        {uploadResult && (
-          <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex items-center">
-              <CheckCircleIcon className="w-5 h-5 text-green-600 mr-2" />
-              <div>
-                <p className="font-medium text-green-800">{uploadResult.message}</p>
-                <div className="text-sm text-green-600 mt-1">
-                  <span>Total: {uploadResult.total_rows} | </span>
-                  <span>Válidos: {uploadResult.valid_rows} | </span>
-                  <span>Inválidos: {uploadResult.invalid_rows} | </span>
-                  <span>Importados: {uploadResult.imported_appointments}</span>
-                  {uploadResult.duplicates_found > 0 && (
-                    <span> | <strong>Duplicados: {uploadResult.duplicates_found}</strong></span>
-                  )}
-                  {uploadResult.processing_time && (
-                    <span> | Tempo: {uploadResult.processing_time.toFixed(1)}s</span>
-                  )}
-                </div>
-                {uploadResult.errors.length > 0 && (
-                  <div className="mt-2">
-                    <p className="text-sm font-medium text-red-800">Erros encontrados:</p>
-                    <ul className="text-sm text-red-600 mt-1 ml-4">
-                      {uploadResult.errors.slice(0, 5).map((error, index) => (
-                        <li key={`error-${index}-${error.slice(0, 10)}`}>• {error}</li>
-                      ))}
-                      {uploadResult.errors.length > 5 && (
-                        <li>• ... e mais {uploadResult.errors.length - 5} erros</li>
-                      )}
-                    </ul>
-                  </div>
+      {(uploadResult || uploadError) && (
+        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+          {uploadResult && (
+            <div className="flex flex-col gap-2 text-sm text-green-700 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                <span className="font-medium">{uploadResult.message}</span>
+              </div>
+              <div className="flex flex-wrap gap-x-3 gap-y-1 text-green-600">
+                <span>Total: {uploadResult.total_rows}</span>
+                <span>Válidos: {uploadResult.valid_rows}</span>
+                <span>Inválidos: {uploadResult.invalid_rows}</span>
+                <span>Importados: {uploadResult.imported_appointments}</span>
+                {uploadResult.duplicates_found > 0 && (
+                  <span>Duplicados: {uploadResult.duplicates_found}</span>
+                )}
+                {uploadResult.processing_time && (
+                  <span>Tempo: {uploadResult.processing_time.toFixed(1)}s</span>
                 )}
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {uploadError && (
-          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center">
-              <XCircleIcon className="w-5 h-5 text-red-600 mr-2" />
-              <p className="font-medium text-red-800">{uploadError}</p>
+          {uploadError && (
+            <div className="flex items-center gap-2 text-sm text-red-700">
+              <XCircleIcon className="h-5 w-5 text-red-500" />
+              <span className="font-medium">{uploadError}</span>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Filters */}
       <AppointmentFilters
@@ -223,7 +251,19 @@ export const AppointmentsPage: React.FC = () => {
         units={filterOptions?.units || []}
         brands={filterOptions?.brands || []}
         statuses={filterOptions?.statuses || []}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        dateShortcut={dateShortcut}
+        onDateShortcutChange={setDateShortcut}
         isLoading={isLoadingFilters}
+      />
+
+      {/* KPIs */}
+      <AppointmentKpiCards
+        total={kpiStats.total}
+        confirmed={kpiStats.confirmed}
+        pendingOrCancelled={kpiStats.pendingOrCancelled}
+        isLoading={isLoadingAppointments}
       />
 
       {/* Appointments Display */}
@@ -246,7 +286,7 @@ export const AppointmentsPage: React.FC = () => {
             
             {appointmentsData?.pagination && (
               <div className="text-sm text-gray-500">
-                Mostrando {appointmentsData.appointments.length} de {appointmentsData.pagination.total_items} agendamentos
+                Mostrando {filteredAppointments.length} de {appointmentsData.pagination.total_items} agendamentos
               </div>
             )}
           </div>
@@ -254,7 +294,20 @@ export const AppointmentsPage: React.FC = () => {
           {/* Render content based on view mode */}
           {viewMode === 'cards' && (
             <AppointmentCardList
-              appointments={appointmentsData?.appointments || []}
+              appointments={filteredAppointments}
+              drivers={driversData?.drivers || []}
+              collectors={collectorsData?.collectors || []}
+              isLoading={isLoadingAppointments}
+              onStatusChange={handleStatusChange}
+              onDriverChange={handleDriverChange}
+              onCollectorChange={handleCollectorChange}
+              onDelete={handleDelete}
+            />
+          )}
+
+          {viewMode === 'table' && (
+            <AppointmentTable
+              appointments={filteredAppointments}
               drivers={driversData?.drivers || []}
               collectors={collectorsData?.collectors || []}
               isLoading={isLoadingAppointments}
@@ -267,7 +320,7 @@ export const AppointmentsPage: React.FC = () => {
 
           {viewMode === 'calendar' && (
             <AppointmentCalendarView
-              appointments={appointmentsData?.appointments || []}
+              appointments={filteredAppointments}
               currentDate={currentCalendarDate}
               selectedDate={selectedDate}
               onDateSelect={setSelectedDate}
@@ -301,7 +354,7 @@ export const AppointmentsPage: React.FC = () => {
               </div>
               
               <CollectorAgendaView
-                appointments={appointmentsData?.appointments || []}
+                appointments={filteredAppointments}
                 collectors={collectorsData?.collectors || []}
                 drivers={driversData?.drivers || []}
                 selectedDate={selectedAgendaDate}
@@ -316,7 +369,7 @@ export const AppointmentsPage: React.FC = () => {
           )}
 
           {/* Pagination - only show for cards view */}
-          {viewMode === 'cards' && appointmentsData?.pagination && appointmentsData.pagination.total_pages > 1 && (
+          {viewMode !== 'calendar' && appointmentsData?.pagination && appointmentsData.pagination.total_pages > 1 && (
             <div className="flex items-center justify-between mt-6">
               <div className="text-sm text-gray-500">
                 Página {appointmentsData.pagination.page} de {appointmentsData.pagination.total_pages}

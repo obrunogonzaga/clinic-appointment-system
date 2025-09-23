@@ -245,12 +245,15 @@ class AppointmentService:
 
             # Get available statuses
             statuses = [
+                "Pendente",
+                "Autorização",
+                "Cadastrar",
+                "Agendado",
                 "Confirmado",
+                "Coletado",
+                "Alterar",
                 "Cancelado",
-                "Reagendado",
-                "Concluído",
-                "Não Compareceu",
-                "Em Atendimento",
+                "Recoleta",
             ]
 
             return {
@@ -351,12 +354,15 @@ class AppointmentService:
         try:
             # Validate status
             valid_statuses = [
+                "Pendente",
+                "Autorização",
+                "Cadastrar",
+                "Agendado",
                 "Confirmado",
+                "Coletado",
+                "Alterar",
                 "Cancelado",
-                "Reagendado",
-                "Concluído",
-                "Não Compareceu",
-                "Em Atendimento",
+                "Recoleta",
             ]
             if new_status not in valid_statuses:
                 return {

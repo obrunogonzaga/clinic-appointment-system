@@ -32,7 +32,7 @@ class Appointment(Entity):
         None, description="Tipo de consulta médica"
     )
     status: Optional[str] = Field(
-        "Confirmado", description="Status do agendamento"
+        "Pendente", description="Status do agendamento"
     )
     telefone: Optional[str] = Field(
         None, description="Telefone de contato do paciente"
@@ -162,16 +162,18 @@ class Appointment(Entity):
     def validate_status(cls, value: Optional[str]) -> str:
         """Validate appointment status."""
         if not value:
-            return "Confirmado"
+            return "Pendente"
 
         valid_statuses = [
-            "Confirmado",
+            "Pendente",
+            "Autorização",
+            "Cadastrar",
             "Agendado",
+            "Confirmado",
+            "Coletado",
+            "Alterar",
             "Cancelado",
-            "Reagendado",
-            "Concluído",
-            "Não Compareceu",
-            "Em Atendimento",
+            "Recoleta",
         ]
 
         if value not in valid_statuses:
@@ -194,7 +196,7 @@ class Appointment(Entity):
                 "data_agendamento": "2025-01-15T00:00:00",
                 "hora_agendamento": "14:30",
                 "tipo_consulta": "Clínico Geral",
-                "status": "Confirmado",
+                "status": "Pendente",
                 "telefone": "11999887766",
                 "carro": "Honda Civic Prata",
                 "observacoes": "Paciente com diabetes",

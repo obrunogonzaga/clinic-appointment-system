@@ -28,7 +28,7 @@ class TestAppointmentEntity:
         assert appointment.nome_paciente == "João Silva"
         assert appointment.data_agendamento == datetime(2025, 1, 15)
         assert appointment.hora_agendamento == "14:30"
-        assert appointment.status == "Confirmado"  # Default value
+        assert appointment.status == "Pendente"  # Default value
         assert appointment.id is not None
         assert appointment.created_at is not None
 
@@ -41,14 +41,14 @@ class TestAppointmentEntity:
             data_agendamento=datetime(2025, 1, 20),
             hora_agendamento="09:00",
             tipo_consulta="Cardiologia",
-            status="Reagendado",
+            status="Agendado",
             telefone="11999887766",
             carro="Honda Civic Prata",
             observacoes="Paciente com hipertensão",
         )
 
         assert appointment.tipo_consulta == "Cardiologia"
-        assert appointment.status == "Reagendado"
+        assert appointment.status == "Agendado"
         assert appointment.telefone == "11999887766"
         assert appointment.carro == "Honda Civic Prata"
         assert appointment.observacoes == "Paciente com hipertensão"
@@ -186,11 +186,15 @@ class TestAppointmentEntity:
         """Test appointment status validation."""
         # Valid statuses
         valid_statuses = [
+            "Pendente",
+            "Autorização",
+            "Cadastrar",
+            "Agendado",
             "Confirmado",
+            "Coletado",
+            "Alterar",
             "Cancelado",
-            "Reagendado",
-            "Concluído",
-            "Não Compareceu",
+            "Recoleta",
         ]
 
         for status in valid_statuses:
@@ -236,7 +240,7 @@ class TestAppointmentEntity:
         assert data["nome_paciente"] == "João Silva"
         assert data["hora_agendamento"] == "14:30"
         assert data["tipo_consulta"] == "Clínico Geral"
-        assert data["status"] == "Confirmado"
+        assert data["status"] == "Pendente"
         assert "id" in data
         assert "created_at" in data
         assert "updated_at" in data

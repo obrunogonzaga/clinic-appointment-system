@@ -75,7 +75,7 @@ class TestExcelParserService:
         assert appointment.nome_paciente == "João Silva"
         assert appointment.data_agendamento == datetime(2025, 1, 15)
         assert appointment.hora_agendamento == "14:30"
-        assert appointment.status == "Confirmado"
+        assert appointment.status == "Pendente"
         assert appointment.telefone == "11999887766"
         assert (
             appointment.carro is None
@@ -118,6 +118,47 @@ class TestExcelParserService:
         assert (
             appointment.observacoes == "Paciente diabético"
         )  # Campo "Observações" tem prioridade
+
+    @pytest.mark.asyncio
+    async def test_status_confirmacao_overrides_agendamento(
+        self, parser_service: ExcelParserService
+    ):
+        """Ensure status confirmation column controls the final status."""
+        data = {
+            "Nome da Marca": ["Clínica A", "Clínica B", "Clínica C"],
+            "Nome da Unidade": ["UBS Centro", "UBS Norte", "UBS Sul"],
+            "Nome do Paciente": [
+                "João Silva",
+                "Maria Santos",
+                "Pedro Costa",
+            ],
+            "Data/Hora Início Agendamento": [
+                "15/01/2025 14:30",
+                "16/01/2025 10:00",
+                "17/01/2025 16:45",
+            ],
+            "Status Agendamento": [
+                "Cancelado",
+                "Agendado",
+                "Confirmado",
+            ],
+            "Status Confirmação": [
+                "Confirmado",
+                "Não Confirmado",
+                None,
+            ],
+        }
+
+        excel_file = self.create_excel_file(data)
+
+        result = await parser_service.parse_excel_file(excel_file, "status.xlsx")
+
+        assert result.success is True
+        assert [apt.status for apt in result.appointments] == [
+            "Confirmado",
+            "Pendente",
+            "Pendente",
+        ]
 
     @pytest.mark.asyncio
     async def test_parse_excel_with_nome_da_sala_field(
@@ -277,15 +318,15 @@ class TestExcelParserService:
         # Test valid statuses
         assert parser_service._map_status("Confirmado") == "Confirmado"
         assert parser_service._map_status("Cancelado") == "Cancelado"
-        assert parser_service._map_status("Agendado") == "Confirmado"  # Mapped
-        assert (
-            parser_service._map_status("Efetivado") == "Confirmado"
-        )  # Mapped
+        assert parser_service._map_status("Agendado") == "Agendado"
+        assert parser_service._map_status("Autorização") == "Autorização"
+        assert parser_service._map_status("Autorição") == "Autorização"
 
         # Test invalid/None status
-        assert parser_service._map_status("Unknown") == "Confirmado"  # Default
-        assert parser_service._map_status(None) == "Confirmado"  # Default
-        assert parser_service._map_status("") == "Confirmado"  # Default
+        assert parser_service._map_status("Efetivado") == "Pendente"
+        assert parser_service._map_status("Unknown") == "Pendente"
+        assert parser_service._map_status(None) == "Pendente"
+        assert parser_service._map_status("") == "Pendente"
 
     @pytest.mark.asyncio
     async def test_get_file_info(

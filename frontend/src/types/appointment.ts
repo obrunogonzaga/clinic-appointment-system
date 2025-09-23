@@ -42,6 +42,11 @@ export interface Appointment {
   updated_at?: string;
 }
 
+export interface AppointmentViewModel extends Appointment {
+  cpfMasked: string;
+  healthPlanLabel: string;
+}
+
 export interface AppointmentFilter {
   nome_unidade?: string;
   nome_marca?: string;

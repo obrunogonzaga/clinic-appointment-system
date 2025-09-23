@@ -1,12 +1,12 @@
 import React from 'react';
 import { AppointmentCard } from './AppointmentCard';
-import type { Appointment } from '../types/appointment';
+import type { AppointmentViewModel } from '../types/appointment';
 import type { ActiveDriver } from '../types/driver';
 import type { ActiveCollector } from '../types/collector';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 
 interface AppointmentCardListProps {
-  appointments: Appointment[];
+  appointments: AppointmentViewModel[];
   drivers: ActiveDriver[];
   collectors?: ActiveCollector[];
   isLoading?: boolean;
@@ -44,13 +44,15 @@ export const AppointmentCardList: React.FC<AppointmentCardListProps> = ({
   onCollectorChange,
   onDelete
 }) => {
-  const { isMobile, isTablet } = useResponsiveLayout();
+  const { isMobile } = useResponsiveLayout();
 
   // Determine grid columns based on screen size
   const getGridColumns = () => {
-    if (isMobile) return 'grid-cols-1';
-    if (isTablet) return 'grid-cols-2';
-    return 'grid-cols-2 xl:grid-cols-3';
+    if (isMobile) {
+      return 'grid-cols-1';
+    }
+
+    return 'grid-cols-2';
   };
 
   if (isLoading) {

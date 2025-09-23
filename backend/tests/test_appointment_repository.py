@@ -246,7 +246,7 @@ class TestAppointmentRepository:
 
         # Update appointment
         update_data = {
-            "status": "Reagendado",
+            "status": "Alterar",
             "carro": "Toyota Corolla Azul",
             "observacoes": "Reagendado pelo paciente",
         }
@@ -256,7 +256,7 @@ class TestAppointmentRepository:
         )
 
         assert updated is not None
-        assert updated.status == "Reagendado"
+        assert updated.status == "Alterar"
         assert updated.carro == "Toyota Corolla Azul"
         assert updated.observacoes == "Reagendado pelo paciente"
         assert updated.updated_at is not None

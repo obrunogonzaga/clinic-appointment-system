@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface ModalProps {
@@ -18,6 +18,10 @@ export function Modal({
   size = 'md',
   showCloseButton = true,
 }: ModalProps) {
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const previouslyFocusedElement = useRef<HTMLElement | null>(null);
+
   // Handle ESC key press
   useEffect(() => {
     const handleEscapeKey = (event: KeyboardEvent) => {
@@ -31,6 +35,82 @@ export function Modal({
       document.removeEventListener('keydown', handleEscapeKey);
     };
   }, [isOpen, onClose]);
+
+  // Focus management
+  useEffect(() => {
+    if (isOpen) {
+      previouslyFocusedElement.current = document.activeElement as HTMLElement | null;
+
+      const focusableSelectors = [
+        'a[href]',
+        'button:not([disabled])',
+        'textarea:not([disabled])',
+        'input:not([disabled])',
+        'select:not([disabled])',
+        '[tabindex]:not([tabindex="-1"])',
+      ].join(',');
+
+      const focusableElements = panelRef.current?.querySelectorAll<HTMLElement>(focusableSelectors);
+      const firstFocusable = focusableElements && focusableElements.length > 0
+        ? focusableElements[0]
+        : panelRef.current;
+
+      firstFocusable?.focus({ preventScroll: true });
+    } else if (!isOpen && previouslyFocusedElement.current) {
+      previouslyFocusedElement.current.focus({ preventScroll: true });
+      previouslyFocusedElement.current = null;
+    }
+  }, [isOpen]);
+
+  // Trap focus inside the modal panel
+  useEffect(() => {
+    if (!isOpen || !panelRef.current) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') {
+        return;
+      }
+
+      const focusableSelectors = [
+        'a[href]',
+        'button:not([disabled])',
+        'textarea:not([disabled])',
+        'input:not([disabled])',
+        'select:not([disabled])',
+        '[tabindex]:not([tabindex="-1"])',
+      ].join(',');
+
+      const focusable = panelRef.current?.querySelectorAll<HTMLElement>(focusableSelectors);
+      if (!focusable || focusable.length === 0) {
+        event.preventDefault();
+        panelRef.current?.focus({ preventScroll: true });
+        return;
+      }
+
+      const firstElement = focusable[0];
+      const lastElement = focusable[focusable.length - 1];
+      const activeElement = document.activeElement as HTMLElement | null;
+
+      if (event.shiftKey) {
+        if (activeElement === firstElement || !panelRef.current?.contains(activeElement)) {
+          event.preventDefault();
+          lastElement.focus({ preventScroll: true });
+        }
+      } else if (activeElement === lastElement || !panelRef.current?.contains(activeElement)) {
+        event.preventDefault();
+        firstElement.focus({ preventScroll: true });
+      }
+    };
+
+    const node = panelRef.current;
+    node.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      node.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -67,12 +147,17 @@ export function Modal({
 
         {/* Modal panel */}
         <div
-          className={`inline-block w-full ${sizeClasses[size]} p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg`}
+          ref={panelRef}
+          className={`inline-block w-full ${sizeClasses[size]} p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg focus:outline-none`}
           onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          tabIndex={-1}
         >
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+            <h3 id={titleId} className="text-lg font-medium text-gray-900">{title}</h3>
             {showCloseButton && (
               <button
                 onClick={onClose}
