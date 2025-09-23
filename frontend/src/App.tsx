@@ -4,6 +4,7 @@ import { HashRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { Navigation } from './components/Navigation';
 import { PrivateRoute } from './components/PrivateRoute';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { AppointmentsPage } from './pages/AppointmentsPage';
 import { CarsPage } from './pages/CarsPage';
 import { CollectorsPage } from './pages/CollectorsPage';
@@ -49,7 +50,7 @@ function Shell() {
   };
   return (
     <PrivateRoute>
-      <div className="min-h-screen bg-gray-50 flex">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 flex transition-colors duration-300">
         <Navigation
           activeTab={activeTab}
           onTabChange={setActiveTab}
@@ -70,24 +71,26 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <HashRouter>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<PublicRegister />} />
-            <Route path="/setup" element={<Setup />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route path="/verify-email/:token" element={<VerifyEmail />} />
+        <ThemeProvider>
+          <HashRouter>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<PublicRegister />} />
+              <Route path="/setup" element={<Setup />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/verify-email/:token" element={<VerifyEmail />} />
 
-            {/* Protected routes */}
-            <Route path="/routes/driver" element={
-              <PrivateRoute>
-                <DriverRoutePage />
-              </PrivateRoute>
-            } />
-            <Route path="*" element={<Shell />} />
-          </Routes>
-        </HashRouter>
+              {/* Protected routes */}
+              <Route path="/routes/driver" element={
+                <PrivateRoute>
+                  <DriverRoutePage />
+                </PrivateRoute>
+              } />
+              <Route path="*" element={<Shell />} />
+            </Routes>
+          </HashRouter>
+        </ThemeProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

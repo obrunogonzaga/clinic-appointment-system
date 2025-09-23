@@ -106,11 +106,11 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
   };
 
   const filterBadgeClass = hasActiveFilters
-    ? 'bg-indigo-100 text-indigo-700'
-    : 'bg-indigo-50 text-indigo-600';
+    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200'
+    : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-200';
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+    <div className="rounded-2xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-950/70 p-6 shadow-sm transition-colors">
       <div className="flex flex-wrap items-center gap-3">
         <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${filterBadgeClass}`}>
           <FunnelIcon className="h-4 w-4" />
@@ -120,7 +120,7 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
           <button
             type="button"
             onClick={resetFilters}
-            className="inline-flex items-center rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:border-gray-300 hover:text-gray-800"
+            className="inline-flex items-center rounded-full border border-gray-200 dark:border-slate-700 px-4 py-2 text-sm font-medium text-gray-600 dark:text-slate-300 transition hover:border-gray-300 hover:text-gray-800 dark:hover:border-slate-600 dark:hover:text-slate-100"
           >
             <XMarkIcon className="mr-1 h-4 w-4" />
             Limpar
@@ -128,7 +128,7 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
           <button
             type="button"
             onClick={handleApply}
-            className="inline-flex items-center rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800"
+            className="inline-flex items-center rounded-full bg-gray-900 dark:bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 dark:hover:bg-indigo-500"
           >
             Aplicar
           </button>
@@ -137,7 +137,7 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12">
         <div className="lg:col-span-2">
-          <label htmlFor="filter-unit" className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <label htmlFor="filter-unit" className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-300">
             Unidade
           </label>
           <select
@@ -145,7 +145,7 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
             value={filters.nome_unidade || ''}
             onChange={(event) => handleFilterChange('nome_unidade', event.target.value)}
             disabled={isLoading}
-            className="mt-2 w-full rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-2 w-full rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-sm text-gray-700 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-400 focus:border-indigo-500 dark:focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
           >
             <option value="">Todas as unidades</option>
             {units.map((unit) => (
@@ -157,7 +157,7 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
         </div>
 
         <div className="lg:col-span-2">
-          <label htmlFor="filter-brand" className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <label htmlFor="filter-brand" className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-300">
             Marca
           </label>
           <select
@@ -165,7 +165,7 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
             value={filters.nome_marca || ''}
             onChange={(event) => handleFilterChange('nome_marca', event.target.value)}
             disabled={isLoading}
-            className="mt-2 w-full rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-2 w-full rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-sm text-gray-700 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-400 focus:border-indigo-500 dark:focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
           >
             <option value="">Todas as marcas</option>
             {brands.map((brand) => (
@@ -177,7 +177,7 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
         </div>
 
         <div className="lg:col-span-2">
-          <label htmlFor="filter-status" className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <label htmlFor="filter-status" className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-300">
             Status
           </label>
           <select
@@ -185,7 +185,7 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
             value={filters.status || ''}
             onChange={(event) => handleFilterChange('status', event.target.value)}
             disabled={isLoading}
-            className="mt-2 w-full rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-2 w-full rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-sm text-gray-700 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-400 focus:border-indigo-500 dark:focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
           >
             <option value="">Todos os status</option>
             {statuses.map((status) => (
@@ -197,7 +197,7 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
         </div>
 
         <div className="lg:col-span-2">
-          <label htmlFor="filter-date" className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <label htmlFor="filter-date" className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-300">
             Data
           </label>
           <input
@@ -206,12 +206,12 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
             value={filters.data || ''}
             onChange={(event) => handleDateInputChange(event.target.value)}
             disabled={isLoading}
-            className="mt-2 w-full rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-2 w-full rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-sm text-gray-700 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-400 focus:border-indigo-500 dark:focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
           />
         </div>
 
         <div className="lg:col-span-4">
-          <label className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-300">
             Buscar por nome ou CPF
           </label>
           <div className="mt-2">
@@ -220,7 +220,7 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
               onChange={(value) => setLocalSearch(value)}
               placeholder="Buscar por nome/CPF"
               className="rounded-full"
-              inputClassName="rounded-full border border-gray-200"
+              inputClassName="rounded-full border border-gray-200 dark:border-slate-700"
               debounceMs={0}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
@@ -234,7 +234,7 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <span className="text-sm font-semibold text-gray-600">Atalhos:</span>
+        <span className="text-sm font-semibold text-gray-600 dark:text-slate-300">Atalhos:</span>
         {dateShortcutOptions.map(({ label, value }) => {
           const isActive = dateShortcut === value;
           return (
@@ -245,7 +245,7 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
               className={`rounded-full px-4 py-1 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 ${
                 isActive
                   ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-700'
               }`}
               aria-pressed={isActive}
             >

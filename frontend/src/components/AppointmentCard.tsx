@@ -216,7 +216,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="mt-4 pt-3 border-t border-gray-100">
+      <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-800">
         <div className="flex flex-col gap-2 mb-3 md:flex-row">
           {/* Driver Selection */}
           <div className="flex-1">
@@ -224,8 +224,8 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
               value={appointment.driver_id || ''}
               onChange={(e) => onDriverChange(appointment.id, e.target.value)}
               className={`
-                w-full border border-gray-300 rounded px-2 py-1.5 
-                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-100 rounded px-2 py-1.5 
+                focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-indigo-400 focus:border-blue-500 dark:focus:border-indigo-400
                 ${compact ? 'text-xs' : 'text-sm'}
               `}
             >
@@ -245,8 +245,8 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
                 value={appointment.collector_id || ''}
                 onChange={(e) => onCollectorChange(appointment.id, e.target.value)}
                 className={`
-                  w-full border border-gray-300 rounded px-2 py-1.5 
-                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                  w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-100 rounded px-2 py-1.5 
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-indigo-400 focus:border-blue-500 dark:focus:border-indigo-400
                   ${compact ? 'text-xs' : 'text-sm'}
                 `}
               >
@@ -267,8 +267,8 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
                 value={appointment.car_id || ''}
                 onChange={(e) => onCarChange(appointment.id, e.target.value)}
                 className={`
-                  w-full border border-gray-300 rounded px-2 py-1.5 
-                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                  w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-100 rounded px-2 py-1.5 
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-indigo-400 focus:border-blue-500 dark:focus:border-indigo-400
                   ${compact ? 'text-xs' : 'text-sm'}
                 `}
               >
