@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type SubmitHandler, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -21,24 +21,6 @@ interface AppointmentFormModalProps {
   collectors: ActiveCollector[];
 }
 
-type FormValues = {
-  nome_marca: string;
-  nome_unidade: string;
-  nome_paciente: string;
-  date: string;
-  time: string;
-  tipo_consulta: string;
-  status: string;
-  telefone: string;
-  carro: string;
-  observacoes: string;
-  driver_id: string;
-  collector_id: string;
-  numero_convenio: string;
-  nome_convenio: string;
-  carteira_convenio: string;
-};
-
 const formSchema = z.object({
   nome_marca: z.string().trim().min(1, 'Informe a marca/clinica'),
   nome_unidade: z.string().trim().min(1, 'Informe a unidade'),
@@ -48,7 +30,7 @@ const formSchema = z.object({
     .string()
     .trim()
     .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Hora inválida (use HH:MM)'),
-  tipo_consulta: z.string().trim().optional().default(''),
+  tipo_consulta: z.string().trim().default(''),
   status: z.string().trim().min(1, 'Selecione o status'),
   telefone: z
     .string()
@@ -58,14 +40,16 @@ const formSchema = z.object({
       const digits = value.replace(/\D/g, '');
       return digits.length === 10 || digits.length === 11;
     }, 'Telefone deve conter 10 ou 11 dígitos'),
-  carro: z.string().trim().optional().default(''),
-  observacoes: z.string().trim().optional().default(''),
-  driver_id: z.string().trim().optional().default(''),
-  collector_id: z.string().trim().optional().default(''),
-  numero_convenio: z.string().trim().optional().default(''),
-  nome_convenio: z.string().trim().optional().default(''),
-  carteira_convenio: z.string().trim().optional().default(''),
+  carro: z.string().trim().default(''),
+  observacoes: z.string().trim().default(''),
+  driver_id: z.string().trim().default(''),
+  collector_id: z.string().trim().default(''),
+  numero_convenio: z.string().trim().default(''),
+  nome_convenio: z.string().trim().default(''),
+  carteira_convenio: z.string().trim().default(''),
 });
+
+type FormValues = z.infer<typeof formSchema>;
 
 export function AppointmentFormModal({
   isOpen,
@@ -120,8 +104,8 @@ export function AppointmentFormModal({
     reset,
     formState: { errors },
   } = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues,
+    resolver: zodResolver(formSchema) as unknown as Resolver<FormValues>,
+    defaultValues: defaultValues as FormValues,
   });
 
   useEffect(() => {
@@ -135,7 +119,7 @@ export function AppointmentFormModal({
     onClose();
   };
 
-  const onSubmitForm = (values: FormValues) => {
+  const onSubmitForm: SubmitHandler<FormValues> = (values) => {
     const iso = new Date(`${values.date}T${values.time}:00`);
     if (Number.isNaN(iso.getTime())) {
       return;
