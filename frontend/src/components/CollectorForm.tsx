@@ -8,6 +8,8 @@ interface CollectorFormProps {
   onClose: () => void;
   onSubmit: (data: CollectorFormData) => void;
   isLoading?: boolean;
+  serverError?: string;
+  onServerErrorClear?: () => void;
 }
 
 const initialFormData: CollectorFormData = {
@@ -29,7 +31,9 @@ export const CollectorForm: React.FC<CollectorFormProps> = ({
   isOpen,
   onClose,
   onSubmit,
-  isLoading = false
+  isLoading = false,
+  serverError,
+  onServerErrorClear,
 }) => {
   const [formData, setFormData] = useState<CollectorFormData>(initialFormData);
   const [errors, setErrors] = useState<Partial<CollectorFormData>>({});
@@ -100,7 +104,11 @@ export const CollectorForm: React.FC<CollectorFormProps> = ({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    
+
+    if (serverError) {
+      onServerErrorClear?.();
+    }
+
     // For CPF, only allow numbers
     if (name === 'cpf') {
       const cleanValue = value.replace(/\D/g, '');
@@ -203,6 +211,11 @@ export const CollectorForm: React.FC<CollectorFormProps> = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {serverError && (
+            <div className="p-3 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-md">
+              {serverError}
+            </div>
+          )}
           {/* Nome Completo */}
           <div>
             <label htmlFor="nome_completo" className="block text-sm font-medium text-gray-700 mb-1">

@@ -28,6 +28,7 @@ export const CollectorsPage: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedCollector, setSelectedCollector] = useState<Collector | undefined>();
   const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Fetch collectors
   const { 
@@ -57,9 +58,12 @@ export const CollectorsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['collectorStats'] });
       setIsFormOpen(false);
       setError(null);
+      setFormError(null);
     },
     onError: (error: any) => {
-      setError(error.response?.data?.detail || 'Erro ao criar coletora');
+      const message = error.response?.data?.detail || error.response?.data?.message || 'Erro ao criar coletora';
+      setFormError(message);
+      setError(message);
     }
   });
 
@@ -73,9 +77,12 @@ export const CollectorsPage: React.FC = () => {
       setIsFormOpen(false);
       setSelectedCollector(undefined);
       setError(null);
+      setFormError(null);
     },
     onError: (error: any) => {
-      setError(error.response?.data?.detail || 'Erro ao atualizar coletora');
+      const message = error.response?.data?.detail || error.response?.data?.message || 'Erro ao atualizar coletora';
+      setFormError(message);
+      setError(message);
     }
   });
 
@@ -110,6 +117,9 @@ export const CollectorsPage: React.FC = () => {
       data_nascimento: data.data_nascimento || undefined,
     };
 
+    setFormError(null);
+    setError(null);
+
     if (selectedCollector) {
       updateCollectorMutation.mutate({ id: selectedCollector.id, data: requestData });
     } else {
@@ -120,6 +130,7 @@ export const CollectorsPage: React.FC = () => {
   const handleEdit = (collector: Collector) => {
     setSelectedCollector(collector);
     setIsFormOpen(true);
+    setFormError(null);
   };
 
   const handleStatusChange = (id: string, status: string) => {
@@ -144,12 +155,15 @@ export const CollectorsPage: React.FC = () => {
   const handleNewCollector = () => {
     setSelectedCollector(undefined);
     setIsFormOpen(true);
+    setFormError(null);
+    setError(null);
   };
 
   const handleCloseForm = () => {
     setIsFormOpen(false);
     setSelectedCollector(undefined);
     setError(null);
+    setFormError(null);
   };
 
   const stats = collectorStats?.stats || {
@@ -318,6 +332,8 @@ export const CollectorsPage: React.FC = () => {
         onClose={handleCloseForm}
         onSubmit={handleFormSubmit}
         isLoading={isFormLoading}
+        serverError={formError ?? undefined}
+        onServerErrorClear={() => setFormError(null)}
       />
     </div>
   );

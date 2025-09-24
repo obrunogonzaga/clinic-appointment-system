@@ -3,6 +3,7 @@ MongoDB implementation of CollectorRepository.
 """
 
 from datetime import datetime
+import re
 from typing import Any, Dict, List, Optional
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -12,6 +13,7 @@ from src.domain.entities.collector import Collector
 from src.domain.repositories.collector_repository_interface import (
     CollectorRepositoryInterface,
 )
+from src.domain.utils import normalize_cpf
 
 
 class CollectorRepository(CollectorRepositoryInterface):
@@ -84,7 +86,16 @@ class CollectorRepository(CollectorRepositoryInterface):
         Returns:
             Collector if found, None otherwise
         """
-        doc = await self.collection.find_one({"cpf": cpf})
+        normalized_cpf = normalize_cpf(cpf)
+        if not normalized_cpf:
+            return None
+
+        doc = await self.collection.find_one({"cpf": normalized_cpf})
+
+        # Support legacy records that may still store formatted CPF values
+        if doc is None and normalized_cpf != cpf:
+            cpf_pattern = self._build_cpf_regex(normalized_cpf)
+            doc = await self.collection.find_one({"cpf": {"$regex": cpf_pattern}})
 
         if doc is None:
             return None
@@ -262,13 +273,31 @@ class CollectorRepository(CollectorRepositoryInterface):
         Returns:
             True if CPF exists, False otherwise
         """
-        query = {"cpf": cpf}
+        normalized_cpf = normalize_cpf(cpf)
 
-        if exclude_id:
-            query["id"] = {"$ne": exclude_id}
+        candidates = []
 
-        doc = await self.collection.find_one(query, {"_id": 1})
-        return doc is not None
+        if normalized_cpf:
+            candidates.append({"cpf": normalized_cpf})
+
+            if normalized_cpf != cpf:
+                candidates.append(
+                    {"cpf": {"$regex": self._build_cpf_regex(normalized_cpf)}}
+                )
+
+        else:
+            candidates.append({"cpf": cpf})
+
+        for candidate in candidates:
+            query = candidate.copy()
+            if exclude_id:
+                query["id"] = {"$ne": exclude_id}
+
+            doc = await self.collection.find_one(query, {"_id": 1})
+            if doc is not None:
+                return True
+
+        return False
 
     async def get_distinct_values(self, field: str) -> List[str]:
         """
@@ -336,3 +365,11 @@ class CollectorRepository(CollectorRepositoryInterface):
         await self.collection.create_index(
             [("status", ASCENDING), ("nome_completo", ASCENDING)]
         )
+
+    def _build_cpf_regex(self, digits_only_cpf: str) -> str:
+        """Build regex matching CPF with optional formatting characters."""
+
+        escaped_digits = map(re.escape, digits_only_cpf)
+        # Allow any non-digit (including none) between digits for legacy formatted values
+        pattern = "\\D*".join(escaped_digits)
+        return f"^{pattern}$"

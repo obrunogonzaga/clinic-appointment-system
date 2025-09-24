@@ -8,6 +8,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
+from src.domain.utils import normalize_cpf
+
 
 class CollectorCreateDTO(BaseModel):
     """DTO for creating a new collector."""
@@ -29,6 +31,15 @@ class CollectorCreateDTO(BaseModel):
         None, description="Registro profissional"
     )
     especializacao: Optional[str] = Field(None, description="Especialização")
+
+    @field_validator("cpf", mode="before")
+    @classmethod
+    def normalize_cpf_value(cls, value: str) -> str:
+        """Ensure CPF is stored using only digits."""
+        normalized = normalize_cpf(value)
+        if not normalized:
+            raise ValueError("CPF é obrigatório")
+        return normalized
 
     @field_validator("data_nascimento", mode="before")
     @classmethod
@@ -96,6 +107,16 @@ class CollectorUpdateDTO(BaseModel):
     observacoes: Optional[str] = None
     registro_profissional: Optional[str] = None
     especializacao: Optional[str] = None
+
+    @field_validator("cpf", mode="before")
+    @classmethod
+    def normalize_optional_cpf(
+        cls, value: Optional[str]
+    ) -> Optional[str]:
+        """Normalize CPF when provided in updates."""
+        if value in (None, ""):
+            return None
+        return normalize_cpf(value)
 
     @field_validator("data_nascimento", mode="before")
     @classmethod
