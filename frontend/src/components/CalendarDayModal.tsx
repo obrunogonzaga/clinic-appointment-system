@@ -125,7 +125,7 @@ export const CalendarDayModal: React.FC<DayModalProps> = ({
                         <div className="flex items-center space-x-1">
                           <ClockIcon className="w-4 h-4" />
                           <span>
-                            Horários: {appointments[0]?.hora_agendamento} - {appointments[appointments.length - 1]?.hora_agendamento}
+                            Horários: {appointments[0]?.hora_agendamento ?? 'Sem horário'} - {appointments[appointments.length - 1]?.hora_agendamento ?? 'Sem horário'}
                           </span>
                         </div>
                       </div>

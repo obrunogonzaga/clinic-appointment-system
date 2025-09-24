@@ -77,8 +77,8 @@ export function getNextStop(appointments: Appointment[]): Appointment | null {
   
   // Ordena por horário e retorna a primeira
   const ordered = appointments.slice().sort((a, b) => {
-    const [ah, am] = (a.hora_agendamento || '00:00').split(':').map(Number);
-    const [bh, bm] = (b.hora_agendamento || '00:00').split(':').map(Number);
+    const [ah, am] = (a.hora_agendamento || '99:99').split(':').map(Number);
+    const [bh, bm] = (b.hora_agendamento || '99:99').split(':').map(Number);
     return ah === bh ? am - bm : ah - bh;
   });
   
@@ -93,8 +93,8 @@ export function getWaypointsForRoute(appointments: Appointment[]): string[] {
   
   // Ordena por horário
   const ordered = appointments.slice().sort((a, b) => {
-    const [ah, am] = (a.hora_agendamento || '00:00').split(':').map(Number);
-    const [bh, bm] = (b.hora_agendamento || '00:00').split(':').map(Number);
+    const [ah, am] = (a.hora_agendamento || '99:99').split(':').map(Number);
+    const [bh, bm] = (b.hora_agendamento || '99:99').split(':').map(Number);
     return ah === bh ? am - bm : ah - bh;
   });
   
@@ -110,8 +110,8 @@ export function getFinalDestination(appointments: Appointment[]): string {
   
   // Ordena por horário e retorna o último
   const ordered = appointments.slice().sort((a, b) => {
-    const [ah, am] = (a.hora_agendamento || '00:00').split(':').map(Number);
-    const [bh, bm] = (b.hora_agendamento || '00:00').split(':').map(Number);
+    const [ah, am] = (a.hora_agendamento || '99:99').split(':').map(Number);
+    const [bh, bm] = (b.hora_agendamento || '99:99').split(':').map(Number);
     return ah === bh ? am - bm : ah - bh;
   });
   

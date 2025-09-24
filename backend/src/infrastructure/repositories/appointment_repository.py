@@ -342,7 +342,10 @@ class AppointmentRepository(AppointmentRepositoryInterface):
         duplicate_ids = []
 
         for appointment in appointments:
-            # Build query for potential duplicates
+            # Only run duplicate checks when date and time are provided
+            if not (appointment.data_agendamento and appointment.hora_agendamento):
+                continue
+
             query = {
                 "nome_paciente": appointment.nome_paciente,
                 "data_agendamento": appointment.data_agendamento,
@@ -350,7 +353,6 @@ class AppointmentRepository(AppointmentRepositoryInterface):
                 "nome_unidade": appointment.nome_unidade,
             }
 
-            # Check if appointment with these key fields already exists
             existing = await self.collection.find_one(query)
             if existing:
                 duplicate_ids.append(str(appointment.id))

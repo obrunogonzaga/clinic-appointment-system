@@ -184,11 +184,11 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
             <div className={`mt-1 flex flex-wrap items-center gap-2 ${detailValueClass}`}>
               <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2 py-1 font-medium text-gray-600">
                 <CalendarIcon className="w-3 h-3" />
-                {formatDate(appointment.data_agendamento)}
+                {formatDate(appointment.data_agendamento ?? '')}
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2 py-1 font-medium text-gray-600">
                 <ClockIcon className="w-3 h-3" />
-                {appointment.hora_agendamento}
+                {appointment.hora_agendamento ?? 'Sem hora definida'}
               </span>
             </div>
           </div>

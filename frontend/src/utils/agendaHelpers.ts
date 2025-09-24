@@ -74,8 +74,14 @@ export function groupAppointmentsByDate(appointments: AppointmentViewModel[]): A
   const grouped: AppointmentsByDate = {};
   
   appointments.forEach(appointment => {
-    // Parse da data do agendamento
+    if (!appointment.data_agendamento) {
+      return;
+    }
+
     const appointmentDate = parseISO(appointment.data_agendamento);
+    if (Number.isNaN(appointmentDate.getTime())) {
+      return;
+    }
     const dateKey = format(appointmentDate, 'yyyy-MM-dd');
     
     if (!grouped[dateKey]) {
@@ -88,8 +94,15 @@ export function groupAppointmentsByDate(appointments: AppointmentViewModel[]): A
   // Ordena os agendamentos de cada dia por hora
   Object.keys(grouped).forEach(dateKey => {
     grouped[dateKey].sort((a, b) => {
-      const timeA = a.hora_agendamento || '00:00';
-      const timeB = b.hora_agendamento || '00:00';
+      const safeTime = (value?: string | null): string => {
+        if (!value || !value.trim()) {
+          return '99:99';
+        }
+        return value;
+      };
+
+      const timeA = safeTime(a.hora_agendamento);
+      const timeB = safeTime(b.hora_agendamento);
       return timeA.localeCompare(timeB);
     });
   });

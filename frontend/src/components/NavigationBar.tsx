@@ -78,7 +78,8 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({ appointments }) =>
         
         {nextStop && (
           <div className="mt-2 text-center text-sm text-gray-600">
-            <strong>Próxima parada:</strong> {nextStop.hora_agendamento} - {nextStop.nome_paciente}
+            <strong>Próxima parada:</strong>{' '}
+            {nextStop.hora_agendamento ?? 'Sem hora definida'} - {nextStop.nome_paciente}
           </div>
         )}
       </div>

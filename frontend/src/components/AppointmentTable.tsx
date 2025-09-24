@@ -61,7 +61,9 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
   onDelete,
   onSelect,
 }) => {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [sorting, setSorting] = React.useState<SortingState>([
+    { id: 'data_agendamento', desc: false },
+  ]);
 
   const columns = React.useMemo<ColumnDef<AppointmentViewModel>[]>(
     () => [
@@ -96,13 +98,46 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
       {
         accessorKey: 'data_agendamento',
         header: 'Agendamento',
+        sortingFn: (rowA, rowB) => {
+          const resolveDateValue = (value?: string | null): number => {
+            if (!value) {
+              return Number.POSITIVE_INFINITY;
+            }
+            const timestamp = new Date(value).getTime();
+            return Number.isNaN(timestamp)
+              ? Number.POSITIVE_INFINITY
+              : timestamp;
+          };
+
+          const aDateValue = resolveDateValue(rowA.original.data_agendamento);
+          const bDateValue = resolveDateValue(rowB.original.data_agendamento);
+
+          if (aDateValue !== bDateValue) {
+            return aDateValue - bDateValue;
+          }
+
+          const resolveCreatedValue = (value?: string | null): number => {
+            if (!value) {
+              return 0;
+            }
+            const timestamp = new Date(value).getTime();
+            return Number.isNaN(timestamp) ? 0 : timestamp;
+          };
+
+          const aCreated = resolveCreatedValue(rowA.original.created_at);
+          const bCreated = resolveCreatedValue(rowB.original.created_at);
+
+          return bCreated - aCreated;
+        },
         cell: ({ row }) => {
           const iso = row.original.data_agendamento ?? '';
           const ymd = iso.split('T')[0] || iso;
           const [y, m, d] = ymd.split('-');
           const formatted = y && m && d ? `${d}/${m}/${y}` : '';
-          const time = row.original.hora_agendamento;
-          const label = formatted && time ? `${formatted} · ${time}` : formatted || time || '-';
+          const time = row.original.hora_agendamento ?? '';
+          const label = formatted && time
+            ? `${formatted} · ${time}`
+            : formatted || time || 'Sem data definida';
           const status = row.original.status;
           const colorClass = statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800';
 

@@ -9,8 +9,8 @@ export interface Appointment {
   nome_marca: string;
   nome_unidade: string;
   nome_paciente: string;
-  data_agendamento: string;
-  hora_agendamento: string;
+  data_agendamento?: string | null;
+  hora_agendamento?: string | null;
   tipo_consulta?: string;
   cip?: string;
   status: string;
@@ -65,8 +65,8 @@ export interface AppointmentCreateRequest {
   nome_marca: string;
   nome_unidade: string;
   nome_paciente: string;
-  data_agendamento: string;
-  hora_agendamento: string;
+  data_agendamento?: string;
+  hora_agendamento?: string;
   tipo_consulta?: string;
   cip?: string;
   status?: string;
