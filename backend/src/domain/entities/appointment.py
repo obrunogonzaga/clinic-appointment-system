@@ -3,11 +3,12 @@ Appointment entity representing a medical appointment.
 """
 
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from pydantic import Field, field_validator
 
 from src.domain.base import Entity
+from src.domain.entities.tag import TagReference
 
 
 class Appointment(Entity):
@@ -93,6 +94,10 @@ class Appointment(Entity):
     )
     agendado_por: Optional[str] = Field(
         None, description="Usuário responsável por mover o status para Agendado"
+    )
+    tags: List[TagReference] = Field(
+        default_factory=list,
+        description="Tags associadas ao agendamento",
     )
     canal_confirmacao: Optional[str] = Field(
         None,
@@ -193,6 +198,19 @@ class Appointment(Entity):
             )
 
         return value
+
+    @field_validator("tags")
+    @classmethod
+    def validate_tags(cls, value: List[TagReference]) -> List[TagReference]:
+        """Ensure tag identifiers are unique within the appointment."""
+        seen: set[str] = set()
+        unique_tags: list[TagReference] = []
+        for tag in value:
+            tag_id = str(tag.id)
+            if tag_id not in seen:
+                seen.add(tag_id)
+                unique_tags.append(tag)
+        return unique_tags
 
     class Config:
         """Pydantic configuration."""

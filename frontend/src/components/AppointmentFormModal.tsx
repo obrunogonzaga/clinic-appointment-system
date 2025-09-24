@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { useForm, type SubmitHandler, type Resolver } from 'react-hook-form';
+import { Controller, useForm, type SubmitHandler, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -8,6 +8,8 @@ import type { AppointmentCreateRequest } from '../types/appointment';
 import type { ActiveDriver } from '../types/driver';
 import type { ActiveCollector } from '../types/collector';
 import { APPOINTMENT_STATUS_OPTIONS } from '../utils/appointmentViewModel';
+import type { Tag } from '../types/tag';
+import { TagSelector } from './tags/TagSelector';
 
 interface AppointmentFormModalProps {
   isOpen: boolean;
@@ -19,6 +21,8 @@ interface AppointmentFormModalProps {
   statuses?: string[];
   drivers: ActiveDriver[];
   collectors: ActiveCollector[];
+  tags: Tag[];
+  maxTags?: number;
 }
 
 const formSchema = z.object({
@@ -48,6 +52,7 @@ const formSchema = z.object({
   numero_convenio: z.string().trim().default(''),
   nome_convenio: z.string().trim().default(''),
   carteira_convenio: z.string().trim().default(''),
+  tags: z.array(z.string()).default([]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -62,6 +67,8 @@ export function AppointmentFormModal({
   statuses,
   drivers,
   collectors,
+  tags,
+  maxTags = 5,
 }: AppointmentFormModalProps) {
   const statusChoices = useMemo(
     () => (statuses && statuses.length > 0 ? statuses : [...APPOINTMENT_STATUS_OPTIONS]),
@@ -96,11 +103,13 @@ export function AppointmentFormModal({
       numero_convenio: '',
       nome_convenio: '',
       carteira_convenio: '',
+      tags: [],
     }),
     [defaultStatus]
   );
 
   const {
+    control,
     register,
     handleSubmit,
     reset,
@@ -146,6 +155,7 @@ export function AppointmentFormModal({
       numero_convenio: values.numero_convenio.trim() || undefined,
       nome_convenio: values.nome_convenio.trim() || undefined,
       carteira_convenio: values.carteira_convenio.trim() || undefined,
+      tags: values.tags ?? [],
     };
 
     onSubmit(payload);
@@ -380,6 +390,31 @@ export function AppointmentFormModal({
               placeholder="Informações adicionais relevantes"
               disabled={isSubmitting}
             />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Tags</label>
+          <p className="mt-1 text-xs text-gray-500">
+            Selecione até {maxTags} tags para facilitar a identificação do agendamento.
+          </p>
+          <div className="mt-3">
+            <Controller
+              control={control}
+              name="tags"
+              render={({ field }) => (
+                <TagSelector
+                  availableTags={tags}
+                  selectedTagIds={field.value}
+                  onChange={field.onChange}
+                  disabled={isSubmitting}
+                  maxSelected={maxTags}
+                />
+              )}
+            />
+            {errors.tags && (
+              <p className="mt-1 text-sm text-red-600">{errors.tags.message}</p>
+            )}
           </div>
         </div>
 

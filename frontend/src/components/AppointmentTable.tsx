@@ -12,6 +12,7 @@ import React from 'react';
 import type { AppointmentViewModel } from '../types/appointment.ts';
 import type { ActiveCollector } from '../types/collector.ts';
 import type { ActiveDriver } from '../types/driver.ts';
+import { TagBadge } from './tags/TagBadge';
 
 interface AppointmentTableProps {
   appointments: AppointmentViewModel[];
@@ -195,6 +196,23 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
             {row.original.telefone || '-'}
           </div>
         ),
+      },
+      {
+        id: 'tags',
+        header: 'Tags',
+        cell: ({ row }) => {
+          const tags = row.original.tags ?? [];
+          if (tags.length === 0) {
+            return <span className="text-xs text-gray-400">-</span>;
+          }
+          return (
+            <div className="flex flex-wrap gap-1.5">
+              {tags.map((tag) => (
+                <TagBadge key={tag.id} name={tag.name} color={tag.color} size="sm" />
+              ))}
+            </div>
+          );
+        },
       },
       {
         accessorKey: 'driver_id',

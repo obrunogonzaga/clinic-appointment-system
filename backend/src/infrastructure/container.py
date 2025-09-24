@@ -15,6 +15,7 @@ from src.infrastructure.repositories.collector_repository import (
 from src.infrastructure.repositories.driver_repository import DriverRepository
 from src.infrastructure.repositories.user_repository import UserRepository
 from src.infrastructure.repositories.notification_repository import NotificationRepository
+from src.infrastructure.repositories.tag_repository import TagRepository
 from src.infrastructure.services.redis_service import RedisService
 from src.infrastructure.services.rate_limiter import RateLimiter
 
@@ -40,6 +41,7 @@ class Container:
         self._collector_repository: Optional[CollectorRepository] = None
         self._user_repository: Optional[UserRepository] = None
         self._notification_repository: Optional[NotificationRepository] = None
+        self._tag_repository: Optional[TagRepository] = None
         self._redis_service: Optional[RedisService] = None
         self._rate_limiter: Optional[RateLimiter] = None
 
@@ -158,6 +160,13 @@ class Container:
         return self._notification_repository
     
     @property
+    def tag_repository(self) -> TagRepository:
+        """Get tag repository instance."""
+        if self._tag_repository is None:
+            self._tag_repository = TagRepository(self.database)
+        return self._tag_repository
+    
+    @property
     def redis_service(self) -> RedisService:
         """
         Get Redis service instance.
@@ -204,6 +213,7 @@ class Container:
             await self.collector_repository.create_indexes()
             await self.user_repository.ensure_indexes()
             await self.notification_repository.create_indexes()
+            await self.tag_repository.ensure_indexes()
             print("✅ Database indexes created")
         except Exception as e:
             print(f"❌ Failed to connect to MongoDB: {e}")
@@ -299,3 +309,8 @@ async def get_user_repository() -> UserRepository:
         UserRepository: Repository instance
     """
     return container.user_repository
+
+
+async def get_tag_repository() -> TagRepository:
+    """Dependency for getting tag repository instance."""
+    return container.tag_repository

@@ -1,3 +1,9 @@
+export interface AppointmentTag {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export interface Appointment {
   id: string;
   nome_marca: string;
@@ -43,6 +49,7 @@ export interface Appointment {
   updated_at?: string;
   cadastrado_por?: string;
   agendado_por?: string;
+  tags?: AppointmentTag[];
 }
 
 export interface AppointmentViewModel extends Appointment {
@@ -67,6 +74,7 @@ export interface AppointmentCreateRequest {
   numero_convenio?: string;
   nome_convenio?: string;
   carteira_convenio?: string;
+  tags?: string[];
 }
 
 export interface AppointmentFilter {
@@ -114,6 +122,7 @@ export interface FilterOptions {
   units: string[];
   brands: string[];
   statuses: string[];
+  max_tags_per_appointment?: number;
 }
 
 export interface DashboardStats {

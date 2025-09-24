@@ -18,6 +18,7 @@ from src.presentation.api.v1.endpoints import (
     drivers,
     notifications,
     reports,
+    tags,
 )
 
 # Get settings
@@ -59,6 +60,8 @@ api_v1_router.include_router(
 api_v1_router.include_router(
     notifications.router, prefix="/notifications", tags=["Notifications"]
 )
+
+api_v1_router.include_router(tags.router, prefix="/tags", tags=["Tags"])
 
 
 @api_v1_router.get("/")

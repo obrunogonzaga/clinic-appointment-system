@@ -133,6 +133,11 @@ class Settings(BaseSettings):
         description="Tamanho máximo da página",
     )
 
+    max_tags_per_appointment: int = Field(
+        default=5,
+        description="Quantidade máxima de tags que podem ser vinculadas a um agendamento",
+    )
+
     # Logging settings
     log_level: str = Field(
         default="INFO",

@@ -268,6 +268,56 @@ class AppointmentRepository(AppointmentRepositoryInterface):
         result = await self.collection.delete_many(filters)
         return result.deleted_count
 
+    async def count_by_tag(self, tag_id: str) -> int:
+        """Count appointments that reference a given tag identifier."""
+        return await self.collection.count_documents({"tags.id": tag_id})
+
+    async def update_tag_references(
+        self, tag_id: str, name: str, color: str
+    ) -> int:
+        """Propagate tag updates to embedded tag summaries."""
+        try:
+            result = await self.collection.update_many(
+                {"tags.id": tag_id},
+                {
+                    "$set": {
+                        "tags.$[tag].name": name,
+                        "tags.$[tag].color": color,
+                        "updated_at": datetime.utcnow(),
+                    }
+                },
+                array_filters=[{"tag.id": tag_id}],
+            )
+            return result.modified_count
+        except NotImplementedError as error:  # mongomock doesn't support array filters
+            if "array filters" not in str(error).lower():
+                raise
+
+            modified = 0
+            cursor = self.collection.find({"tags.id": tag_id})
+            async for document in cursor:
+                tags = document.get("tags", [])
+                updated = False
+                for tag in tags:
+                    if tag.get("id") == tag_id:
+                        tag["name"] = name
+                        tag["color"] = color
+                        updated = True
+
+                if updated:
+                    await self.collection.update_one(
+                        {"id": document["id"]},
+                        {
+                            "$set": {
+                                "tags": tags,
+                                "updated_at": datetime.utcnow(),
+                            }
+                        },
+                    )
+                    modified += 1
+
+            return modified
+
     async def find_duplicates(
         self, appointments: List[Appointment]
     ) -> List[str]:

@@ -74,6 +74,8 @@ describe('Appointments smoke tests', () => {
         statuses={['Confirmado', 'Pendente']}
         drivers={[]}
         collectors={[]}
+        tags={[]}
+        maxTags={5}
       />
     );
 

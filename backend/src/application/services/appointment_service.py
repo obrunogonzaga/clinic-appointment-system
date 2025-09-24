@@ -3,7 +3,7 @@ Service for managing appointments business logic.
 """
 
 from datetime import datetime, timedelta
-from typing import Any, BinaryIO, Dict, Optional
+from typing import Any, BinaryIO, Dict, List, Optional
 
 from src.application.dtos.appointment_dto import (
     AppointmentCreateDTO,
@@ -11,8 +11,12 @@ from src.application.dtos.appointment_dto import (
 )
 from src.application.services.excel_parser_service import ExcelParserService
 from src.domain.entities.appointment import Appointment
+from src.domain.entities.tag import TagReference
 from src.domain.repositories.appointment_repository_interface import (
     AppointmentRepositoryInterface,
+)
+from src.domain.repositories.tag_repository_interface import (
+    TagRepositoryInterface,
 )
 
 
@@ -28,6 +32,8 @@ class AppointmentService:
         self,
         appointment_repository: AppointmentRepositoryInterface,
         excel_parser: ExcelParserService,
+        tag_repository: Optional[TagRepositoryInterface] = None,
+        max_tags_per_appointment: int = 5,
     ):
         """
         Initialize the service with dependencies.
@@ -38,6 +44,8 @@ class AppointmentService:
         """
         self.appointment_repository = appointment_repository
         self.excel_parser = excel_parser
+        self.tag_repository = tag_repository
+        self.max_tags_per_appointment = max(max_tags_per_appointment, 0)
 
     async def import_appointments_from_excel(
         self,
@@ -270,6 +278,54 @@ class AppointmentService:
                 else None
             )
 
+            provided_tag_ids = list(dict.fromkeys(appointment_data.tags or []))
+            tag_references: List[TagReference] = []
+            if provided_tag_ids:
+                if not self.tag_repository:
+                    return {
+                        "success": False,
+                        "message": "Funcionalidade de tags não está configurada.",
+                        "error_code": "unavailable",
+                    }
+
+                if (
+                    self.max_tags_per_appointment
+                    and len(provided_tag_ids) > self.max_tags_per_appointment
+                ):
+                    return {
+                        "success": False,
+                        "message": "Número máximo de tags por agendamento excedido.",
+                        "error_code": "limit_exceeded",
+                    }
+
+                stored_tags = await self.tag_repository.find_by_ids(
+                    provided_tag_ids
+                )
+                active_tags_map = {
+                    str(tag.id): tag for tag in stored_tags if tag.is_active
+                }
+                missing_or_inactive = [
+                    tag_id
+                    for tag_id in provided_tag_ids
+                    if tag_id not in active_tags_map
+                ]
+                if missing_or_inactive:
+                    return {
+                        "success": False,
+                        "message": "Uma ou mais tags informadas são inválidas ou inativas.",
+                        "error_code": "invalid_tag",
+                        "invalid_tags": missing_or_inactive,
+                    }
+
+                tag_references = [
+                    TagReference(
+                        id=tag_id,
+                        name=active_tags_map[tag_id].name,
+                        color=active_tags_map[tag_id].color,
+                    )
+                    for tag_id in provided_tag_ids
+                ]
+
             appointment = Appointment(
                 nome_marca=appointment_data.nome_marca,
                 nome_unidade=appointment_data.nome_unidade,
@@ -289,6 +345,7 @@ class AppointmentService:
                 carteira_convenio=appointment_data.carteira_convenio,
                 cadastrado_por=creator_name,
                 agendado_por=agendado_por,
+                tags=tag_references,
             )
 
             duplicate_ids = await self.appointment_repository.find_duplicates(
@@ -358,6 +415,7 @@ class AppointmentService:
                 "units": units,
                 "brands": brands,
                 "statuses": statuses,
+                "max_tags_per_appointment": self.max_tags_per_appointment,
             }
 
         except Exception as e:

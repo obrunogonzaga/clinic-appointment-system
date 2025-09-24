@@ -29,6 +29,25 @@ export const formatDateTime = (dateString: string, timeString?: string): string 
   return `${formattedDate} às ${timeString}`;
 };
 
+export const formatDateTimeLabel = (isoString: string | null | undefined): string => {
+  if (!isoString) {
+    return '-';
+  }
+
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) {
+    return '-';
+  }
+
+  return date.toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
 /**
  * Checks if a date is today
  */
