@@ -7,7 +7,10 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from fastapi.testclient import TestClient
 
-from src.application.dtos.appointment_dto import AppointmentResponseDTO
+from src.application.dtos.appointment_dto import (
+    AppointmentFullUpdateDTO,
+    AppointmentResponseDTO,
+)
 from src.domain.entities.user import User
 from src.main import app
 from src.presentation.api.v1.endpoints.appointments import (
@@ -158,3 +161,191 @@ def test_create_appointment_error_responses(
     body = response.json()
     assert body["success"] is False
     assert body["message"] == "Erro"
+
+
+def test_get_appointment_success(client: TestClient) -> None:
+    """Endpoint should return appointment details when service succeeds."""
+
+    appointment_id = str(uuid4())
+    dto = _build_response_dto()
+    dto.id = uuid4()
+
+    service_mock = MagicMock()
+    service_mock.get_appointment = AsyncMock(
+        return_value={
+            "success": True,
+            "message": "Agendamento encontrado",
+            "appointment": dto,
+        }
+    )
+
+    async def override_service() -> MagicMock:
+        return service_mock
+
+    app.dependency_overrides[get_appointment_service] = override_service
+    try:
+        response = client.get(f"/api/v1/appointments/{appointment_id}")
+    finally:
+        app.dependency_overrides.pop(get_appointment_service, None)
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+    assert payload["data"]["nome_paciente"] == dto.nome_paciente
+    service_mock.get_appointment.assert_awaited_once_with(appointment_id)
+
+
+def test_get_appointment_not_found(client: TestClient) -> None:
+    """Endpoint should propagate 404 when service reports missing appointment."""
+
+    appointment_id = str(uuid4())
+    service_mock = MagicMock()
+    service_mock.get_appointment = AsyncMock(
+        return_value={
+            "success": False,
+            "message": "Agendamento não encontrado",
+            "error_code": "not_found",
+        }
+    )
+
+    async def override_service() -> MagicMock:
+        return service_mock
+
+    app.dependency_overrides[get_appointment_service] = override_service
+    try:
+        response = client.get(f"/api/v1/appointments/{appointment_id}")
+    finally:
+        app.dependency_overrides.pop(get_appointment_service, None)
+
+    assert response.status_code == 404
+    detail = response.json()
+    assert detail["detail"] == "Agendamento não encontrado"
+
+
+def test_partial_update_appointment_success(client: TestClient) -> None:
+    """PATCH endpoint should return updated appointment on success."""
+
+    appointment_id = str(uuid4())
+    dto = _build_response_dto()
+
+    service_mock = MagicMock()
+    service_mock.update_appointment = AsyncMock(
+        return_value={
+            "success": True,
+            "message": "Agendamento atualizado com sucesso",
+            "appointment": dto,
+        }
+    )
+
+    async def override_service() -> MagicMock:
+        return service_mock
+
+    app.dependency_overrides[get_appointment_service] = override_service
+    try:
+        response = client.patch(
+            f"/api/v1/appointments/{appointment_id}",
+            json={"nome_paciente": "Paciente Editado"},
+        )
+    finally:
+        app.dependency_overrides.pop(get_appointment_service, None)
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+    assert payload["message"] == "Agendamento atualizado com sucesso"
+    service_mock.update_appointment.assert_awaited_once()
+
+
+def test_partial_update_updates_confirmation_channel(client: TestClient) -> None:
+    """PATCH endpoint should pass through confirmation channel changes."""
+
+    appointment_id = str(uuid4())
+    updated_dto = _build_response_dto()
+    updated_dto.canal_confirmacao = "Telefone"
+
+    service_mock = MagicMock()
+    service_mock.update_appointment = AsyncMock(
+        return_value={
+            "success": True,
+            "message": "Agendamento atualizado com sucesso",
+            "appointment": updated_dto,
+        }
+    )
+
+    async def override_service() -> MagicMock:
+        return service_mock
+
+    app.dependency_overrides[get_appointment_service] = override_service
+    try:
+        response = client.patch(
+            f"/api/v1/appointments/{appointment_id}",
+            json={"canal_confirmacao": "Telefone"},
+        )
+    finally:
+        app.dependency_overrides.pop(get_appointment_service, None)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["canal_confirmacao"] == "Telefone"
+    service_mock.update_appointment.assert_awaited_once_with(
+        appointment_id,
+        AppointmentFullUpdateDTO(canal_confirmacao="Telefone"),
+    )
+
+
+def test_partial_update_appointment_validation_error(client: TestClient) -> None:
+    """PATCH endpoint should map validation errors to HTTP 400."""
+
+    service_mock = MagicMock()
+    service_mock.update_appointment = AsyncMock(
+        return_value={
+            "success": False,
+            "message": "Dados inválidos",
+            "error_code": "validation",
+        }
+    )
+
+    async def override_service() -> MagicMock:
+        return service_mock
+
+    app.dependency_overrides[get_appointment_service] = override_service
+    try:
+        response = client.patch(
+            f"/api/v1/appointments/{uuid4()}",
+            json={"status": ""},
+        )
+    finally:
+        app.dependency_overrides.pop(get_appointment_service, None)
+
+    assert response.status_code == 400
+    detail = response.json()
+    assert detail["detail"] == "Dados inválidos"
+
+
+def test_partial_update_appointment_not_found(client: TestClient) -> None:
+    """PATCH endpoint should return 404 when service reports missing entity."""
+
+    service_mock = MagicMock()
+    service_mock.update_appointment = AsyncMock(
+        return_value={
+            "success": False,
+            "message": "Agendamento não encontrado",
+            "error_code": "not_found",
+        }
+    )
+
+    async def override_service() -> MagicMock:
+        return service_mock
+
+    app.dependency_overrides[get_appointment_service] = override_service
+    try:
+        response = client.patch(
+            f"/api/v1/appointments/{uuid4()}",
+            json={"nome_paciente": "Paciente"},
+        )
+    finally:
+        app.dependency_overrides.pop(get_appointment_service, None)
+
+    assert response.status_code == 404
+    detail = response.json()
+    assert detail["detail"] == "Agendamento não encontrado"

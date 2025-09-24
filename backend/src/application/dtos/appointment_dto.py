@@ -66,6 +66,7 @@ class AppointmentResponseDTO(BaseModel):
     status: str
     telefone: Optional[str] = None
     carro: Optional[str] = None
+    car_id: Optional[str] = None
     observacoes: Optional[str] = None
     driver_id: Optional[str] = None
     collector_id: Optional[str] = None
@@ -99,6 +100,9 @@ class AppointmentResponseDTO(BaseModel):
     carteira_convenio: Optional[str] = None
     cadastrado_por: Optional[str] = None
     agendado_por: Optional[str] = None
+    canal_confirmacao: Optional[str] = None
+    data_confirmacao: Optional[datetime] = None
+    hora_confirmacao: Optional[str] = None
     tags: List[TagSummaryDTO] = Field(
         default_factory=list, description="Tags vinculadas ao agendamento"
     )
@@ -183,16 +187,28 @@ class AppointmentFullUpdateDTO(BaseModel):
     data_agendamento: Optional[datetime] = None
     hora_agendamento: Optional[str] = None
     tipo_consulta: Optional[str] = None
+    cip: Optional[str] = None
     status: Optional[str] = None
     telefone: Optional[str] = None
     carro: Optional[str] = None
     observacoes: Optional[str] = None
     driver_id: Optional[str] = None
     collector_id: Optional[str] = None
+    car_id: Optional[str] = None
     # Campos de convênio
     numero_convenio: Optional[str] = None
     nome_convenio: Optional[str] = None
     carteira_convenio: Optional[str] = None
+    canal_confirmacao: Optional[str] = None
+    data_confirmacao: Optional[datetime] = None
+    hora_confirmacao: Optional[str] = None
+    cep: Optional[str] = None
+    endereco_normalizado: Optional[Dict[str, Optional[str]]] = None
+    documento_normalizado: Optional[Dict[str, Optional[str]]] = None
+    cpf: Optional[str] = None
+    rg: Optional[str] = None
+    # Tags vinculadas (IDs)
+    tags: Optional[List[str]] = None
 
 
 class AppointmentDeleteResponseDTO(BaseModel):

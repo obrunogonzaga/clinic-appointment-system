@@ -18,6 +18,7 @@ from fastapi import (
 from src.application.dtos.appointment_dto import (
     AppointmentCreateDTO,
     AppointmentFilterDTO,
+    AppointmentFullUpdateDTO,
     AppointmentListResponseDTO,
     AppointmentResponseDTO,
     AppointmentUpdateDTO,
@@ -363,6 +364,7 @@ async def get_dashboard_stats(
 async def get_appointment(
     appointment_id: str,
     service: AppointmentService = Depends(get_appointment_service),
+    current_user: User = Depends(get_current_active_user),
 ) -> DataResponse[AppointmentResponseDTO]:
     """
     Get appointment by ID.
@@ -374,28 +376,21 @@ async def get_appointment(
     Returns:
         DataResponse[AppointmentResponseDTO]: Appointment data
     """
-    try:
-        # Get appointment repository directly for this simple operation
-        repo = await get_appointment_repository()
-        appointment = await repo.find_by_id(appointment_id)
+    result = await service.get_appointment(appointment_id)
 
-        if not appointment:
-            raise HTTPException(
-                status_code=404, detail="Agendamento não encontrado"
-            )
-
-        return DataResponse(
-            success=True,
-            message="Agendamento encontrado",
-            data=AppointmentResponseDTO(**appointment.model_dump()),
+    if not result["success"]:
+        status_code_value = (
+            status.HTTP_404_NOT_FOUND
+            if result.get("error_code") == "not_found"
+            else status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+        raise HTTPException(status_code=status_code_value, detail=result["message"])
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Erro interno do servidor: {str(e)}"
-        )
+    return DataResponse(
+        success=True,
+        message=result["message"],
+        data=result["appointment"],
+    )
 
 
 @router.put(
@@ -487,6 +482,55 @@ async def delete_appointment(
         raise HTTPException(
             status_code=500, detail=f"Erro interno do servidor: {str(e)}"
         )
+
+
+@router.patch(
+    "/{appointment_id}",
+    response_model=DataResponse[AppointmentResponseDTO],
+    summary="Atualizar informações do agendamento",
+    description="Atualiza campos editáveis de um agendamento, incluindo tags e metadados.",
+)
+async def partially_update_appointment(
+    appointment_id: str,
+    update_payload: AppointmentFullUpdateDTO,
+    service: AppointmentService = Depends(get_appointment_service),
+    current_user: User = Depends(get_current_active_user),
+) -> DataResponse[AppointmentResponseDTO]:
+    """Partial update for appointment core fields."""
+
+    result = await service.update_appointment(
+        appointment_id, update_payload, updated_by=current_user.name
+    )
+
+    if not result["success"]:
+        error_code = result.get("error_code")
+        status_map = {
+            "not_found": status.HTTP_404_NOT_FOUND,
+            "invalid_tag": status.HTTP_400_BAD_REQUEST,
+            "limit_exceeded": status.HTTP_400_BAD_REQUEST,
+            "validation": status.HTTP_400_BAD_REQUEST,
+            "unavailable": status.HTTP_503_SERVICE_UNAVAILABLE,
+        }
+        status_code_value = status_map.get(
+            error_code, status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+        detail_payload: object
+        if isinstance(result.get("invalid_tags"), list):
+            detail_payload = {
+                "message": result["message"],
+                "invalid_tags": result["invalid_tags"],
+            }
+        else:
+            detail_payload = result["message"]
+
+        raise HTTPException(status_code=status_code_value, detail=detail_payload)
+
+    return DataResponse(
+        success=True,
+        message=result["message"],
+        data=result["appointment"],
+    )
 
 
 @router.put(

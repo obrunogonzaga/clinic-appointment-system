@@ -16,7 +16,7 @@ export function useToast() {
       const newToast: Toast = {
         ...toast,
         id,
-        duration: toast.duration || 5000,
+        duration: toast.duration || 10000,
       };
 
       setToasts((prev) => [...prev, newToast]);

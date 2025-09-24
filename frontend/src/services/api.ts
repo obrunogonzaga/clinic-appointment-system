@@ -1,9 +1,11 @@
 import axios from 'axios';
 import type {
+    Appointment,
     AppointmentCreateRequest,
     AppointmentCreateResponse,
     AppointmentFilter,
     AppointmentListResponse,
+    AppointmentUpdateRequest,
     DashboardStats,
     ExcelUploadResponse,
     FilterOptions
@@ -49,7 +51,19 @@ import type {
     TagUpdateRequest,
 } from '../types/tag';
 
-const API_BASE_URL = window.ENV?.API_URL || import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const resolveApiBaseUrl = (): string => {
+  if (typeof window !== 'undefined' && window.ENV?.API_URL) {
+    return window.ENV.API_URL;
+  }
+
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL as string;
+  }
+
+  return 'http://localhost:8000';
+};
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api/v1`,
@@ -134,6 +148,18 @@ export const appointmentAPI = {
     return response.data;
   },
 
+  getAppointmentById: async (appointmentId: string): Promise<Appointment> => {
+    const response = await api.get<{
+      success: boolean;
+      message: string;
+      data: Appointment;
+    }>(`/appointments/${appointmentId}`, {
+      withCredentials: true,
+    });
+
+    return response.data.data;
+  },
+
   // Get filter options
   getFilterOptions: async (): Promise<FilterOptions> => {
     const response = await api.get<FilterOptions>(
@@ -183,6 +209,23 @@ export const appointmentAPI = {
       null,
       { withCredentials: true }
     );
+  },
+
+  updateAppointment: async (
+    appointmentId: string,
+    updatePayload: AppointmentUpdateRequest
+  ): Promise<Appointment> => {
+    const response = await api.patch<{
+      success: boolean;
+      message: string;
+      data: Appointment;
+    }>(
+      `/appointments/${appointmentId}`,
+      updatePayload,
+      { withCredentials: true }
+    );
+
+    return response.data.data;
   },
 };
 

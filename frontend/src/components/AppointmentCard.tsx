@@ -29,6 +29,7 @@ interface AppointmentCardProps {
   onCarChange?: (appointmentId: string, carId: string) => void;
   onDelete: (id: string) => void;
   compact?: boolean;
+  onSelect?: (id: string) => void;
 }
 
 const statusOptions = [
@@ -53,7 +54,8 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
   onCollectorChange,
   onCarChange,
   onDelete,
-  compact = false
+  compact = false,
+  onSelect,
 }) => {
   // Get car info from linked car or carro field
   const getCarInfo = (): string => {
@@ -79,9 +81,34 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
     return '-';
   };
 
-  const handleDelete = () => {
+  const handleDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
     if (window.confirm('Tem certeza que deseja excluir este agendamento?')) {
       onDelete(appointment.id);
+    }
+  };
+
+  const handleCardClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!onSelect) {
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+    if (target && target.closest('button, a, select, input, textarea, label')) {
+      return;
+    }
+
+    onSelect(appointment.id);
+  };
+
+  const handleCardKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!onSelect || (event.target as HTMLElement) !== event.currentTarget) {
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onSelect(appointment.id);
     }
   };
 
@@ -100,11 +127,18 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
   const detailValueClass = `${compact ? 'text-xs' : 'text-sm'} text-gray-700`;
 
   return (
-    <div className={`
+    <div
+      className={`
       rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-200
       hover:shadow-md hover:border-gray-200
+      ${onSelect ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2' : ''}
       ${compact ? 'p-3' : 'p-5'}
-    `}>
+    `}
+      onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
+      role={onSelect ? 'button' : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+    >
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center min-w-0 flex-1">
@@ -328,6 +362,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
             onClick={handleDelete}
             className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
             title="Excluir agendamento"
+            type="button"
           >
             <TrashIcon className="w-4 h-4" />
           </button>

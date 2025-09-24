@@ -6,9 +6,11 @@ import {
 import { isAxiosError } from 'axios';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AppointmentCardList } from '../components/AppointmentCardList';
 import { AppointmentCalendarView } from '../components/AppointmentCalendarView';
 import { AppointmentFormModal } from '../components/AppointmentFormModal';
+import { AppointmentDetailsModal } from '../components/AppointmentDetailsModal';
 import { AppointmentFilters } from '../components/AppointmentFilters';
 import { CollectorAgendaView } from '../components/CollectorAgendaView';
 import { FileUpload } from '../components/FileUpload';
@@ -38,6 +40,9 @@ export const AppointmentsPage: React.FC = () => {
   const queryClient = useQueryClient();
   const { toasts, success: showToastSuccess, error: showToastError, removeToast } = useToast();
   
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedAppointmentId = searchParams.get('itemId');
+
   const [filters, setFilters] = useState<AppointmentFilter>({
     page: 1,
     page_size: 50
@@ -95,6 +100,18 @@ export const AppointmentsPage: React.FC = () => {
   });
 
   const maxTagsPerAppointment = filterOptions?.max_tags_per_appointment ?? 5;
+
+  const openAppointmentDetails = (appointmentId: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('itemId', appointmentId);
+    setSearchParams(next, { replace: false });
+  };
+
+  const closeAppointmentDetails = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('itemId');
+    setSearchParams(next, { replace: false });
+  };
 
   const handleUploadSuccess = (result: ExcelUploadResponse) => {
     setUploadResult(result);
@@ -260,6 +277,19 @@ export const AppointmentsPage: React.FC = () => {
         maxTags={maxTagsPerAppointment}
       />
 
+      <AppointmentDetailsModal
+        isOpen={Boolean(selectedAppointmentId)}
+        appointmentId={selectedAppointmentId}
+        onClose={closeAppointmentDetails}
+        drivers={driversData?.drivers || []}
+        collectors={collectorsData?.collectors || []}
+        statuses={filterOptions?.statuses}
+        tags={tagsData?.data ?? []}
+        maxTags={maxTagsPerAppointment}
+        onEditSuccess={showToastSuccess}
+        onEditError={showToastError}
+      />
+
       <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -388,6 +418,7 @@ export const AppointmentsPage: React.FC = () => {
               onDriverChange={handleDriverChange}
               onCollectorChange={handleCollectorChange}
               onDelete={handleDelete}
+              onSelect={openAppointmentDetails}
             />
           )}
 
@@ -401,6 +432,7 @@ export const AppointmentsPage: React.FC = () => {
               onDriverChange={handleDriverChange}
               onCollectorChange={handleCollectorChange}
               onDelete={handleDelete}
+              onSelect={openAppointmentDetails}
             />
           )}
 
