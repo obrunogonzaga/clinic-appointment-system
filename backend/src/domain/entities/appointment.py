@@ -23,9 +23,11 @@ class Appointment(Entity):
     nome_unidade: str = Field(..., description="Nome da Unidade de Saúde")
     nome_marca: str = Field(..., description="Nome da Marca/Clínica")
     nome_paciente: str = Field(..., description="Nome completo do paciente")
-    data_agendamento: datetime = Field(..., description="Data do agendamento")
-    hora_agendamento: str = Field(
-        ..., description="Hora do agendamento (HH:MM)"
+    data_agendamento: Optional[datetime] = Field(
+        None, description="Data do agendamento"
+    )
+    hora_agendamento: Optional[str] = Field(
+        None, description="Hora do agendamento (HH:MM)"
     )
 
     # Optional fields
@@ -124,13 +126,17 @@ class Appointment(Entity):
 
     @field_validator("hora_agendamento")
     @classmethod
-    def validate_time_format(cls, value: str) -> str:
+    def validate_time_format(cls, value: Optional[str]) -> Optional[str]:
         """Validate time format (HH:MM)."""
-        if not value:
-            raise ValueError("Hora do agendamento é obrigatória")
+        if value is None:
+            return None
 
         # Basic validation for HH:MM format
-        parts = value.strip().split(":")
+        trimmed = value.strip()
+        if not trimmed:
+            return None
+
+        parts = trimmed.split(":")
         if len(parts) != 2:
             raise ValueError("Hora deve estar no formato HH:MM")
 

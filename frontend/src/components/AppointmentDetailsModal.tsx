@@ -576,7 +576,7 @@ export function AppointmentDetailsModal({
           { label: 'Nome do paciente', value: ensureValue(appointment.nome_paciente) },
           { label: 'Tipo de consulta', value: ensureValue(appointment.tipo_consulta) },
           { label: 'CIP', value: ensureValue(appointment.cip) },
-          { label: 'Data do agendamento', value: formatDate(appointment.data_agendamento) },
+          { label: 'Data do agendamento', value: formatDate(appointment.data_agendamento ?? '') },
           { label: 'Hora do agendamento', value: ensureValue(appointment.hora_agendamento) },
           { label: 'Status', value: ensureValue(appointment.status), variant: 'status' },
           { label: 'Carro', value: carInfo },
@@ -737,7 +737,7 @@ export function AppointmentDetailsModal({
             ) : (
               <span>—</span>
             )}
-            <span>{formatDate(appointment.data_agendamento)}</span>
+            <span>{formatDate(appointment.data_agendamento ?? '')}</span>
             <span>{ensureValue(appointment.hora_agendamento)}</span>
           </div>
         </div>

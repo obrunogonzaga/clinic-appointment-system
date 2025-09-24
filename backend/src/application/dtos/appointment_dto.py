@@ -17,13 +17,17 @@ class AppointmentCreateDTO(BaseModel):
     nome_marca: str = Field(..., description="Nome da Marca")
     nome_unidade: str = Field(..., description="Nome da Unidade")
     nome_paciente: str = Field(..., description="Nome do Paciente")
-    data_agendamento: datetime = Field(..., description="Data do Agendamento")
-    hora_agendamento: str = Field(..., description="Hora do Agendamento")
+    data_agendamento: Optional[datetime] = Field(
+        None, description="Data do Agendamento"
+    )
+    hora_agendamento: Optional[str] = Field(
+        None, description="Hora do Agendamento"
+    )
     tipo_consulta: Optional[str] = Field(None, description="Tipo de Consulta")
     cip: Optional[str] = Field(
         None, description="Código CIP (Classificação Internacional de Procedimentos)"
     )
-    status: str = Field("Confirmado", description="Status do Agendamento")
+    status: str = Field("Pendente", description="Status do Agendamento")
     telefone: Optional[str] = Field(None, description="Telefone do Paciente")
     carro: Optional[str] = Field(
         None, description="Informações do carro utilizado"
@@ -59,8 +63,8 @@ class AppointmentResponseDTO(BaseModel):
     nome_marca: str
     nome_unidade: str
     nome_paciente: str
-    data_agendamento: datetime
-    hora_agendamento: str
+    data_agendamento: Optional[datetime] = None
+    hora_agendamento: Optional[str] = None
     tipo_consulta: Optional[str] = None
     cip: Optional[str] = None
     status: str

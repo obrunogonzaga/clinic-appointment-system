@@ -25,15 +25,27 @@ interface AppointmentFormModalProps {
   maxTags?: number;
 }
 
+const DEFAULT_BRAND = 'Sergio Franco';
+const DEFAULT_UNIT = 'LM-RECREIO 2 PEDRA DE ITAUNA D';
+const DEFAULT_STATUS = 'Pendente';
+const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 const formSchema = z.object({
   nome_marca: z.string().trim().min(1, 'Informe a marca/clinica'),
   nome_unidade: z.string().trim().min(1, 'Informe a unidade'),
   nome_paciente: z.string().trim().min(1, 'Informe o nome do paciente'),
-  date: z.string().trim().min(1, 'Selecione a data do agendamento'),
+  date: z.string().trim().optional(),
   time: z
     .string()
     .trim()
-    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Hora inválida (use HH:MM)'),
+    .optional()
+    .refine((value) => {
+      if (!value) {
+        return true;
+      }
+
+      return TIME_REGEX.test(value);
+    }, 'Hora inválida (use HH:MM)'),
   tipo_consulta: z.string().trim().default(''),
   cip: z.string().trim().max(60, 'CIP deve ter no máximo 60 caracteres').default(''),
   status: z.string().trim().min(1, 'Selecione o status'),
@@ -70,25 +82,37 @@ export function AppointmentFormModal({
   tags,
   maxTags = 5,
 }: AppointmentFormModalProps) {
-  const statusChoices = useMemo(
-    () => (statuses && statuses.length > 0 ? statuses : [...APPOINTMENT_STATUS_OPTIONS]),
-    [statuses]
-  );
+  const statusChoices = useMemo(() => {
+    const provided = statuses && statuses.length > 0 ? statuses : [...APPOINTMENT_STATUS_OPTIONS];
+    if (provided.includes(DEFAULT_STATUS)) {
+      return provided;
+    }
+
+    return [DEFAULT_STATUS, ...provided];
+  }, [statuses]);
 
   const defaultStatus = useMemo(() => {
-    if (statusChoices.includes('Confirmado')) {
-      return 'Confirmado';
+    if (statusChoices.includes(DEFAULT_STATUS)) {
+      return DEFAULT_STATUS;
     }
-    if (statusChoices.includes('Agendado')) {
-      return 'Agendado';
-    }
-    return statusChoices[0] ?? 'Pendente';
+
+    return statusChoices[0] ?? DEFAULT_STATUS;
   }, [statusChoices]);
+
+  const brandOptions = useMemo(() => {
+    void brands;
+    return [DEFAULT_BRAND];
+  }, [brands]);
+
+  const unitOptions = useMemo(() => {
+    void units;
+    return [DEFAULT_UNIT];
+  }, [units]);
 
   const defaultValues = useMemo<FormValues>(
     () => ({
-      nome_marca: '',
-      nome_unidade: '',
+      nome_marca: DEFAULT_BRAND,
+      nome_unidade: DEFAULT_UNIT,
       nome_paciente: '',
       date: '',
       time: '',
@@ -131,9 +155,16 @@ export function AppointmentFormModal({
   };
 
   const onSubmitForm: SubmitHandler<FormValues> = (values) => {
-    const iso = new Date(`${values.date}T${values.time}:00`);
-    if (Number.isNaN(iso.getTime())) {
-      return;
+    const trimmedDate = values.date?.trim();
+    const trimmedTime = values.time?.trim();
+
+    let scheduledAt: string | undefined;
+
+    if (trimmedDate && trimmedTime) {
+      const composed = new Date(`${trimmedDate}T${trimmedTime}:00`);
+      if (!Number.isNaN(composed.getTime())) {
+        scheduledAt = composed.toISOString();
+      }
     }
 
     const phoneDigits = values.telefone.replace(/\D/g, '');
@@ -142,11 +173,9 @@ export function AppointmentFormModal({
       nome_marca: values.nome_marca.trim(),
       nome_unidade: values.nome_unidade.trim(),
       nome_paciente: values.nome_paciente.trim(),
-      data_agendamento: iso.toISOString(),
-      hora_agendamento: values.time,
       tipo_consulta: values.tipo_consulta.trim() || undefined,
       cip: values.cip.trim() || undefined,
-      status: values.status,
+      status: values.status || DEFAULT_STATUS,
       telefone: phoneDigits,
       carro: values.carro.trim() || undefined,
       observacoes: values.observacoes.trim() || undefined,
@@ -157,6 +186,14 @@ export function AppointmentFormModal({
       carteira_convenio: values.carteira_convenio.trim() || undefined,
       tags: values.tags ?? [],
     };
+
+    if (scheduledAt) {
+      payload.data_agendamento = scheduledAt;
+    }
+
+    if (trimmedTime) {
+      payload.hora_agendamento = trimmedTime;
+    }
 
     onSubmit(payload);
   };
@@ -172,19 +209,17 @@ export function AppointmentFormModal({
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-gray-700">Marca / Clínica *</label>
-            <input
-              type="text"
+            <select
               {...register('nome_marca')}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              list="appointment-brand-options"
-              placeholder="Clínica Saúde"
               disabled={isSubmitting}
-            />
-            <datalist id="appointment-brand-options">
-              {brands.map((brand) => (
-                <option key={brand} value={brand} />
+            >
+              {brandOptions.map((brand) => (
+                <option key={brand} value={brand}>
+                  {brand}
+                </option>
               ))}
-            </datalist>
+            </select>
             {errors.nome_marca && (
               <p className="mt-1 text-sm text-red-600">{errors.nome_marca.message}</p>
             )}
@@ -192,19 +227,17 @@ export function AppointmentFormModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700">Unidade *</label>
-            <input
-              type="text"
+            <select
               {...register('nome_unidade')}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              list="appointment-unit-options"
-              placeholder="Unidade Centro"
               disabled={isSubmitting}
-            />
-            <datalist id="appointment-unit-options">
-              {units.map((unit) => (
-                <option key={unit} value={unit} />
+            >
+              {unitOptions.map((unit) => (
+                <option key={unit} value={unit}>
+                  {unit}
+                </option>
               ))}
-            </datalist>
+            </select>
             {errors.nome_unidade && (
               <p className="mt-1 text-sm text-red-600">{errors.nome_unidade.message}</p>
             )}
@@ -252,7 +285,7 @@ export function AppointmentFormModal({
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Data *</label>
+            <label className="block text-sm font-medium text-gray-700">Data</label>
             <input
               type="date"
               {...register('date')}
@@ -264,7 +297,7 @@ export function AppointmentFormModal({
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Hora *</label>
+            <label className="block text-sm font-medium text-gray-700">Hora</label>
             <input
               type="time"
               {...register('time')}

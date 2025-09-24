@@ -60,7 +60,14 @@ export const DriverRoutePage: React.FC = () => {
         <div className="grid grid-cols-12 items-center gap-4">
           <div className="col-span-12 md:col-span-6 flex items-center gap-4">
             <div className="text-6xl md:text-7xl font-black text-gray-900 tabular-nums">
-              {(ap.hora_agendamento || '').padStart(5, '0')}
+              {(() => {
+                const time = ap.hora_agendamento;
+                if (!time) {
+                  return '--:--';
+                }
+                const match = time.match(/^(\d{2}:\d{2})/);
+                return match ? match[1] : '--:--';
+              })()}
             </div>
             <div className="hidden md:block h-10 w-px bg-gray-800" />
             <div className="flex flex-wrap gap-8 text-lg font-bold text-gray-900">
@@ -196,8 +203,15 @@ export const DriverRoutePage: React.FC = () => {
 
   // ordena horário
   const ordered = (appts || []).slice().sort((a, b) => {
-    const [ah, am] = (a.hora_agendamento || '00:00').split(':').map(Number);
-    const [bh, bm] = (b.hora_agendamento || '00:00').split(':').map(Number);
+    const normalizeTime = (value?: string | null): string => {
+      if (!value || !value.trim()) {
+        return '99:99';
+      }
+      return value;
+    };
+
+    const [ah, am] = normalizeTime(a.hora_agendamento).split(':').map(Number);
+    const [bh, bm] = normalizeTime(b.hora_agendamento).split(':').map(Number);
     return ah === bh ? am - bm : ah - bh;
   });
 
@@ -272,5 +286,4 @@ function isNac(ap: Appointment): boolean {
   if (!unidade && marca) return true;
   return marca.includes('nac');
 }
-
 

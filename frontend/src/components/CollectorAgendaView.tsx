@@ -35,9 +35,17 @@ const TIME_SLOTS = [
   '18:00', '18:30', '19:00', '19:30', '20:00'
 ];
 
-const formatDateForComparison = (date: string): string => {
-  const d = new Date(date);
-  return d.toISOString().split('T')[0];
+const formatDateForComparison = (date?: string | null): string | null => {
+  if (!date) {
+    return null;
+  }
+
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed.toISOString().split('T')[0];
 };
 
 export const CollectorAgendaView: React.FC<CollectorAgendaViewProps> = ({
@@ -60,6 +68,9 @@ export const CollectorAgendaView: React.FC<CollectorAgendaViewProps> = ({
   const filteredAppointments = useMemo(() => {
     return appointments.filter(appointment => {
       const appointmentDate = formatDateForComparison(appointment.data_agendamento);
+      if (!appointmentDate) {
+        return false;
+      }
       return appointmentDate === selectedDateStr;
     });
   }, [appointments, selectedDateStr]);
@@ -77,9 +88,18 @@ export const CollectorAgendaView: React.FC<CollectorAgendaViewProps> = ({
       if (collectorAppts.length > 0) {
         grouped.push({
           collector,
-          appointments: collectorAppts.sort((a, b) => 
-            a.hora_agendamento.localeCompare(b.hora_agendamento)
-          )
+          appointments: collectorAppts.sort((a, b) => {
+            const safeTime = (value?: string | null): string => {
+              if (!value || !value.trim()) {
+                return '99:99';
+              }
+              return value;
+            };
+
+            return safeTime(a.hora_agendamento).localeCompare(
+              safeTime(b.hora_agendamento)
+            );
+          })
         });
       }
     });
@@ -98,9 +118,18 @@ export const CollectorAgendaView: React.FC<CollectorAgendaViewProps> = ({
           cpf: '',
           telefone: ''
         },
-        appointments: unassignedAppointments.sort((a, b) => 
-          a.hora_agendamento.localeCompare(b.hora_agendamento)
-        )
+        appointments: unassignedAppointments.sort((a, b) => {
+          const safeTime = (value?: string | null): string => {
+            if (!value || !value.trim()) {
+              return '99:99';
+            }
+            return value;
+          };
+
+          return safeTime(a.hora_agendamento).localeCompare(
+            safeTime(b.hora_agendamento)
+          );
+        })
       });
     }
 
@@ -144,7 +173,12 @@ export const CollectorAgendaView: React.FC<CollectorAgendaViewProps> = ({
     const nextSlotTime = slotTime + 30; // 30-minute slots
 
     return collectorData.appointments.filter(appointment => {
-      const [hour, minute] = appointment.hora_agendamento.split(':').map(Number);
+      const rawTime = appointment.hora_agendamento;
+      if (!rawTime) {
+        return false;
+      }
+
+      const [hour, minute] = rawTime.split(':').map(Number);
       const appointmentTime = hour * 60 + minute;
       return appointmentTime >= slotTime && appointmentTime < nextSlotTime;
     });
@@ -325,14 +359,14 @@ export const CollectorAgendaView: React.FC<CollectorAgendaViewProps> = ({
                                   ${hasMultiple ? 'p-1.5 text-xs' : 'p-2 text-xs'}
                                   ${getStatusColor(appointment.status)}
                                 `}
-                                title={`${appointment.nome_paciente} - ${appointment.status} - ${appointment.hora_agendamento}`}
+                                title={`${appointment.nome_paciente} - ${appointment.status} - ${appointment.hora_agendamento ?? 'Sem horário'}`}
                               >
                                 <div className="flex items-center justify-between mb-1">
                                   <span className={`font-medium truncate ${hasMultiple ? 'text-xs' : ''}`}>
                                     {appointment.nome_paciente}
                                   </span>
                                   <span className={`flex-shrink-0 ml-1 ${hasMultiple ? 'text-xs' : 'text-xs'}`}>
-                                    {appointment.hora_agendamento}
+                                    {appointment.hora_agendamento ?? 'Sem horário'}
                                   </span>
                                 </div>
                                 <div className={`truncate opacity-80 ${hasMultiple ? 'text-xs' : ''}`}>
