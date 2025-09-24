@@ -7,6 +7,10 @@ import { AppointmentFormModal } from '../../components/AppointmentFormModal';
 import { Modal } from '../../components/ui/Modal';
 import { ViewModeToggle } from '../../components/ViewModeToggle';
 import {
+  appointmentQueryKeys,
+  sanitizeUpdatePayload,
+} from '../../hooks/useAppointmentDetails';
+import {
   filterAppointmentsBySearch,
   filterAppointmentsByDateRange,
   getDateRangeForShortcut,
@@ -122,5 +126,23 @@ describe('Appointments smoke tests', () => {
 
     assert.equal(filtered.length, 1);
     assert.equal(filtered[0].id, 'today');
+  });
+
+  test('sanitizeUpdatePayload removes undefined keys but keeps nullish values', () => {
+    const payload = sanitizeUpdatePayload({
+      status: 'Confirmado',
+      telefone: undefined,
+      observacoes: null,
+    });
+
+    assert.deepEqual(payload, {
+      status: 'Confirmado',
+      observacoes: null,
+    });
+  });
+
+  test('appointmentQueryKeys.detail produces scoped cache keys', () => {
+    const key = appointmentQueryKeys.detail('abc');
+    assert.deepEqual(key, ['appointments', 'detail', 'abc']);
   });
 });

@@ -5,8 +5,11 @@ Service for managing appointments business logic.
 from datetime import datetime, timedelta
 from typing import Any, BinaryIO, Dict, List, Optional
 
+from pydantic import ValidationError
+
 from src.application.dtos.appointment_dto import (
     AppointmentCreateDTO,
+    AppointmentFullUpdateDTO,
     AppointmentResponseDTO,
 )
 from src.application.services.excel_parser_service import ExcelParserService
@@ -381,6 +384,34 @@ class AppointmentService:
                 "error_code": "internal",
             }
 
+    async def get_appointment(self, appointment_id: str) -> Dict:
+        """Retrieve a single appointment by its identifier."""
+        try:
+            appointment = await self.appointment_repository.find_by_id(
+                appointment_id
+            )
+            if not appointment:
+                return {
+                    "success": False,
+                    "message": "Agendamento não encontrado",
+                    "error_code": "not_found",
+                }
+
+            return {
+                "success": True,
+                "message": "Agendamento encontrado",
+                "appointment": AppointmentResponseDTO(
+                    **appointment.model_dump()
+                ),
+            }
+
+        except Exception as exc:  # pragma: no cover - defensive
+            return {
+                "success": False,
+                "message": f"Erro ao buscar agendamento: {str(exc)}",
+                "error_code": "internal",
+            }
+
     async def get_filter_options(self) -> Dict:
         """
         Get available filter options for the UI.
@@ -491,6 +522,212 @@ class AppointmentService:
             return {
                 "success": False,
                 "message": f"Erro ao excluir agendamento: {str(e)}",
+            }
+
+    async def update_appointment(
+        self,
+        appointment_id: str,
+        update_data: AppointmentFullUpdateDTO,
+        updated_by: Optional[str] = None,
+    ) -> Dict:
+        """Update appointment core details (including tags)."""
+
+        try:
+            appointment = await self.appointment_repository.find_by_id(
+                appointment_id
+            )
+            if not appointment:
+                return {
+                    "success": False,
+                    "message": "Agendamento não encontrado",
+                    "error_code": "not_found",
+                }
+
+            payload = update_data.model_dump(exclude_unset=True)
+            if not payload:
+                return {
+                    "success": True,
+                    "message": "Nenhuma alteração realizada",
+                    "appointment": AppointmentResponseDTO(
+                        **appointment.model_dump()
+                    ),
+                }
+
+            sanitized_updates: Dict[str, Any] = {}
+            tag_references_for_validation: Optional[List[TagReference]] = None
+
+            for field, value in payload.items():
+                if field in {
+                    "nome_marca",
+                    "nome_unidade",
+                    "nome_paciente",
+                    "tipo_consulta",
+                    "status",
+                    "carro",
+                    "observacoes",
+                    "numero_convenio",
+                    "nome_convenio",
+                    "carteira_convenio",
+                    "cip",
+                    "canal_confirmacao",
+                }:
+                    if value is None:
+                        sanitized_updates[field] = None
+                        continue
+                    if isinstance(value, str):
+                        trimmed = value.strip()
+                        sanitized_updates[field] = trimmed or None
+                    else:
+                        sanitized_updates[field] = value
+                    continue
+
+                if field in {"driver_id", "collector_id", "car_id"}:
+                    if value is None:
+                        sanitized_updates[field] = None
+                    elif isinstance(value, str):
+                        sanitized_updates[field] = value.strip() or None
+                    else:
+                        sanitized_updates[field] = value
+                    continue
+
+                if field == "telefone":
+                    if value is None:
+                        sanitized_updates[field] = None
+                    elif isinstance(value, str):
+                        digits = "".join(ch for ch in value if ch.isdigit())
+                        sanitized_updates[field] = digits or None
+                    else:
+                        sanitized_updates[field] = value
+                    continue
+
+                if field == "hora_agendamento":
+                    if value is None:
+                        sanitized_updates[field] = None
+                    elif isinstance(value, str):
+                        sanitized_updates[field] = value.strip()
+                    else:
+                        sanitized_updates[field] = value
+                    continue
+
+                if field == "tags":
+                    provided_tag_ids = list(dict.fromkeys(value or []))
+                    if provided_tag_ids and not self.tag_repository:
+                        return {
+                            "success": False,
+                            "message": "Funcionalidade de tags não está configurada.",
+                            "error_code": "unavailable",
+                        }
+
+                    if (
+                        self.max_tags_per_appointment
+                        and len(provided_tag_ids) > self.max_tags_per_appointment
+                    ):
+                        return {
+                            "success": False,
+                            "message": "Número máximo de tags por agendamento excedido.",
+                            "error_code": "limit_exceeded",
+                        }
+
+                    tag_references: List[TagReference] = []
+                    if provided_tag_ids and self.tag_repository:
+                        stored_tags = await self.tag_repository.find_by_ids(
+                            provided_tag_ids
+                        )
+                        active_tags_map = {
+                            str(tag.id): tag for tag in stored_tags if tag.is_active
+                        }
+                        missing_or_inactive = [
+                            tag_id
+                            for tag_id in provided_tag_ids
+                            if tag_id not in active_tags_map
+                        ]
+                        if missing_or_inactive:
+                            return {
+                                "success": False,
+                                "message": "Uma ou mais tags informadas são inválidas ou inativas.",
+                                "error_code": "invalid_tag",
+                                "invalid_tags": missing_or_inactive,
+                            }
+
+                        tag_references = [
+                            TagReference(
+                                id=tag_id,
+                                name=active_tags_map[tag_id].name,
+                                color=active_tags_map[tag_id].color,
+                            )
+                            for tag_id in provided_tag_ids
+                        ]
+
+                    sanitized_updates[field] = [
+                        tag.model_dump() for tag in tag_references
+                    ]
+                    tag_references_for_validation = tag_references
+                    continue
+
+                # Default assignment (includes datetime fields)
+                sanitized_updates[field] = value
+
+            validation_updates: Dict[str, Any] = dict(sanitized_updates)
+            if tag_references_for_validation is not None:
+                validation_updates["tags"] = tag_references_for_validation
+
+            current_serialized = appointment.model_dump()
+            base_data = {**current_serialized, **validation_updates}
+
+            try:
+                validated = Appointment(**base_data)
+            except (ValidationError, ValueError) as exc:
+                return {
+                    "success": False,
+                    "message": str(exc),
+                    "error_code": "validation",
+                }
+
+            normalized = validated.model_dump()
+            changes: Dict[str, Any] = {}
+            for field in sanitized_updates:
+                new_value = normalized.get(field)
+                old_value = current_serialized.get(field)
+                if field == "tags":
+                    new_value = new_value or []
+                    old_value = old_value or []
+                if new_value != old_value:
+                    changes[field] = new_value
+
+            if "status" in changes and changes["status"] == "Agendado" and updated_by:
+                changes["agendado_por"] = updated_by.strip()
+
+            if not changes:
+                return {
+                    "success": True,
+                    "message": "Nenhuma alteração realizada",
+                    "appointment": AppointmentResponseDTO(**normalized),
+                }
+
+            updated = await self.appointment_repository.update(
+                appointment_id, changes
+            )
+
+            if not updated:
+                return {
+                    "success": False,
+                    "message": "Erro ao atualizar agendamento",
+                    "error_code": "update_failed",
+                }
+
+            return {
+                "success": True,
+                "message": "Agendamento atualizado com sucesso",
+                "appointment": AppointmentResponseDTO(
+                    **updated.model_dump()
+                ),
+            }
+
+        except Exception as exc:  # pragma: no cover - defensive
+            return {
+                "success": False,
+                "message": f"Erro ao atualizar agendamento: {str(exc)}",
+                "error_code": "internal",
             }
 
     async def update_appointment_status(

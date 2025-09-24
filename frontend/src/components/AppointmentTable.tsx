@@ -23,6 +23,7 @@ interface AppointmentTableProps {
   onDriverChange?: (appointmentId: string, driverId: string) => void;
   onCollectorChange?: (appointmentId: string, collectorId: string) => void;
   onDelete?: (id: string) => void;
+  onSelect?: (appointmentId: string) => void;
 }
 
 const statusColors = {
@@ -57,7 +58,8 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
   onStatusChange,
   onDriverChange,
   onCollectorChange,
-  onDelete
+  onDelete,
+  onSelect,
 }) => {
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
@@ -212,7 +214,11 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
         cell: ({ row }) => (
           <div className="flex space-x-2">
             <button
-              onClick={() => onDelete?.(row.original.id)}
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onDelete?.(row.original.id);
+              }}
               className="rounded-full p-1 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
               title="Excluir agendamento"
             >
@@ -222,7 +228,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
         ),
       },
     ],
-    [collectors, drivers, onCollectorChange, onDelete, onDriverChange, onStatusChange]
+    [collectors, drivers, onCollectorChange, onDelete, onDriverChange, onSelect, onStatusChange]
   );
 
   const table = useReactTable({
@@ -302,7 +308,30 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
         </thead>
         <tbody className="divide-y divide-gray-100">
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="hover:bg-gray-50">
+            <tr
+              key={row.id}
+              className={`hover:bg-gray-50 ${onSelect ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1' : ''}`}
+              onClick={(event) => {
+                if (!onSelect) {
+                  return;
+                }
+                const target = event.target as HTMLElement | null;
+                if (target && target.closest('button, a, select, input, textarea, label')) {
+                  return;
+                }
+                onSelect(row.original.id);
+              }}
+              onKeyDown={(event) => {
+                if (!onSelect || (event.target as HTMLElement) !== event.currentTarget) {
+                  return;
+                }
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onSelect(row.original.id);
+                }
+              }}
+              tabIndex={onSelect ? 0 : undefined}
+            >
               {row.getVisibleCells().map((cell) => (
                 <td
                   key={cell.id}

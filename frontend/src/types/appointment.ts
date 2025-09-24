@@ -20,6 +20,9 @@ export interface Appointment {
   driver_id?: string;
   collector_id?: string;
   car_id?: string;
+  canal_confirmacao?: string;
+  data_confirmacao?: string;
+  hora_confirmacao?: string;
   // Campos opcionais que podem vir a existir no backend
   cep?: string;
   endereco_coleta?: string;
@@ -141,4 +144,46 @@ export interface AppointmentCreateResponse {
   success: boolean;
   message: string;
   data: Appointment;
+}
+
+export interface AppointmentUpdateRequest {
+  nome_marca?: string;
+  nome_unidade?: string;
+  nome_paciente?: string;
+  data_agendamento?: string;
+  hora_agendamento?: string;
+  tipo_consulta?: string;
+  cip?: string;
+  status?: string;
+  telefone?: string | null;
+  carro?: string | null;
+  observacoes?: string | null;
+  driver_id?: string | null;
+  collector_id?: string | null;
+  car_id?: string | null;
+  numero_convenio?: string | null;
+  nome_convenio?: string | null;
+  carteira_convenio?: string | null;
+  tags?: string[];
+  canal_confirmacao?: string | null;
+  data_confirmacao?: string | null;
+  hora_confirmacao?: string | null;
+  cep?: string | null;
+  endereco_normalizado?: {
+    rua?: string | null;
+    numero?: string | null;
+    complemento?: string | null;
+    bairro?: string | null;
+    cidade?: string | null;
+    estado?: string | null;
+    cep?: string | null;
+  } | null;
+  documento_normalizado?: {
+    cpf?: string | null;
+    rg?: string | null;
+    cpf_formatted?: string | null;
+    rg_formatted?: string | null;
+  } | null;
+  cpf?: string | null;
+  rg?: string | null;
 }

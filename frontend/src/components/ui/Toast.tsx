@@ -54,23 +54,22 @@ export function ToastComponent({ toast, onRemove }: ToastProps) {
 
   return (
     <div
-      className={`max-w-sm w-full border rounded-lg shadow-md p-4 ${getBgColor()} animate-in slide-in-from-right duration-300`}
+      className={`min-w-[19rem] max-w-lg border rounded-xl shadow-lg px-6 py-4 ${getBgColor()} animate-in slide-in-from-right duration-300`}
     >
-      <div className="flex items-start">
+      <div className="flex items-start gap-3">
         <div className="flex-shrink-0">{getIcon()}</div>
-        <div className="ml-3 w-0 flex-1">
-          <p className={`text-sm font-medium ${getTextColor()}`}>
+        <div className="flex-1">
+          <p className={`text-sm font-medium leading-5 ${getTextColor()}`}>
             {toast.message}
           </p>
         </div>
-        <div className="ml-4 flex-shrink-0 flex">
-          <button
-            onClick={() => onRemove(toast.id)}
-            className={`inline-flex rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${getTextColor()}`}
-          >
-            <XMarkIcon className="w-5 h-5" />
-          </button>
-        </div>
+        <button
+          onClick={() => onRemove(toast.id)}
+          className={`flex-shrink-0 rounded-md p-1 focus:outline-none focus:ring-2 focus:ring-offset-2 ${getTextColor()}`}
+          aria-label="Fechar notificação"
+        >
+          <XMarkIcon className="w-5 h-5" />
+        </button>
       </div>
     </div>
   );
@@ -87,7 +86,7 @@ export function ToastContainer({ toasts, onRemove }: ToastContainerProps) {
   }
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-4">
+    <div className="fixed right-8 top-10 z-50 space-y-4 sm:right-12 sm:top-12 md:right-16 md:top-16">
       {toasts.map((toast) => (
         <ToastComponent key={toast.id} toast={toast} onRemove={onRemove} />
       ))}
