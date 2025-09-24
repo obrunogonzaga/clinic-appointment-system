@@ -48,6 +48,7 @@ export interface Appointment {
   rg?: string;
   numero_convenio?: string;
   nome_convenio?: string;
+  carteira_convenio?: string;
   created_at: string;
   updated_at?: string;
   cadastrado_por?: string;
@@ -147,14 +148,14 @@ export interface AppointmentCreateResponse {
 }
 
 export interface AppointmentUpdateRequest {
-  nome_marca?: string;
-  nome_unidade?: string;
-  nome_paciente?: string;
-  data_agendamento?: string;
-  hora_agendamento?: string;
-  tipo_consulta?: string;
-  cip?: string;
-  status?: string;
+  nome_marca?: string | null;
+  nome_unidade?: string | null;
+  nome_paciente?: string | null;
+  data_agendamento?: string | null;
+  hora_agendamento?: string | null;
+  tipo_consulta?: string | null;
+  cip?: string | null;
+  status?: string | null;
   telefone?: string | null;
   carro?: string | null;
   observacoes?: string | null;
