@@ -10,8 +10,8 @@ import { formatDate } from '../utils/dateUtils';
 import { getStatusBadgeClass } from '../utils/statusColors';
 import type { ActiveCollector } from '../types/collector';
 import type { ActiveDriver } from '../types/driver';
+import type { AppointmentTag, AppointmentUpdateRequest } from '../types/appointment';
 import type { Tag } from '../types/tag';
-import type { AppointmentUpdateRequest } from '../types/appointment';
 
 interface AppointmentDetailsModalProps {
   appointmentId: string | null;
@@ -60,9 +60,9 @@ type FormValues = {
 
 type DetailItem = {
   label: string;
-  value?: string;
+  value?: string | null;
   variant?: 'status' | 'multiline' | 'tags';
-  tags?: Tag[];
+  tags?: AppointmentTag[];
 };
 
 type DetailGroup = {
@@ -281,8 +281,28 @@ export function AppointmentDetailsModal({
 
     const payload: AppointmentUpdateRequest = {};
 
-    const assignStringField = (
-      field: keyof AppointmentUpdateRequest,
+    type NullableFieldKey =
+      | 'observacoes'
+      | 'nome_unidade'
+      | 'nome_marca'
+      | 'nome_paciente'
+      | 'tipo_consulta'
+      | 'cip'
+      | 'carro'
+      | 'numero_convenio'
+      | 'nome_convenio'
+      | 'carteira_convenio'
+      | 'canal_confirmacao';
+
+    const assignStatusField = (newValue: string, originalValue: string) => {
+      const normalizedNew = newValue.trim();
+      if (normalizedNew && normalizedNew !== originalValue.trim()) {
+        payload.status = normalizedNew;
+      }
+    };
+
+    const assignNullableField = (
+      field: NullableFieldKey,
       newValue: string,
       originalValue?: string | null
     ) => {
@@ -294,24 +314,32 @@ export function AppointmentDetailsModal({
       }
     };
 
-    assignStringField('status', values.status, appointment.status);
+    assignStatusField(values.status, appointment.status);
 
-    const normalizedPhone = normalizeDigits(values.telefone);
+    const normalizedPhone = normalizeDigits(values.telefone || '');
     if (normalizedPhone !== (appointment.telefone ?? '')) {
       payload.telefone = normalizedPhone || null;
     }
 
-    assignStringField('observacoes', values.observacoes, appointment.observacoes);
-    assignStringField('nome_unidade', values.nome_unidade, appointment.nome_unidade);
-    assignStringField('nome_marca', values.nome_marca, appointment.nome_marca);
-    assignStringField('nome_paciente', values.nome_paciente, appointment.nome_paciente);
-    assignStringField('tipo_consulta', values.tipo_consulta, appointment.tipo_consulta);
-    assignStringField('cip', values.cip, appointment.cip);
-    assignStringField('carro', values.carro, appointment.carro);
-    assignStringField('numero_convenio', values.numero_convenio, appointment.numero_convenio);
-    assignStringField('nome_convenio', values.nome_convenio, appointment.nome_convenio);
-    assignStringField('carteira_convenio', values.carteira_convenio, appointment.carteira_convenio);
-    assignStringField('canal_confirmacao', values.canal_confirmacao, appointment.canal_confirmacao);
+    assignNullableField('observacoes', values.observacoes, appointment.observacoes);
+    assignNullableField('nome_unidade', values.nome_unidade, appointment.nome_unidade);
+    assignNullableField('nome_marca', values.nome_marca, appointment.nome_marca);
+    assignNullableField('nome_paciente', values.nome_paciente, appointment.nome_paciente);
+    assignNullableField('tipo_consulta', values.tipo_consulta, appointment.tipo_consulta);
+    assignNullableField('cip', values.cip, appointment.cip);
+    assignNullableField('carro', values.carro, appointment.carro);
+    assignNullableField('numero_convenio', values.numero_convenio, appointment.numero_convenio);
+    assignNullableField('nome_convenio', values.nome_convenio, appointment.nome_convenio);
+    assignNullableField(
+      'carteira_convenio',
+      values.carteira_convenio,
+      appointment.carteira_convenio ?? null
+    );
+    assignNullableField(
+      'canal_confirmacao',
+      values.canal_confirmacao,
+      appointment.canal_confirmacao
+    );
 
     const driverId = values.driver_id || null;
     if (driverId !== (appointment.driver_id ?? null)) {
@@ -395,8 +423,8 @@ export function AppointmentDetailsModal({
       payload.cep = newAddress.cep ?? null;
     }
 
-    const newCpfDigits = normalizeDigits(values.cpf);
-    const newRgDigits = normalizeDigits(values.rg);
+    const newCpfDigits = normalizeDigits(values.cpf || '');
+    const newRgDigits = normalizeDigits(values.rg || '');
     const originalCpfDigits = appointment.cpf ?? '';
     const originalRgDigits = appointment.rg ?? '';
 
@@ -666,18 +694,20 @@ export function AppointmentDetailsModal({
       );
     }
 
+    const displayValue = item.value ?? '—';
+
     if (item.variant === 'status') {
-      if (item.value === '—') {
+      if (displayValue === '—') {
         return <p className="mt-1 text-sm text-gray-700">—</p>;
       }
 
       return (
         <span
           className={`${getStatusBadgeClass(
-            item.value
+            displayValue
           )} mt-1 inline-flex items-center`}
         >
-          {item.value}
+          {displayValue}
         </span>
       );
     }
@@ -685,14 +715,14 @@ export function AppointmentDetailsModal({
     if (item.variant === 'multiline') {
       return (
         <p className="mt-1 whitespace-pre-line text-sm text-gray-700">
-          {item.value}
+          {displayValue}
         </p>
       );
     }
 
     return (
       <p className="mt-1 text-sm text-gray-700">
-        {item.value}
+        {displayValue}
       </p>
     );
   };
