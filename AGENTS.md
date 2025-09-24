@@ -9,6 +9,11 @@ Use `make quick-start` for a full-stack boot with health checks, or `docker-comp
 ## Coding Style & Naming Conventions
 Python modules use 4-space indentation, snake_case for files/functions, and PascalCase for Pydantic models or services; validate formatting with `make format-backend`. TypeScript components sit in PascalCase files, React hooks start with `use`, and shared helpers live in `frontend/src/utils`. Tailwind utility classes stay inline, while shared styles move to composable components. Before committing, run `npm run lint` and `npx prettier --write .` via `make format-frontend` to align with the ESLint/Prettier baseline.
 
+### Frontend TypeScript & React Query specifics
+- The project uses TanStack Query v5. Always pass explicit generics to hooks like `useQuery`/`useMutation` so the compiler knows the data shape.
+- To preserve previous data while paginating, use `placeholderData: keepPreviousData` (imported from `@tanstack/react-query`) instead of the deprecated `keepPreviousData` option.
+- Keep the config aligned with TypeScript `noImplicitAny`; if a callback parameter needs typing (e.g., `map(tag => …)`), annotate it.
+
 ## Testing Guidelines
 Mirror backend module names with `test_<module>.py` files and lean on fixtures in `backend/tests/conftest.py`; add integration tests whenever repositories or external gateways change. Frontend specs belong next to their components with a `.test.tsx` suffix and run through `npm test`. End-to-end flows live in the top-level `tests/` package—seed sample data via `make db-seed` and execute `npm run e2e` from that directory.
 

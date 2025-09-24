@@ -3,13 +3,18 @@ import {
   PlusIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import React, { useEffect, useMemo, useState } from 'react';
 import { TagFormModal, type TagFormValues } from '../components/tags/TagFormModal';
 import { TagBadge } from '../components/tags/TagBadge';
 import { ToastContainer } from '../components/ui/Toast';
 import { useToast } from '../hooks/useToast';
-import type { Tag } from '../types/tag';
+import type { Tag, TagListResponse } from '../types/tag';
 import { tagAPI } from '../services/api';
 import { formatDateTimeLabel } from '../utils/dateUtils';
 
@@ -34,7 +39,7 @@ export const TagsPage: React.FC = () => {
     return () => window.clearTimeout(handle);
   }, [searchInput]);
 
-  const tagsQuery = useQuery({
+  const tagsQuery = useQuery<TagListResponse>({
     queryKey: ['tags', { page, search, includeInactive }],
     queryFn: () =>
       tagAPI.listTags({
@@ -43,7 +48,7 @@ export const TagsPage: React.FC = () => {
         search: search || undefined,
         include_inactive: includeInactive,
       }),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 
   const closeModal = () => {
@@ -148,7 +153,7 @@ export const TagsPage: React.FC = () => {
   const totalPages = data?.pages ?? 1;
   const totalItems = data?.total ?? 0;
 
-  const tableRows = useMemo(() => data?.data ?? [], [data]);
+  const tableRows = useMemo<Tag[]>(() => data?.data ?? [], [data]);
 
   return (
     <div className="space-y-6">
