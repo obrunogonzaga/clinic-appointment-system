@@ -16,7 +16,7 @@ import { ToastContainer } from '../components/ui/Toast';
 import { ViewModeToggle, type ViewMode } from '../components/ViewModeToggle';
 import { AppointmentTable } from '../components/AppointmentTable';
 import { AppointmentKpiCards } from '../components/AppointmentKpiCards';
-import { appointmentAPI, collectorAPI, driverAPI } from '../services/api';
+import { appointmentAPI, collectorAPI, driverAPI, tagAPI } from '../services/api';
 import { useToast } from '../hooks/useToast';
 import type {
   AppointmentCreateRequest,
@@ -86,6 +86,15 @@ export const AppointmentsPage: React.FC = () => {
     queryFn: () => collectorAPI.getActiveCollectors(),
     refetchOnWindowFocus: false,
   });
+
+  const { data: tagsData } = useQuery({
+    queryKey: ['activeTags'],
+    queryFn: () => tagAPI.listTags({ page: 1, page_size: 100, include_inactive: false }),
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const maxTagsPerAppointment = filterOptions?.max_tags_per_appointment ?? 5;
 
   const handleUploadSuccess = (result: ExcelUploadResponse) => {
     setUploadResult(result);
@@ -247,6 +256,8 @@ export const AppointmentsPage: React.FC = () => {
         statuses={filterOptions?.statuses}
         drivers={driversData?.drivers || []}
         collectors={collectorsData?.collectors || []}
+        tags={tagsData?.data ?? []}
+        maxTags={maxTagsPerAppointment}
       />
 
       <div className="space-y-6">

@@ -8,6 +8,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from src.application.dtos.tag_dto import TagSummaryDTO
+
 
 class AppointmentCreateDTO(BaseModel):
     """DTO for creating a new appointment."""
@@ -36,6 +38,10 @@ class AppointmentCreateDTO(BaseModel):
     nome_convenio: Optional[str] = Field(None, description="Nome do convênio")
     carteira_convenio: Optional[str] = Field(
         None, description="Número da carteira do convênio"
+    )
+    tags: List[str] = Field(
+        default_factory=list,
+        description="Lista de IDs de tags associadas ao agendamento",
     )
 
 
@@ -93,6 +99,9 @@ class AppointmentResponseDTO(BaseModel):
     carteira_convenio: Optional[str] = None
     cadastrado_por: Optional[str] = None
     agendado_por: Optional[str] = None
+    tags: List[TagSummaryDTO] = Field(
+        default_factory=list, description="Tags vinculadas ao agendamento"
+    )
     created_at: datetime
     updated_at: Optional[datetime]
 
@@ -152,6 +161,9 @@ class FilterOptionsDTO(BaseModel):
     units: List[str] = []
     brands: List[str] = []
     statuses: List[str] = []
+    max_tags_per_appointment: int = Field(
+        5, description="Limite máximo de tags permitido por agendamento"
+    )
 
 
 class DashboardStatsDTO(BaseModel):

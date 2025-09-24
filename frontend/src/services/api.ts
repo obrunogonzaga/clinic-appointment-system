@@ -40,6 +40,14 @@ import type {
     CarStats,
     CarUpdateRequest
 } from '../types/car';
+import type {
+    Tag,
+    TagCreateRequest,
+    TagDeleteResponse,
+    TagListResponse,
+    TagMutationResponse,
+    TagUpdateRequest,
+} from '../types/tag';
 
 const API_BASE_URL = window.ENV?.API_URL || import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -175,6 +183,65 @@ export const appointmentAPI = {
       null,
       { withCredentials: true }
     );
+  },
+};
+
+export const tagAPI = {
+  listTags: async ({
+    page = 1,
+    page_size = 20,
+    search,
+    include_inactive = false,
+  }: {
+    page?: number;
+    page_size?: number;
+    search?: string;
+    include_inactive?: boolean;
+  }): Promise<TagListResponse> => {
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('page_size', page_size.toString());
+    if (search) {
+      params.append('search', search);
+    }
+    if (include_inactive) {
+      params.append('include_inactive', 'true');
+    }
+
+    const response = await api.get<TagListResponse>(
+      `/tags?${params.toString()}`,
+      { withCredentials: true }
+    );
+    return response.data;
+  },
+
+  createTag: async (payload: TagCreateRequest): Promise<Tag> => {
+    const response = await api.post<TagMutationResponse>(
+      '/tags',
+      payload,
+      { withCredentials: true }
+    );
+    return response.data.data;
+  },
+
+  updateTag: async (
+    tagId: string,
+    payload: TagUpdateRequest,
+  ): Promise<Tag> => {
+    const response = await api.patch<TagMutationResponse>(
+      `/tags/${tagId}`,
+      payload,
+      { withCredentials: true }
+    );
+    return response.data.data;
+  },
+
+  deleteTag: async (tagId: string): Promise<TagDeleteResponse> => {
+    const response = await api.delete<TagDeleteResponse>(
+      `/tags/${tagId}`,
+      { withCredentials: true }
+    );
+    return response.data;
   },
 };
 

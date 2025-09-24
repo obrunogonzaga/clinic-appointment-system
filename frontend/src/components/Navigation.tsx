@@ -6,6 +6,7 @@ import {
   HomeIcon,
   MoonIcon,
   ShieldCheckIcon,
+  TagIcon,
   SunIcon,
   TruckIcon,
   UserIcon,
@@ -62,6 +63,13 @@ const navigationItems = [
     name: 'Usuários',
     icon: UserIcon,
     description: 'Gerenciar usuários do sistema',
+    adminOnly: true,
+  },
+  {
+    id: 'tags',
+    name: 'Tags',
+    icon: TagIcon,
+    description: 'Gerenciar tags de agendamento',
     adminOnly: true,
   },
 ];

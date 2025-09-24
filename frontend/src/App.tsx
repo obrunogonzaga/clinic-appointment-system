@@ -16,6 +16,7 @@ import { Setup } from './pages/Setup';
 import { UsersPage } from './pages/UsersPage';
 import { PublicRegister } from './pages/PublicRegister';
 import { VerifyEmail } from './pages/VerifyEmail';
+import { TagsPage } from './pages/TagsPage';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -44,6 +45,8 @@ function Shell() {
         return <CarsPage />;
       case 'users':
         return <UsersPage />;
+      case 'tags':
+        return <TagsPage />;
       default:
         return <Dashboard onTabChange={setActiveTab} />;
     }

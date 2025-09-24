@@ -10,6 +10,13 @@ from .appointment_dto import (
     DashboardStatsDTO,
     ExcelUploadResponseDTO,
 )
+from .tag_dto import (
+    TagCreateDTO,
+    TagListResponseDTO,
+    TagResponseDTO,
+    TagSummaryDTO,
+    TagUpdateDTO,
+)
 
 __all__ = [
     "AppointmentCreateDTO",
@@ -18,4 +25,9 @@ __all__ = [
     "AppointmentListResponseDTO",
     "ExcelUploadResponseDTO",
     "DashboardStatsDTO",
+    "TagCreateDTO",
+    "TagUpdateDTO",
+    "TagResponseDTO",
+    "TagListResponseDTO",
+    "TagSummaryDTO",
 ]

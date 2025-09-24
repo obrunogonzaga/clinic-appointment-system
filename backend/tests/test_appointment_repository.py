@@ -13,6 +13,7 @@ from mongomock_motor import AsyncMongoMockClient
 pytestmark = pytest.mark.asyncio
 
 from src.domain.entities.appointment import Appointment
+from src.domain.entities.tag import TagReference
 from src.infrastructure.repositories.appointment_repository import (
     AppointmentRepository,
 )
@@ -405,3 +406,53 @@ class TestAppointmentRepository:
         assert stats["cancelled_appointments"] == 1
         assert stats["total_units"] == 2
         assert stats["total_brands"] == 2
+
+    async def test_count_by_tag(
+        self, repository: AppointmentRepository
+    ) -> None:
+        """Ensure repository can count appointments per tag."""
+        tag_id = "tag-123"
+        appointment = Appointment(
+            nome_unidade="UBS Centro",
+            nome_marca="Clínica",
+            nome_paciente="Paciente Tag",
+            data_agendamento=datetime(2025, 1, 15),
+            hora_agendamento="10:00",
+            tags=[
+                TagReference(id=tag_id, name="Urgente", color="#ff0000"),
+            ],
+        )
+
+        await repository.create(appointment)
+
+        count = await repository.count_by_tag(tag_id)
+        assert count == 1
+
+    async def test_update_tag_references(
+        self, repository: AppointmentRepository
+    ) -> None:
+        """Propagating tag updates should refresh embedded tag metadata."""
+        tag_id = "tag-789"
+        appointment = Appointment(
+            nome_unidade="UBS Centro",
+            nome_marca="Clínica",
+            nome_paciente="Paciente Tag",
+            data_agendamento=datetime(2025, 2, 20),
+            hora_agendamento="15:00",
+            tags=[
+                TagReference(id=tag_id, name="Urgente", color="#ff0000"),
+            ],
+        )
+
+        await repository.create(appointment)
+
+        modified = await repository.update_tag_references(
+            tag_id=tag_id, name="Revisão", color="#00ff00"
+        )
+
+        assert modified == 1
+
+        refreshed = await repository.find_by_id(str(appointment.id))
+        assert refreshed is not None
+        assert refreshed.tags[0].name == "Revisão"
+        assert refreshed.tags[0].color == "#00ff00"

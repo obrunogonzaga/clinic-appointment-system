@@ -164,6 +164,18 @@ class AppointmentRepositoryInterface(ABC):
         pass
 
     @abstractmethod
+    async def count_by_tag(self, tag_id: str) -> int:
+        """Return how many appointments reference the given tag identifier."""
+        pass
+
+    @abstractmethod
+    async def update_tag_references(
+        self, tag_id: str, name: str, color: str
+    ) -> int:
+        """Update embedded tag data for all appointments referencing a tag."""
+        pass
+
+    @abstractmethod
     async def get_distinct_values(self, field: str) -> List[str]:
         """
         Get distinct values for a specific field.

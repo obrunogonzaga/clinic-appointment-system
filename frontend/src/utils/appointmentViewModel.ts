@@ -78,6 +78,7 @@ const resolveHealthPlan = (appointment: Appointment): string => {
 
 export const toAppointmentViewModel = (appointment: Appointment): AppointmentViewModel => ({
   ...appointment,
+  tags: appointment.tags ?? [],
   cpfMasked: resolveCpfMasked(appointment),
   healthPlanLabel: resolveHealthPlan(appointment) || '-',
 });
@@ -100,6 +101,7 @@ export const filterAppointmentsBySearch = (
       appointment.documento_completo,
       appointment.documento_normalizado?.rg_formatted,
       appointment.documento_normalizado?.cpf_formatted,
+      ...(appointment.tags?.map((tag) => tag.name) ?? []),
     ];
 
     if (candidateStrings.some((value) => value?.toLowerCase().includes(term))) {

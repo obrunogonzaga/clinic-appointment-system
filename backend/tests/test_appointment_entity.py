@@ -8,6 +8,7 @@ import pytest
 from pydantic import ValidationError
 
 from src.domain.entities.appointment import Appointment
+from src.domain.entities.tag import TagReference
 
 
 class TestAppointmentEntity:
@@ -181,6 +182,24 @@ class TestAppointmentEntity:
         assert any(
             "Telefone deve ter 10 ou 11 dígitos" in e["msg"] for e in errors
         )
+
+    def test_tags_are_deduplicated(self):
+        """Duplicated tags should be collapsed by the validator."""
+        tag_id = "tag-123"
+        appointment = Appointment(
+            nome_unidade="UBS",
+            nome_marca="Clínica",
+            nome_paciente="João",
+            data_agendamento=datetime.now(),
+            hora_agendamento="14:30",
+            tags=[
+                TagReference(id=tag_id, name="Urgente", color="#ff0000"),
+                TagReference(id=tag_id, name="Urgente", color="#ff0000"),
+            ],
+        )
+
+        assert len(appointment.tags) == 1
+        assert appointment.tags[0].id == tag_id
 
     def test_status_validation(self):
         """Test appointment status validation."""

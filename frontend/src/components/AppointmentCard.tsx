@@ -16,6 +16,7 @@ import type { ActiveCollector } from '../types/collector';
 import type { ActiveDriver } from '../types/driver';
 import { formatDate } from '../utils/dateUtils';
 import { getStatusBadgeClass } from '../utils/statusColors';
+import { TagBadge } from './tags/TagBadge';
 
 interface AppointmentCardProps {
   appointment: AppointmentViewModel;
@@ -132,6 +133,14 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
           ))}
         </select>
       </div>
+
+      {appointment.tags && appointment.tags.length > 0 && (
+        <div className="mb-3 flex flex-wrap gap-2">
+          {appointment.tags.map((tag) => (
+            <TagBadge key={tag.id} name={tag.name} color={tag.color} size="sm" />
+          ))}
+        </div>
+      )}
 
       {/* Body */}
       <div className={`mt-4 grid grid-cols-1 gap-4 ${compact ? '' : 'md:grid-cols-2'}`}>
