@@ -58,11 +58,13 @@ type FormValues = {
   rg: string;
 };
 
+type TagSummary = Pick<Tag, 'id' | 'name' | 'color'>;
+
 type DetailItem = {
   label: string;
   value?: string;
   variant?: 'status' | 'multiline' | 'tags';
-  tags?: Tag[];
+  tags?: TagSummary[];
 };
 
 type DetailGroup = {
@@ -120,6 +122,11 @@ const toTimeInputValue = (value?: string | null): string => {
 };
 
 const normalizeDigits = (value: string): string => value.replace(/\D/g, '');
+
+const toNullableString = (value: string): string | null => {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
 
 const formatCpf = (digits: string): string => {
   if (digits.length !== 11) {
@@ -274,15 +281,24 @@ export function AppointmentDetailsModal({
       return;
     }
 
-    const toNullableString = (input: string): string | null => {
-      const trimmed = input.trim();
-      return trimmed.length > 0 ? trimmed : null;
-    };
-
     const payload: AppointmentUpdateRequest = {};
 
-    const assignStringField = (
-      field: keyof AppointmentUpdateRequest,
+    type UpdatableTextField =
+      | 'status'
+      | 'observacoes'
+      | 'nome_unidade'
+      | 'nome_marca'
+      | 'nome_paciente'
+      | 'tipo_consulta'
+      | 'cip'
+      | 'carro'
+      | 'numero_convenio'
+      | 'nome_convenio'
+      | 'carteira_convenio'
+      | 'canal_confirmacao';
+
+    const assignStringField = <Field extends UpdatableTextField>(
+      field: Field,
       newValue: string,
       originalValue?: string | null
     ) => {
@@ -290,7 +306,8 @@ export function AppointmentDetailsModal({
       const normalizedNew = newValue.trim();
 
       if (normalizedNew !== normalizedOriginal) {
-        payload[field] = normalizedNew.length > 0 ? normalizedNew : null;
+        const result = normalizedNew.length > 0 ? normalizedNew : null;
+        payload[field] = result as AppointmentUpdateRequest[Field];
       }
     };
 
@@ -667,17 +684,14 @@ export function AppointmentDetailsModal({
     }
 
     if (item.variant === 'status') {
-      if (item.value === '—') {
+      const statusValue = item.value;
+      if (!statusValue || statusValue === '—') {
         return <p className="mt-1 text-sm text-gray-700">—</p>;
       }
 
       return (
-        <span
-          className={`${getStatusBadgeClass(
-            item.value
-          )} mt-1 inline-flex items-center`}
-        >
-          {item.value}
+        <span className={`${getStatusBadgeClass(statusValue)} mt-1 inline-flex items-center`}>
+          {statusValue}
         </span>
       );
     }
