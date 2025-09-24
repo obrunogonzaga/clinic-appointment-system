@@ -66,42 +66,34 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
       {
         accessorKey: 'nome_paciente',
         header: 'Paciente',
-        cell: ({ row }) => (
-          <div className="font-medium text-gray-900">
-            {row.original.nome_paciente}
-          </div>
-        ),
-      },
-      {
-        id: 'cpfMasked',
-        header: 'CPF',
-        cell: ({ row }) => (
-          <div className="text-sm text-gray-600 font-mono">
-            {row.original.cpfMasked || '-'}
-          </div>
-        ),
-      },
-      {
-        accessorKey: 'cip',
-        header: 'CIP',
-        cell: ({ row }) => (
-          <div className="text-sm text-gray-600 font-mono">
-            {row.original.cip || '-'}
-          </div>
-        ),
-      },
-      {
-        id: 'healthPlanLabel',
-        header: 'Plano',
-        cell: ({ row }) => (
-          <div className="text-sm text-gray-600">
-            {row.original.healthPlanLabel}
-          </div>
-        ),
+        cell: ({ row }) => {
+          const { nome_paciente, healthPlanLabel, cpfMasked, cip, telefone } = row.original;
+          const hasDetails = Boolean(healthPlanLabel || cpfMasked || cip || telefone);
+
+          return (
+            <div className="space-y-2">
+              <div className="text-sm font-semibold text-gray-900">{nome_paciente}</div>
+              {hasDetails && (
+                <div className="space-y-1 text-xs text-gray-500">
+                  {healthPlanLabel && (
+                    <div className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 font-medium text-blue-700">
+                      {healthPlanLabel}
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    {cpfMasked && <span className="font-mono">CPF: {cpfMasked}</span>}
+                    {cip && <span className="font-mono">CIP: {cip}</span>}
+                    {telefone && <span>Telefone: {telefone}</span>}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        },
       },
       {
         accessorKey: 'data_agendamento',
-        header: 'Data',
+        header: 'Agendamento',
         cell: ({ row }) => {
           const iso = row.original.data_agendamento ?? '';
           const ymd = iso.split('T')[0] || iso;
@@ -109,93 +101,39 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
           const formatted = y && m && d ? `${d}/${m}/${y}` : '';
           const time = row.original.hora_agendamento;
           const label = formatted && time ? `${formatted} · ${time}` : formatted || time || '-';
-          return (
-            <div className="text-sm font-semibold text-gray-900">
-              {label}
-            </div>
-          );
-        },
-      },
-      {
-        id: 'unitBrand',
-        header: 'Unidade / Marca',
-        cell: ({ row }) => {
-          const unit = row.original.nome_unidade;
-          const brand = row.original.nome_marca;
-          const label = unit && brand ? `${unit} · ${brand}` : unit || brand || '-';
-          return (
-            <div className="text-sm font-medium text-gray-700">
-              {label}
-            </div>
-          );
-        },
-      },
-      {
-        id: 'address',
-        header: 'Endereço',
-        cell: ({ row }) => {
-          const normalized = row.original.endereco_normalizado;
-          const street = normalized?.rua || row.original.endereco_coleta || row.original.nome_unidade;
-          const number = normalized?.numero ? `, ${normalized.numero}` : '';
-          const city = normalized?.cidade ? ` - ${normalized.cidade}` : '';
-          return (
-            <div className="text-sm text-gray-600">
-              {street ? `${street}${number}${city}` : '-'}
-            </div>
-          );
-        },
-      },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        cell: ({ row }) => {
           const status = row.original.status;
           const colorClass = statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800';
 
           return (
-            <select
-              value={status}
-              onChange={(e) => onStatusChange?.(row.original.id, e.target.value)}
-              className={`
-                rounded-full border bg-white px-3 py-1 text-xs font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1
-                ${colorClass}
-              `}
-            >
-              {statusOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <div className="text-sm font-semibold text-gray-900">{label}</div>
+                <div className="text-xs text-gray-500">
+                  {row.original.cadastrado_por && (
+                    <div>Cadastro: {row.original.cadastrado_por}</div>
+                  )}
+                  {row.original.agendado_por && (
+                    <div>Agendado por: {row.original.agendado_por}</div>
+                  )}
+                </div>
+              </div>
+              <select
+                value={status}
+                onChange={(e) => onStatusChange?.(row.original.id, e.target.value)}
+                className={`
+                  w-full rounded-full border bg-white px-3 py-1 text-xs font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1
+                  ${colorClass}
+                `}
+              >
+                {statusOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
           );
         },
-      },
-      {
-        accessorKey: 'cadastrado_por',
-        header: 'Cadastrado por',
-        cell: ({ row }) => (
-          <div className="text-sm text-gray-600">
-            {row.original.cadastrado_por || '-'}
-          </div>
-        ),
-      },
-      {
-        accessorKey: 'agendado_por',
-        header: 'Agendado por',
-        cell: ({ row }) => (
-          <div className="text-sm text-gray-600">
-            {row.original.agendado_por || '-'}
-          </div>
-        ),
-      },
-      {
-        accessorKey: 'telefone',
-        header: 'Telefone',
-        cell: ({ row }) => (
-          <div className="text-sm text-gray-600">
-            {row.original.telefone || '-'}
-          </div>
-        ),
       },
       {
         id: 'tags',
@@ -215,60 +153,54 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
         },
       },
       {
-        accessorKey: 'driver_id',
-        header: 'Motorista',
+        id: 'team',
+        header: 'Equipe',
+        enableSorting: false,
         cell: ({ row }) => {
           const appointment = row.original;
-
-          return (
-            <select
-              value={appointment.driver_id || ''}
-              onChange={(e) => onDriverChange?.(appointment.id, e.target.value)}
-              className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Selecionar motorista</option>
-              {drivers.map((driver) => (
-                <option key={driver.id} value={driver.id}>
-                  {driver.nome_completo}
-                </option>
-              ))}
-            </select>
-          );
-        },
-      },
-      {
-        accessorKey: 'collector_id',
-        header: 'Coletora',
-        cell: ({ row }) => {
-          const appointment = row.original;
-          
-          return (
-            <select
-              value={appointment.collector_id || ''}
-              onChange={(e) => onCollectorChange?.(appointment.id, e.target.value)}
-              className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            >
-              <option value="">Selecionar coletora</option>
-              {collectors.map((collector) => (
-                <option key={collector.id} value={collector.id}>
-                  {collector.nome_completo}
-                </option>
-              ))}
-            </select>
-          );
-        },
-      },
-      {
-        id: 'carro',
-        header: 'Carro',
-        cell: ({ row }) => {
-          const carroInfo = row.original.carro || '';
+          const carroInfo = appointment.carro || '';
           const carroMatch = carroInfo.match(/Carro:\s*([^|]+)/);
           const carro = carroMatch ? carroMatch[1].trim() : carroInfo;
 
           return (
-            <div className="text-sm text-gray-600 font-mono">
-              {carro || '-'}
+            <div className="space-y-3 text-sm text-gray-600">
+              <div>
+                <span className="text-xs font-medium uppercase tracking-wide text-gray-500">Motorista</span>
+                <select
+                  value={appointment.driver_id || ''}
+                  onChange={(e) => onDriverChange?.(appointment.id, e.target.value)}
+                  className="mt-1 w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Selecionar motorista</option>
+                  {drivers.map((driver) => (
+                    <option key={driver.id} value={driver.id}>
+                      {driver.nome_completo}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <span className="text-xs font-medium uppercase tracking-wide text-gray-500">Coletora</span>
+                <select
+                  value={appointment.collector_id || ''}
+                  onChange={(e) => onCollectorChange?.(appointment.id, e.target.value)}
+                  className="mt-1 w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="">Selecionar coletora</option>
+                  {collectors.map((collector) => (
+                    <option key={collector.id} value={collector.id}>
+                      {collector.nome_completo}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {carro && (
+                <div className="rounded-md border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-500">
+                  Carro: {carro}
+                </div>
+              )}
             </div>
           );
         },
@@ -276,20 +208,21 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
       {
         id: 'actions',
         header: 'Ações',
+        enableSorting: false,
         cell: ({ row }) => (
           <div className="flex space-x-2">
             <button
               onClick={() => onDelete?.(row.original.id)}
-              className="p-1 text-red-600 hover:text-red-800 transition-colors"
+              className="rounded-full p-1 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
               title="Excluir agendamento"
             >
-              <TrashIcon className="w-4 h-4" />
+              <TrashIcon className="h-4 w-4" />
             </button>
           </div>
         ),
       },
     ],
-    [onStatusChange, onDriverChange, onCollectorChange, onDelete, drivers, collectors]
+    [collectors, drivers, onCollectorChange, onDelete, onDriverChange, onStatusChange]
   );
 
   const table = useReactTable({
@@ -336,7 +269,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
-                  className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"
+                  className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"
                 >
                   {header.isPlaceholder ? null : (
                     <div
@@ -373,7 +306,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
               {row.getVisibleCells().map((cell) => (
                 <td
                   key={cell.id}
-                  className="px-6 py-4 text-sm text-gray-700"
+                  className="px-4 py-4 align-top text-sm text-gray-700"
                 >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
