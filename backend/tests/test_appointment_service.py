@@ -13,6 +13,7 @@ from src.application.dtos.appointment_dto import (
 from src.application.services.appointment_service import AppointmentService
 from src.domain.entities.appointment import Appointment
 from src.domain.entities.tag import Tag, TagReference
+from src.domain.entities.logistics_package import LogisticsPackage
 
 
 @pytest.mark.asyncio
@@ -165,6 +166,94 @@ async def test_create_appointment_sets_agendado_por_when_status_agendado() -> No
 
     assert result["success"] is True
     assert result["appointment"].agendado_por == "Ana Admin"
+
+
+@pytest.mark.asyncio
+async def test_create_appointment_with_logistics_package() -> None:
+    """Selecting a logistics package should override logistics fields automatically."""
+
+    repository = MagicMock()
+    repository.find_duplicates = AsyncMock(return_value=[])
+    repository.create = AsyncMock(side_effect=lambda appointment: appointment)
+
+    package = LogisticsPackage(
+        nome="Combo Manhã",
+        descricao="",
+        driver_id="driver-1",
+        driver_nome="João Motorista",
+        collector_id="collector-1",
+        collector_nome="Maria Coletora",
+        car_id="car-1",
+        car_nome="Kombi Azul",
+        car_unidade="UND-01",
+        car_display_name="Carro: Kombi Azul | Unidade: UND-01",
+    )
+
+    logistics_repo = MagicMock()
+    logistics_repo.find_by_id = AsyncMock(return_value=package)
+
+    service = AppointmentService(
+        repository,
+        excel_parser=MagicMock(),
+        logistics_package_repository=logistics_repo,
+    )
+
+    dto = AppointmentCreateDTO(
+        nome_marca="Marca",
+        nome_unidade="Unidade",
+        nome_paciente="Paciente",
+        data_agendamento=datetime(2025, 1, 10, 9, 0),
+        hora_agendamento="09:00",
+        status="Confirmado",
+        telefone="11999988888",
+        logistics_package_id=str(package.id),
+    )
+
+    result = await service.create_appointment(dto, created_by="Ana Admin")
+
+    assert result["success"] is True
+    appointment = result["appointment"]
+    assert appointment.driver_id == "driver-1"
+    assert appointment.collector_id == "collector-1"
+    assert appointment.car_id == "car-1"
+    assert appointment.carro == "Carro: Kombi Azul | Unidade: UND-01"
+    assert appointment.logistics_package_id == str(package.id)
+    assert appointment.logistics_package_name == "Combo Manhã"
+    logistics_repo.find_by_id.assert_awaited_once_with(str(package.id))
+
+
+@pytest.mark.asyncio
+async def test_create_appointment_invalid_logistics_package() -> None:
+    """Service should surface error when selected package does not exist."""
+
+    repository = MagicMock()
+    repository.find_duplicates = AsyncMock(return_value=[])
+
+    logistics_repo = MagicMock()
+    logistics_repo.find_by_id = AsyncMock(return_value=None)
+
+    service = AppointmentService(
+        repository,
+        excel_parser=MagicMock(),
+        logistics_package_repository=logistics_repo,
+    )
+
+    dto = AppointmentCreateDTO(
+        nome_marca="Marca",
+        nome_unidade="Unidade",
+        nome_paciente="Paciente",
+        data_agendamento=datetime(2025, 1, 10, 9, 0),
+        hora_agendamento="09:00",
+        status="Confirmado",
+        telefone="11999988888",
+        logistics_package_id="missing",
+    )
+
+    result = await service.create_appointment(dto, created_by="Ana Admin")
+
+    assert result["success"] is False
+    assert result["error_code"] == "logistics_package_not_found"
+    repository.create.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -370,6 +459,139 @@ async def test_update_appointment_success() -> None:
     assert payload["tags"] == [
         {"id": str(tag_id), "name": "Urgente", "color": "#ff0000"}
     ]
+
+
+@pytest.mark.asyncio
+async def test_update_appointment_assigns_logistics_package() -> None:
+    """Updating with a package ID should apply combo logistics info."""
+
+    appointment = Appointment(
+        nome_marca="Marca",
+        nome_unidade="Unidade",
+        nome_paciente="Paciente",
+        data_agendamento=datetime(2025, 1, 10, 9, 0),
+        hora_agendamento="09:00",
+        status="Confirmado",
+        telefone="11999988888",
+    )
+
+    repository = MagicMock()
+    repository.find_by_id = AsyncMock(return_value=appointment)
+
+    package = LogisticsPackage(
+        nome="Combo",
+        descricao=None,
+        driver_id="driver-1",
+        driver_nome="João",
+        collector_id="collector-1",
+        collector_nome="Maria",
+        car_id="car-1",
+        car_nome="Kombi",
+        car_unidade="UND-01",
+        car_display_name="Carro: Kombi | Unidade: UND-01",
+    )
+
+    logistics_repo = MagicMock()
+    logistics_repo.find_by_id = AsyncMock(return_value=package)
+
+    updated = appointment.model_copy(update={
+        "logistics_package_id": str(package.id),
+        "logistics_package_name": package.nome,
+        "driver_id": package.driver_id,
+        "collector_id": package.collector_id,
+        "car_id": package.car_id,
+        "carro": package.car_display_name,
+    })
+    repository.update = AsyncMock(return_value=updated)
+
+    service = AppointmentService(
+        repository,
+        excel_parser=MagicMock(),
+        logistics_package_repository=logistics_repo,
+    )
+
+    dto = AppointmentFullUpdateDTO(logistics_package_id=str(package.id))
+    result = await service.update_appointment("apt-id", dto)
+
+    assert result["success"] is True
+    logistics_repo.find_by_id.assert_awaited_once_with(str(package.id))
+    updates = repository.update.await_args.args[1]
+    assert updates["logistics_package_id"] == str(package.id)
+    assert updates["driver_id"] == "driver-1"
+
+
+@pytest.mark.asyncio
+async def test_update_appointment_logistics_package_not_found() -> None:
+    """Missing package should cancel update with descriptive error."""
+
+    appointment = Appointment(
+        nome_marca="Marca",
+        nome_unidade="Unidade",
+        nome_paciente="Paciente",
+        data_agendamento=datetime(2025, 1, 10, 9, 0),
+        hora_agendamento="09:00",
+        status="Confirmado",
+        telefone="11999988888",
+    )
+
+    repository = MagicMock()
+    repository.find_by_id = AsyncMock(return_value=appointment)
+
+    logistics_repo = MagicMock()
+    logistics_repo.find_by_id = AsyncMock(return_value=None)
+
+    service = AppointmentService(
+        repository,
+        excel_parser=MagicMock(),
+        logistics_package_repository=logistics_repo,
+    )
+
+    result = await service.update_appointment(
+        "apt-id", AppointmentFullUpdateDTO(logistics_package_id="missing")
+    )
+
+    assert result["success"] is False
+    assert result["error_code"] == "logistics_package_not_found"
+    repository.update.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_update_appointment_clears_logistics_package() -> None:
+    """Empty payload should remove stored package linkage."""
+
+    appointment = Appointment(
+        nome_marca="Marca",
+        nome_unidade="Unidade",
+        nome_paciente="Paciente",
+        data_agendamento=datetime(2025, 1, 10, 9, 0),
+        hora_agendamento="09:00",
+        status="Confirmado",
+        telefone="11999988888",
+        logistics_package_id="pkg",
+        logistics_package_name="Combo",
+        driver_id="driver-1",
+        collector_id="collector-1",
+        car_id="car-1",
+    )
+
+    repository = MagicMock()
+    repository.find_by_id = AsyncMock(return_value=appointment)
+    repository.update = AsyncMock(
+        return_value=appointment.model_copy(update={
+            "logistics_package_id": None,
+            "logistics_package_name": None,
+        })
+    )
+
+    service = AppointmentService(repository, excel_parser=MagicMock())
+
+    dto = AppointmentFullUpdateDTO(logistics_package_id="  ")
+    result = await service.update_appointment("apt-id", dto)
+
+    assert result["success"] is True
+    updates = repository.update.await_args.args[1]
+    assert updates["logistics_package_id"] is None
+    assert updates["logistics_package_name"] is None
 
 
 @pytest.mark.asyncio

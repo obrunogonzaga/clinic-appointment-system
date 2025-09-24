@@ -218,8 +218,8 @@ def test_get_appointment_not_found(client: TestClient) -> None:
         app.dependency_overrides.pop(get_appointment_service, None)
 
     assert response.status_code == 404
-    detail = response.json()
-    assert detail["detail"] == "Agendamento não encontrado"
+    error = response.json()
+    assert error["message"] == "Agendamento não encontrado"
 
 
 def test_partial_update_appointment_success(client: TestClient) -> None:
@@ -290,6 +290,7 @@ def test_partial_update_updates_confirmation_channel(client: TestClient) -> None
     service_mock.update_appointment.assert_awaited_once_with(
         appointment_id,
         AppointmentFullUpdateDTO(canal_confirmacao="Telefone"),
+        updated_by="Usuário Teste",
     )
 
 
@@ -318,8 +319,8 @@ def test_partial_update_appointment_validation_error(client: TestClient) -> None
         app.dependency_overrides.pop(get_appointment_service, None)
 
     assert response.status_code == 400
-    detail = response.json()
-    assert detail["detail"] == "Dados inválidos"
+    error = response.json()
+    assert error["message"] == "Dados inválidos"
 
 
 def test_partial_update_appointment_not_found(client: TestClient) -> None:
@@ -347,5 +348,5 @@ def test_partial_update_appointment_not_found(client: TestClient) -> None:
         app.dependency_overrides.pop(get_appointment_service, None)
 
     assert response.status_code == 404
-    detail = response.json()
-    assert detail["detail"] == "Agendamento não encontrado"
+    error = response.json()
+    assert error["message"] == "Agendamento não encontrado"

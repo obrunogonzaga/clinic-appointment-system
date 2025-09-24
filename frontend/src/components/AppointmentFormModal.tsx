@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Controller, useForm, type SubmitHandler, type Resolver } from 'react-hook-form';
+import { Controller, useForm, useWatch, type SubmitHandler, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -9,6 +9,7 @@ import type { ActiveDriver } from '../types/driver';
 import type { ActiveCollector } from '../types/collector';
 import { APPOINTMENT_STATUS_OPTIONS } from '../utils/appointmentViewModel';
 import type { Tag } from '../types/tag';
+import type { LogisticsPackage } from '../types/logistics-package';
 import { TagSelector } from './tags/TagSelector';
 
 interface AppointmentFormModalProps {
@@ -23,6 +24,7 @@ interface AppointmentFormModalProps {
   collectors: ActiveCollector[];
   tags: Tag[];
   maxTags?: number;
+  logisticsPackages: LogisticsPackage[];
 }
 
 const DEFAULT_BRAND = 'Sergio Franco';
@@ -58,6 +60,7 @@ const formSchema = z.object({
       return digits.length === 10 || digits.length === 11;
     }, 'Telefone deve conter 10 ou 11 dígitos'),
   carro: z.string().trim().default(''),
+  logistics_package_id: z.string().trim().default(''),
   observacoes: z.string().trim().default(''),
   driver_id: z.string().trim().default(''),
   collector_id: z.string().trim().default(''),
@@ -81,6 +84,7 @@ export function AppointmentFormModal({
   collectors,
   tags,
   maxTags = 5,
+  logisticsPackages,
 }: AppointmentFormModalProps) {
   const statusChoices = useMemo(() => {
     const provided = statuses && statuses.length > 0 ? statuses : [...APPOINTMENT_STATUS_OPTIONS];
@@ -121,6 +125,7 @@ export function AppointmentFormModal({
       status: defaultStatus,
       telefone: '',
       carro: '',
+      logistics_package_id: '',
       observacoes: '',
       driver_id: '',
       collector_id: '',
@@ -138,9 +143,19 @@ export function AppointmentFormModal({
     handleSubmit,
     reset,
     formState: { errors },
+    setValue,
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema) as unknown as Resolver<FormValues>,
     defaultValues: defaultValues as FormValues,
+  });
+
+  const logisticsPackagesById = useMemo(() => {
+    return new Map(logisticsPackages.map(pkg => [pkg.id, pkg]));
+  }, [logisticsPackages]);
+
+  const selectedLogisticsPackageId = useWatch({
+    control,
+    name: 'logistics_package_id',
   });
 
   useEffect(() => {
@@ -148,6 +163,21 @@ export function AppointmentFormModal({
       reset(defaultValues);
     }
   }, [isOpen, reset, defaultValues]);
+
+  useEffect(() => {
+    if (!selectedLogisticsPackageId) {
+      return;
+    }
+
+    const selectedPackage = logisticsPackagesById.get(selectedLogisticsPackageId);
+    if (!selectedPackage) {
+      return;
+    }
+
+    setValue('driver_id', selectedPackage.driver_id, { shouldDirty: true });
+    setValue('collector_id', selectedPackage.collector_id, { shouldDirty: true });
+    setValue('carro', selectedPackage.car_display_name, { shouldDirty: true });
+  }, [selectedLogisticsPackageId, logisticsPackagesById, setValue]);
 
   const handleClose = () => {
     reset(defaultValues);
@@ -181,6 +211,7 @@ export function AppointmentFormModal({
       observacoes: values.observacoes.trim() || undefined,
       driver_id: values.driver_id || undefined,
       collector_id: values.collector_id || undefined,
+      logistics_package_id: values.logistics_package_id || undefined,
       numero_convenio: values.numero_convenio.trim() || undefined,
       nome_convenio: values.nome_convenio.trim() || undefined,
       carteira_convenio: values.carteira_convenio.trim() || undefined,
@@ -341,6 +372,26 @@ export function AppointmentFormModal({
               <p className="mt-1 text-sm text-red-600">{errors.telefone.message}</p>
             )}
           </div>
+          {logisticsPackages.length > 0 && (
+            <div className="md:col-span-3">
+              <label className="block text-sm font-medium text-gray-700">Pacote logístico</label>
+              <select
+                {...register('logistics_package_id')}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                disabled={isSubmitting}
+              >
+                <option value="">Sem pacote pré-definido</option>
+                {logisticsPackages.map((logisticsPackage) => (
+                  <option key={logisticsPackage.id} value={logisticsPackage.id}>
+                    {logisticsPackage.nome}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                Selecionar um pacote preenche automaticamente motorista, coletora e carro. Os campos podem ser ajustados após a seleção.
+              </p>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700">Motorista</label>
             <select

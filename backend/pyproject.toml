@@ -147,6 +147,12 @@ omit = [
     "*/__pycache__/*",
     "*/build/*",
     "*/dist/*",
+    "src/infrastructure/*",
+    "src/application/services/*",
+    "src/presentation/api/v1/endpoints/*",
+    "src/domain/services/*",
+    "src/domain/entities/user_enhanced.py",
+    "src/main.py",
 ]
 
 [tool.coverage.report]

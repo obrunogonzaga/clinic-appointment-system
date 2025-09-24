@@ -50,6 +50,13 @@ import type {
     TagMutationResponse,
     TagUpdateRequest,
 } from '../types/tag';
+import type {
+    LogisticsPackageCreateRequest,
+    LogisticsPackageDeleteResponse,
+    LogisticsPackageListResponse,
+    LogisticsPackageResponse,
+    LogisticsPackageUpdateRequest,
+} from '../types/logistics-package';
 
 const resolveApiBaseUrl = (): string => {
   if (typeof window !== 'undefined' && window.ENV?.API_URL) {
@@ -420,6 +427,77 @@ export const collectorAPI = {
   // Get collector filter options
   getCollectorFilterOptions: async (): Promise<CollectorFilterOptions> => {
     const response = await api.get<CollectorFilterOptions>('/collectors/filter-options');
+    return response.data;
+  },
+};
+
+export const logisticsPackageAPI = {
+  listPackages: async (status?: string): Promise<LogisticsPackageListResponse> => {
+    const params = new URLSearchParams();
+    if (status) {
+      params.append('status_filter', status);
+    }
+
+    const query = params.toString();
+    const response = await api.get<LogisticsPackageListResponse>(
+      `/logistics-packages${query ? `?${query}` : ''}`,
+      { withCredentials: true }
+    );
+
+    return response.data;
+  },
+
+  listActivePackages: async (): Promise<LogisticsPackageListResponse> => {
+    const response = await api.get<LogisticsPackageListResponse>(
+      '/logistics-packages/active',
+      { withCredentials: true }
+    );
+
+    return response.data;
+  },
+
+  getPackage: async (packageId: string): Promise<LogisticsPackageResponse> => {
+    const response = await api.get<LogisticsPackageResponse>(
+      `/logistics-packages/${packageId}`,
+      { withCredentials: true }
+    );
+
+    return response.data;
+  },
+
+  createPackage: async (
+    payload: LogisticsPackageCreateRequest
+  ): Promise<LogisticsPackageResponse> => {
+    const response = await api.post<LogisticsPackageResponse>(
+      '/logistics-packages',
+      payload,
+      { withCredentials: true }
+    );
+
+    return response.data;
+  },
+
+  updatePackage: async (
+    packageId: string,
+    payload: LogisticsPackageUpdateRequest
+  ): Promise<LogisticsPackageResponse> => {
+    const response = await api.patch<LogisticsPackageResponse>(
+      `/logistics-packages/${packageId}`,
+      payload,
+      { withCredentials: true }
+    );
+
+    return response.data;
+  },
+
+  deletePackage: async (
+    packageId: string
+  ): Promise<LogisticsPackageDeleteResponse> => {
+    const response = await api.delete<LogisticsPackageDeleteResponse>(
+      `/logistics-packages/${packageId}`,
+      { withCredentials: true }
+    );
+
     return response.data;
   },
 };

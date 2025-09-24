@@ -21,6 +21,9 @@ from src.domain.repositories.appointment_repository_interface import (
 from src.domain.repositories.tag_repository_interface import (
     TagRepositoryInterface,
 )
+from src.domain.repositories.logistics_package_repository_interface import (
+    LogisticsPackageRepositoryInterface,
+)
 
 
 class AppointmentService:
@@ -35,6 +38,9 @@ class AppointmentService:
         self,
         appointment_repository: AppointmentRepositoryInterface,
         excel_parser: ExcelParserService,
+        logistics_package_repository: Optional[
+            LogisticsPackageRepositoryInterface
+        ] = None,
         tag_repository: Optional[TagRepositoryInterface] = None,
         max_tags_per_appointment: int = 5,
     ):
@@ -47,8 +53,42 @@ class AppointmentService:
         """
         self.appointment_repository = appointment_repository
         self.excel_parser = excel_parser
+        self.logistics_package_repository = logistics_package_repository
         self.tag_repository = tag_repository
         self.max_tags_per_appointment = max(max_tags_per_appointment, 0)
+
+    async def _load_logistics_package(
+        self, package_id: str
+    ) -> Dict[str, Any]:
+        if not package_id:
+            return {"error": {"message": "ID do pacote não informado."}}
+
+        if not self.logistics_package_repository:
+            return {
+                "error": {
+                    "message": "Funcionalidade de pacotes logísticos não está configurada.",
+                    "error_code": "logistics_package_unavailable",
+                }
+            }
+
+        package = await self.logistics_package_repository.find_by_id(package_id)
+        if not package:
+            return {
+                "error": {
+                    "message": "Pacote logístico informado não foi encontrado.",
+                    "error_code": "logistics_package_not_found",
+                }
+            }
+
+        if package.status != "Ativo":
+            return {
+                "error": {
+                    "message": "Pacote logístico informado está inativo.",
+                    "error_code": "logistics_package_inactive",
+                }
+            }
+
+        return {"package": package}
 
     async def import_appointments_from_excel(
         self,
@@ -329,6 +369,59 @@ class AppointmentService:
                     for tag_id in provided_tag_ids
                 ]
 
+            carro_value = (
+                appointment_data.carro.strip()
+                if appointment_data.carro and appointment_data.carro.strip()
+                else None
+            )
+            car_id_value = (
+                appointment_data.car_id.strip()
+                if appointment_data.car_id and appointment_data.car_id.strip()
+                else None
+            )
+            driver_id_value = (
+                appointment_data.driver_id.strip()
+                if appointment_data.driver_id and appointment_data.driver_id.strip()
+                else None
+            )
+            collector_id_value = (
+                appointment_data.collector_id.strip()
+                if appointment_data.collector_id
+                and appointment_data.collector_id.strip()
+                else None
+            )
+            logistics_package_id = (
+                appointment_data.logistics_package_id.strip()
+                if appointment_data.logistics_package_id
+                and appointment_data.logistics_package_id.strip()
+                else None
+            )
+            logistics_package_name = None
+
+            if logistics_package_id:
+                package_result = await self._load_logistics_package(
+                    logistics_package_id
+                )
+                if "error" in package_result:
+                    error = package_result["error"]
+                    return {
+                        "success": False,
+                        "message": error.get(
+                            "message", "Pacote logístico inválido."
+                        ),
+                        "error_code": error.get(
+                            "error_code", "invalid_logistics_package"
+                        ),
+                    }
+
+                package = package_result["package"]
+                logistics_package_id = str(package.id)
+                logistics_package_name = package.nome
+                driver_id_value = package.driver_id
+                collector_id_value = package.collector_id
+                car_id_value = package.car_id
+                carro_value = package.car_display_name
+
             appointment = Appointment(
                 nome_marca=appointment_data.nome_marca,
                 nome_unidade=appointment_data.nome_unidade,
@@ -339,10 +432,13 @@ class AppointmentService:
                 cip=cip_value,
                 status=appointment_data.status,
                 telefone=phone,
-                carro=appointment_data.carro,
+                carro=carro_value,
+                logistics_package_id=logistics_package_id,
+                logistics_package_name=logistics_package_name,
                 observacoes=appointment_data.observacoes,
-                driver_id=appointment_data.driver_id,
-                collector_id=appointment_data.collector_id,
+                driver_id=driver_id_value,
+                collector_id=collector_id_value,
+                car_id=car_id_value,
                 numero_convenio=appointment_data.numero_convenio,
                 nome_convenio=appointment_data.nome_convenio,
                 carteira_convenio=appointment_data.carteira_convenio,
@@ -555,6 +651,47 @@ class AppointmentService:
 
             sanitized_updates: Dict[str, Any] = {}
             tag_references_for_validation: Optional[List[TagReference]] = None
+
+            if "logistics_package_id" in payload:
+                raw_package_id = payload.pop("logistics_package_id")
+                normalized_package_id = (
+                    raw_package_id.strip()
+                    if isinstance(raw_package_id, str)
+                    and raw_package_id.strip()
+                    else None
+                )
+
+                if normalized_package_id:
+                    package_result = await self._load_logistics_package(
+                        normalized_package_id
+                    )
+                    if "error" in package_result:
+                        error = package_result["error"]
+                        return {
+                            "success": False,
+                            "message": error.get(
+                                "message", "Pacote logístico inválido."
+                            ),
+                            "error_code": error.get(
+                                "error_code", "invalid_logistics_package"
+                            ),
+                        }
+
+                    package = package_result["package"]
+                    sanitized_updates["logistics_package_id"] = str(package.id)
+                    sanitized_updates["logistics_package_name"] = package.nome
+                    sanitized_updates["driver_id"] = package.driver_id
+                    sanitized_updates["collector_id"] = package.collector_id
+                    sanitized_updates["car_id"] = package.car_id
+                    sanitized_updates["carro"] = package.car_display_name
+
+                    payload.pop("driver_id", None)
+                    payload.pop("collector_id", None)
+                    payload.pop("car_id", None)
+                    payload.pop("carro", None)
+                else:
+                    sanitized_updates["logistics_package_id"] = None
+                    sanitized_updates["logistics_package_name"] = None
 
             for field, value in payload.items():
                 if field in {

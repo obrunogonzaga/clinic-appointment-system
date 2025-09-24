@@ -10,6 +10,7 @@ import {
   SunIcon,
   TruckIcon,
   UserIcon,
+  Squares2X2Icon,
 } from '@heroicons/react/24/outline';
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
@@ -56,6 +57,13 @@ const navigationItems = [
     name: 'Carros',
     icon: TruckIcon,
     description: 'Cadastrar e gerenciar carros',
+    adminOnly: false,
+  },
+  {
+    id: 'logistics',
+    name: 'Pacotes Logísticos',
+    icon: Squares2X2Icon,
+    description: 'Combinar carro, motorista e coletora em um só clique',
     adminOnly: false,
   },
   {
