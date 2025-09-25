@@ -1,3 +1,4 @@
+import '../setup/test-env';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { describe, test } from 'node:test';
@@ -80,6 +81,7 @@ describe('Appointments smoke tests', () => {
         collectors={[]}
         tags={[]}
         maxTags={5}
+        logisticsPackages={[]}
       />
     );
 

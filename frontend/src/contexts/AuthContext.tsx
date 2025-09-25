@@ -26,14 +26,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return null;
     }
 
-    if (typeof rawUser.is_admin === 'undefined' && rawUser.role) {
-      return {
-        ...rawUser,
-        is_admin: rawUser.role === 'admin',
-      };
-    }
+    const normalizedRole = (() => {
+      if (rawUser.role) {
+        return rawUser.role === 'admin' ? 'admin' : 'colaborador';
+      }
 
-    return rawUser;
+      if (rawUser.is_admin) {
+        return 'admin';
+      }
+
+      return 'colaborador';
+    })();
+
+    return {
+      ...rawUser,
+      is_admin: normalizedRole === 'admin',
+      role: normalizedRole,
+    };
   };
 
   // Initialize authentication state on mount

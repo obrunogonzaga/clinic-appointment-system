@@ -1,14 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState } from 'react';
-import { HashRouter, Route, Routes } from 'react-router-dom';
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import { Navigation } from './components/Navigation';
 import { PrivateRoute } from './components/PrivateRoute';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AppointmentsPage } from './pages/AppointmentsPage';
 import { CarsPage } from './pages/CarsPage';
 import { CollectorsPage } from './pages/CollectorsPage';
-import { Dashboard } from './pages/Dashboard';
 import { DriverRoutePage } from './pages/DriverRoutePage';
 import { DriversPage } from './pages/DriversPage';
 import { Login } from './pages/Login';
@@ -18,6 +15,13 @@ import { PublicRegister } from './pages/PublicRegister';
 import { VerifyEmail } from './pages/VerifyEmail';
 import { TagsPage } from './pages/TagsPage';
 import { LogisticsPackagesPage } from './pages/LogisticsPackagesPage';
+import { AppLayout } from './layouts/AppLayout';
+import { DashboardRedirect } from './pages/dashboard/DashboardRedirect';
+import { OperationDashboardPage } from './pages/dashboard/OperationDashboardPage';
+import { AdminDashboardPage } from './pages/dashboard/AdminDashboardPage';
+import { ForbiddenPage } from './pages/Forbidden';
+import { withRole } from './components/rbac/withRole';
+import { ROLES } from './constants/roles';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -29,49 +33,15 @@ const queryClient = new QueryClient({
   },
 });
 
-function Shell() {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [isNavigationCollapsed, setIsNavigationCollapsed] = useState(false);
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <Dashboard onTabChange={setActiveTab} />;
-      case 'appointments':
-        return <AppointmentsPage />;
-      case 'drivers':
-        return <DriversPage />;
-      case 'collectors':
-        return <CollectorsPage />;
-      case 'cars':
-        return <CarsPage />;
-      case 'logistics':
-        return <LogisticsPackagesPage />;
-      case 'users':
-        return <UsersPage />;
-      case 'tags':
-        return <TagsPage />;
-      default:
-        return <Dashboard onTabChange={setActiveTab} />;
-    }
-  };
-  return (
-    <PrivateRoute>
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 flex transition-colors duration-300">
-        <Navigation
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          isCollapsed={isNavigationCollapsed}
-          onToggleCollapse={() =>
-            setIsNavigationCollapsed((previousState) => !previousState)
-          }
-        />
-        <main className="flex-1 p-8 transition-all duration-300">
-          {renderContent()}
-        </main>
-      </div>
-    </PrivateRoute>
-  );
-}
+const OperationDashboardRoute = withRole([ROLES.COLABORADOR, ROLES.ADMIN])(OperationDashboardPage);
+const AdminDashboardRoute = withRole([ROLES.ADMIN])(AdminDashboardPage);
+const AppointmentsRoute = withRole([ROLES.COLABORADOR, ROLES.ADMIN])(AppointmentsPage);
+const DriversRoute = withRole([ROLES.COLABORADOR, ROLES.ADMIN])(DriversPage);
+const CollectorsRoute = withRole([ROLES.COLABORADOR, ROLES.ADMIN])(CollectorsPage);
+const CarsRoute = withRole([ROLES.COLABORADOR, ROLES.ADMIN])(CarsPage);
+const PackagesRoute = withRole([ROLES.COLABORADOR, ROLES.ADMIN])(LogisticsPackagesPage);
+const UsersRoute = withRole([ROLES.ADMIN])(UsersPage);
+const TagsRoute = withRole([ROLES.ADMIN])(TagsPage);
 
 function App() {
   return (
@@ -93,7 +63,32 @@ function App() {
                   <DriverRoutePage />
                 </PrivateRoute>
               } />
-              <Route path="*" element={<Shell />} />
+              <Route
+                path="/*"
+                element={
+                  <PrivateRoute>
+                    <AppLayout />
+                  </PrivateRoute>
+                }
+              >
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="dashboard" element={<DashboardRedirect />} />
+                <Route path="dashboard/operacao" element={<OperationDashboardRoute />} />
+                <Route path="dashboard/admin" element={<AdminDashboardRoute />} />
+                <Route path="agendamentos" element={<AppointmentsRoute />} />
+                <Route path="cadastros">
+                  <Route path="motoristas" element={<DriversRoute />} />
+                  <Route path="coletoras" element={<CollectorsRoute />} />
+                  <Route path="carros" element={<CarsRoute />} />
+                  <Route path="pacotes" element={<PackagesRoute />} />
+                </Route>
+                <Route path="admin">
+                  <Route path="usuarios" element={<UsersRoute />} />
+                  <Route path="tags" element={<TagsRoute />} />
+                </Route>
+                <Route path="403" element={<ForbiddenPage />} />
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              </Route>
             </Routes>
           </HashRouter>
         </ThemeProvider>

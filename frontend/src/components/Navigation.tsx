@@ -3,93 +3,161 @@ import {
   CalendarDaysIcon,
   ChevronDoubleLeftIcon,
   ChevronDoubleRightIcon,
+  ClipboardDocumentListIcon,
   HomeIcon,
   MoonIcon,
-  ShieldCheckIcon,
-  TagIcon,
-  SunIcon,
-  TruckIcon,
-  UserIcon,
   Squares2X2Icon,
+  SunIcon,
+  TagIcon,
+  TruckIcon,
+  UserCircleIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline';
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import type { Role } from '../constants/roles';
+import { ROLES } from '../constants/roles';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
+import { getUserRole } from '../utils/session';
+
+interface NavigationItem {
+  id: string;
+  label: string;
+  description: string;
+  to: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  allowedRoles?: Role[];
+}
+
+interface NavigationGroup {
+  id: string;
+  title: string;
+  items: NavigationItem[];
+  allowedRoles?: Role[];
+}
 
 interface NavigationProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
 }
 
-const navigationItems = [
+const navigationGroups: NavigationGroup[] = [
   {
-    id: 'dashboard',
-    name: 'Dashboard',
-    icon: HomeIcon,
-    description: 'Visão geral e upload de arquivos',
-    adminOnly: false,
+    id: 'operacao',
+    title: 'Operação',
+    items: [
+      {
+        id: 'dashboard',
+        label: 'Dashboard',
+        description: 'Resumo focado em operação',
+        to: '/dashboard',
+        icon: HomeIcon,
+      },
+      {
+        id: 'agendamentos',
+        label: 'Agendamentos',
+        description: 'Gerenciar agendamentos e calendário',
+        to: '/agendamentos',
+        icon: CalendarDaysIcon,
+      },
+    ],
   },
   {
-    id: 'appointments',
-    name: 'Agendamentos',
-    icon: CalendarDaysIcon,
-    description: 'Gerenciar agendamentos',
-    adminOnly: false,
+    id: 'cadastros',
+    title: 'Cadastros',
+    items: [
+      {
+        id: 'motoristas',
+        label: 'Motoristas',
+        description: 'Cadastrar e gerenciar motoristas',
+        to: '/cadastros/motoristas',
+        icon: TruckIcon,
+      },
+      {
+        id: 'coletoras',
+        label: 'Coletoras',
+        description: 'Gerenciar equipe de coleta',
+        to: '/cadastros/coletoras',
+        icon: UserGroupIcon,
+      },
+      {
+        id: 'carros',
+        label: 'Carros',
+        description: 'Frota disponível para agendamentos',
+        to: '/cadastros/carros',
+        icon: TruckIcon,
+      },
+      {
+        id: 'pacotes',
+        label: 'Pacotes',
+        description: 'Combinações prontas de recursos',
+        to: '/cadastros/pacotes',
+        icon: Squares2X2Icon,
+      },
+    ],
   },
   {
-    id: 'drivers',
-    name: 'Motoristas',
-    icon: TruckIcon,
-    description: 'Cadastrar e gerenciar motoristas',
-    adminOnly: false,
-  },
-  {
-    id: 'collectors',
-    name: 'Coletoras',
-    icon: UserIcon,
-    description: 'Cadastrar e gerenciar coletoras',
-    adminOnly: false,
-  },
-  {
-    id: 'cars',
-    name: 'Carros',
-    icon: TruckIcon,
-    description: 'Cadastrar e gerenciar carros',
-    adminOnly: false,
-  },
-  {
-    id: 'logistics',
-    name: 'Pacotes Logísticos',
-    icon: Squares2X2Icon,
-    description: 'Combinar carro, motorista e coletora em um só clique',
-    adminOnly: false,
-  },
-  {
-    id: 'users',
-    name: 'Usuários',
-    icon: UserIcon,
-    description: 'Gerenciar usuários do sistema',
-    adminOnly: true,
-  },
-  {
-    id: 'tags',
-    name: 'Tags',
-    icon: TagIcon,
-    description: 'Gerenciar tags de agendamento',
-    adminOnly: true,
+    id: 'administracao',
+    title: 'Administração',
+    allowedRoles: [ROLES.ADMIN],
+    items: [
+      {
+        id: 'usuarios',
+        label: 'Usuários',
+        description: 'Gerenciar usuários do sistema',
+        to: '/admin/usuarios',
+        icon: UserCircleIcon,
+        allowedRoles: [ROLES.ADMIN],
+      },
+      {
+        id: 'tags',
+        label: 'Tags',
+        description: 'Organizar tags de agendamento',
+        to: '/admin/tags',
+        icon: TagIcon,
+        allowedRoles: [ROLES.ADMIN],
+      },
+    ],
   },
 ];
 
+const buildInitialGroupState = (pathname: string) => {
+  const state: Record<string, boolean> = {};
+  navigationGroups.forEach((group) => {
+    state[group.id] = pathname.startsWith(`/${group.id}`) || pathname.startsWith('/dashboard')
+      ? true
+      : group.id !== 'administracao';
+  });
+  return state;
+};
+
 export const Navigation: React.FC<NavigationProps> = ({
-  activeTab,
-  onTabChange,
   isCollapsed,
   onToggleCollapse,
 }) => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
+    buildInitialGroupState(location.pathname),
+  );
+
+  useEffect(() => {
+    setOpenGroups((previous) => {
+      const next = { ...previous };
+      navigationGroups.forEach((group) => {
+        const shouldBeOpen = group.items.some((item) =>
+          location.pathname.startsWith(item.to),
+        );
+        if (shouldBeOpen) {
+          next[group.id] = true;
+        }
+      });
+      return next;
+    });
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     if (!window.confirm('Tem certeza que deseja sair?')) {
@@ -100,25 +168,74 @@ export const Navigation: React.FC<NavigationProps> = ({
       await logout();
     } catch (error) {
       console.error('Logout error:', error);
-      window.location.href = '/login';
+      navigate('/login');
     }
   };
 
-  const visibleNavigationItems = navigationItems.filter(
-    (item) => !item.adminOnly || user?.is_admin,
-  );
+  const userRole = useMemo(() => getUserRole(user), [user]);
+
+  const visibleGroups = useMemo(() => {
+    return navigationGroups
+      .map<NavigationGroup | null>((group) => {
+        if (group.allowedRoles && !group.allowedRoles.includes(userRole)) {
+          return null;
+        }
+
+        const filteredItems = group.items.filter((item) =>
+          item.allowedRoles ? item.allowedRoles.includes(userRole) : true,
+        );
+
+        if (filteredItems.length === 0) {
+          return null;
+        }
+
+        return {
+          ...group,
+          items: filteredItems,
+        };
+      })
+      .filter(Boolean) as NavigationGroup[];
+  }, [userRole]);
+
+  const renderNavigationItem = (item: NavigationItem) => {
+    const Icon = item.icon;
+    return (
+      <NavLink
+        key={item.id}
+        to={item.to}
+        end={item.to === '/dashboard'}
+        className={({ isActive }) =>
+          [
+            'group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200',
+            isActive
+              ? 'bg-blue-100 text-blue-700 dark:bg-slate-900 dark:text-blue-300'
+              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white',
+            isCollapsed ? 'justify-center' : 'justify-start',
+          ].join(' ')
+        }
+        aria-label={item.label}
+      >
+        <Icon className="h-5 w-5 flex-shrink-0" aria-hidden="true" />
+        {!isCollapsed && (
+          <div className="flex flex-col text-left">
+            <span className="font-semibold leading-5">{item.label}</span>
+            <span className="text-xs text-gray-500 dark:text-slate-400 leading-4">
+              {item.description}
+            </span>
+          </div>
+        )}
+      </NavLink>
+    );
+  };
 
   return (
     <nav
       className={`bg-white dark:bg-slate-950 shadow-sm border-r border-gray-200/80 dark:border-slate-800 min-h-screen flex flex-col transition-all duration-300 ${
-        isCollapsed ? 'w-16' : 'w-64'
+        isCollapsed ? 'w-20' : 'w-72'
       }`}
+      aria-label="Menu principal"
     >
-      <div
-        className={`border-b border-gray-100 dark:border-slate-800 flex flex-col gap-6 ${
-          isCollapsed ? 'px-2 py-4' : 'px-6 py-6'
-        }`}
-      >
+      <div className={`border-b border-gray-100 dark:border-slate-800 flex flex-col gap-6 ${isCollapsed ? 'px-2 py-4' : 'px-6 py-6'}`}>
         <button
           type="button"
           onClick={onToggleCollapse}
@@ -136,141 +253,81 @@ export const Navigation: React.FC<NavigationProps> = ({
           type="button"
           onClick={toggleTheme}
           className={`inline-flex items-center justify-center rounded-md border border-transparent bg-gray-100 dark:bg-slate-900 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-800 transition-colors ${
-            isCollapsed ? 'mx-auto h-9 w-9' : 'w-full px-4 py-2 gap-2'
+            isCollapsed ? 'mx-auto h-10 w-10' : 'w-full px-4 py-2 gap-2'
           }`}
           aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
           title={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
         >
-          {theme === 'dark' ? (
-            <SunIcon className="h-5 w-5" />
-          ) : (
-            <MoonIcon className="h-5 w-5" />
-          )}
-          {!isCollapsed && (
-            <span className="text-sm font-medium">
-              {theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
-            </span>
-          )}
+          {theme === 'dark' ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+          {!isCollapsed && <span className="text-sm font-medium">{theme === 'dark' ? 'Modo claro' : 'Modo escuro'}</span>}
         </button>
-        <div
-          className={`flex items-center ${
-            isCollapsed ? 'justify-center' : 'space-x-2'
-          }`}
-        >
-          <UserIcon
-            className={`text-blue-600 dark:text-blue-400 ${isCollapsed ? 'w-7 h-7' : 'w-8 h-8'}`}
-          />
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
+          <UserCircleIcon className="h-10 w-10 text-blue-600" aria-hidden="true" />
           {!isCollapsed && (
-            <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">
-              Sistema de Agendamentos
-            </h1>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate" aria-live="polite">
+                {user?.name ?? 'Usuário'}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-slate-400 truncate">
+                {user?.email ?? 'sem-email@widia.app'}
+              </p>
+              <p className="mt-1 text-xs uppercase tracking-wide text-blue-600 dark:text-blue-400 font-semibold">
+                {userRole === ROLES.ADMIN ? 'Administrador' : 'Colaborador'}
+              </p>
+            </div>
           )}
         </div>
       </div>
 
-      <div className={`flex-1 ${isCollapsed ? 'px-2' : 'px-4'} py-4 space-y-2`}>
-        {visibleNavigationItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeTab === item.id;
-          const buttonClasses = `w-full flex items-center px-3 py-3 rounded-lg transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-            isCollapsed ? 'justify-center' : 'space-x-3 text-left'
-          } ${
-            isActive
-              ? `bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-200 ${
-                  isCollapsed ? '' : 'border-l-4 border-blue-600 dark:border-blue-400'
-                }`
-              : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-900'
-          }`;
-
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4" role="menubar">
+        {visibleGroups.map((group) => {
+          const isGroupOpen = openGroups[group.id];
           return (
-            <button
-              type="button"
-              key={item.id}
-              onClick={() => onTabChange(item.id)}
-              className={buttonClasses}
-              aria-label={item.name}
-            >
-              <Icon
-                className={`w-5 h-5 ${
-                  isActive
-                    ? 'text-blue-600 dark:text-blue-300'
-                    : 'text-gray-400 dark:text-slate-500'
+            <div key={group.id} className="space-y-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setOpenGroups((previous) => ({
+                    ...previous,
+                    [group.id]: !previous[group.id],
+                  }))
+                }
+                className={`w-full flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400 ${
+                  isCollapsed ? 'px-1' : 'px-2'
                 }`}
-              />
-              {!isCollapsed && (
-                <div>
-                  <div className="flex items-center">
-                    <p
-                      className={`font-medium ${
-                        isActive
-                          ? 'text-blue-900 dark:text-blue-100'
-                          : 'text-gray-900 dark:text-slate-100'
-                      }`}
-                    >
-                      {item.name}
-                    </p>
-                    {item.adminOnly && (
-                      <ShieldCheckIcon
-                        className="w-3 h-3 text-green-500 ml-1"
-                        title="Apenas Admin"
-                      />
-                    )}
-                  </div>
-                  <p
-                    className={`text-xs ${
-                      isActive
-                        ? 'text-blue-600 dark:text-blue-200'
-                        : 'text-gray-500 dark:text-slate-400'
-                    }`}
-                  >
-                    {item.description}
-                  </p>
-                </div>
-              )}
-            </button>
+                aria-expanded={isGroupOpen}
+                aria-controls={`group-${group.id}`}
+              >
+                <span>{group.title}</span>
+                {!isCollapsed && (
+                  <ClipboardDocumentListIcon
+                    className={`h-4 w-4 transition-transform ${isGroupOpen ? 'rotate-0' : '-rotate-90'}`}
+                    aria-hidden="true"
+                  />
+                )}
+              </button>
+              <div
+                id={`group-${group.id}`}
+                className={`${isGroupOpen ? 'space-y-2' : 'hidden'} ${isCollapsed ? '' : 'pl-1'}`}
+                role="menu"
+              >
+                {group.items.map((item) => renderNavigationItem(item))}
+              </div>
+            </div>
           );
         })}
       </div>
 
-      <div
-        className={`mt-auto border-t border-gray-200 dark:border-slate-800 ${
-          isCollapsed ? 'px-2 py-4' : 'px-6 py-6'
-        }`}
-      >
-        {!isCollapsed && user && (
-          <div className="mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-500/20 rounded-full flex items-center justify-center">
-                <UserIcon className="w-4 h-4 text-blue-600 dark:text-blue-300" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">
-                  Olá, {user.name.split(' ')[0]}!
-                </p>
-                <div className="flex items-center space-x-1">
-                  <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{user.email}</p>
-                  {user.is_admin && (
-                    <ShieldCheckIcon
-                      className="w-3 h-3 text-green-500"
-                      title="Administrador"
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
+      <div className={`border-t border-gray-200 dark:border-slate-800 ${isCollapsed ? 'px-2 py-4' : 'px-6 py-6'}`}>
         <button
           type="button"
           onClick={handleLogout}
-          className={`w-full flex items-center rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-900 transition-colors duration-200 ${
-            isCollapsed ? 'justify-center p-2' : 'space-x-3 px-4 py-2'
+          className={`w-full inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-slate-900 transition-colors ${
+            isCollapsed ? 'flex-col text-center' : 'flex-row'
           }`}
-          aria-label="Sair"
         >
-          <ArrowLeftOnRectangleIcon className="w-5 h-5 text-gray-400 dark:text-slate-500" />
-          {!isCollapsed && <span className="text-sm font-medium">Sair</span>}
+          <ArrowLeftOnRectangleIcon className="h-5 w-5" aria-hidden="true" />
+          <span>Sair</span>
         </button>
       </div>
     </nav>
