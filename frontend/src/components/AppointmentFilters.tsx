@@ -54,6 +54,7 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
     onFiltersChange({
       page: 1,
       page_size: filters.page_size || 50,
+      scope: filters.scope,
     });
     setLocalSearch('');
     onSearchChange('');

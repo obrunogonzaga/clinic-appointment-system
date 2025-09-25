@@ -28,6 +28,7 @@ interface AppointmentTableProps {
   ) => void;
   onDelete?: (id: string) => void;
   onSelect?: (appointmentId: string) => void;
+  isReadOnly?: boolean;
 }
 
 const statusColors = {
@@ -64,6 +65,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
   onLogisticsPackageChange,
   onDelete,
   onSelect,
+  isReadOnly = false,
 }) => {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: 'data_agendamento', desc: false },
@@ -173,9 +175,11 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
               <select
                 value={status}
                 onChange={(e) => onStatusChange?.(row.original.id, e.target.value)}
+                disabled={isReadOnly || !onStatusChange}
                 className={`
                   w-full rounded-full border bg-white px-3 py-1 text-xs font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1
                   ${colorClass}
+                  ${isReadOnly || !onStatusChange ? 'opacity-60 cursor-not-allowed' : ''}
                 `}
               >
                 {statusOptions.map((option) => (
@@ -221,7 +225,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
             <div className="space-y-3 text-sm text-gray-600">
               <div className="space-y-1">
                 <span className="text-xs font-medium uppercase tracking-wide text-gray-500">Pacote logístico</span>
-                {onLogisticsPackageChange ? (
+                {onLogisticsPackageChange && !isReadOnly ? (
                   <select
                     value={appointment.logistics_package_id || ''}
                     onChange={(event) =>
@@ -275,22 +279,33 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
         enableSorting: false,
         cell: ({ row }) => (
           <div className="flex space-x-2">
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                onDelete?.(row.original.id);
-              }}
-              className="rounded-full p-1 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
-              title="Excluir agendamento"
-            >
-              <TrashIcon className="h-4 w-4" />
-            </button>
+            {!isReadOnly && onDelete && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDelete?.(row.original.id);
+                }}
+                className="rounded-full p-1 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
+                title="Excluir agendamento"
+              >
+                <TrashIcon className="h-4 w-4" />
+              </button>
+            )}
           </div>
         ),
       },
     ],
-    [collectors, drivers, logisticsPackages, onDelete, onLogisticsPackageChange, onSelect, onStatusChange]
+    [
+      collectors,
+      drivers,
+      isReadOnly,
+      logisticsPackages,
+      onDelete,
+      onLogisticsPackageChange,
+      onSelect,
+      onStatusChange,
+    ]
   );
 
   const table = useReactTable({

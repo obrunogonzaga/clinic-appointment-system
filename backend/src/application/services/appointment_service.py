@@ -3,7 +3,7 @@ Service for managing appointments business logic.
 """
 
 from datetime import datetime, timedelta
-from typing import Any, BinaryIO, Dict, List, Optional
+from typing import Any, BinaryIO, Dict, List, Optional, Tuple
 
 from pydantic import ValidationError
 
@@ -11,6 +11,7 @@ from src.application.dtos.appointment_dto import (
     AppointmentCreateDTO,
     AppointmentFullUpdateDTO,
     AppointmentResponseDTO,
+    AppointmentScope,
 )
 from src.application.services.excel_parser_service import ExcelParserService
 from src.domain.entities.appointment import Appointment
@@ -136,6 +137,48 @@ class AppointmentService:
                     if appointment.status == "Agendado":
                         appointment.agendado_por = uploader_name
 
+            # Enforce temporal rules: appointments dated before today are rejected
+            today_cutoff = datetime.utcnow().replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            blocked_by_past_dates = [
+                appointment
+                for appointment in parse_result.appointments
+                if appointment.data_agendamento
+                and appointment.data_agendamento < today_cutoff
+            ]
+
+            if blocked_by_past_dates:
+                formatted_examples = [
+                    f"{apt.nome_paciente} – {apt.data_agendamento.strftime('%d/%m/%Y')}"
+                    for apt in blocked_by_past_dates[:5]
+                ]
+
+                errors = list(parse_result.errors)
+                errors.insert(
+                    0,
+                    (
+                        f"{len(blocked_by_past_dates)} agendamentos com data anterior a hoje "
+                        "foram encontrados na planilha."
+                    ),
+                )
+
+                return {
+                    "success": False,
+                    "message": "Planilha contém agendamentos com data no passado.",
+                    "errors": errors,
+                    "total_rows": parse_result.total_rows,
+                    "valid_rows": max(
+                        parse_result.valid_rows - len(blocked_by_past_dates), 0
+                    ),
+                    "invalid_rows": parse_result.invalid_rows
+                    + len(blocked_by_past_dates),
+                    "imported_appointments": 0,
+                    "duplicates_found": 0,
+                    "past_appointments_blocked": len(blocked_by_past_dates),
+                    "past_appointments_examples": formatted_examples,
+                }
+
             # Handle existing appointments if needed
             if replace_existing:
                 # Get distinct units and brands from import
@@ -197,6 +240,8 @@ class AppointmentService:
                 "duplicates_found": duplicates_found,
                 "errors": parse_result.errors,
                 "filename": filename,
+                "past_appointments_blocked": 0,
+                "past_appointments_examples": [],
             }
 
         except Exception as e:
@@ -220,6 +265,7 @@ class AppointmentService:
         driver_id: Optional[str] = None,
         page: int = 1,
         page_size: int = 50,
+        scope: AppointmentScope = AppointmentScope.CURRENT,
     ) -> Dict:
         """
         Get appointments with filters and pagination.
@@ -242,22 +288,40 @@ class AppointmentService:
 
             # Parse date if provided
             parsed_dates = self._parse_filter_date(data)
-
-            # Get appointments
-            appointments = await self.appointment_repository.find_by_filters(
-                nome_unidade=nome_unidade,
-                nome_marca=nome_marca,
-                data_inicio=parsed_dates[0],
-                data_fim=parsed_dates[1],
-                status=status,
-                driver_id=driver_id,
-                skip=skip,
-                limit=page_size,
-            )
+            scope_bounds = self._resolve_scope_bounds(scope)
+            
+            # Check if this is unscheduled scope
+            if scope == AppointmentScope.UNSCHEDULED:
+                # For unscheduled, we need to filter by null dates
+                appointments = await self.appointment_repository.find_by_filters(
+                    nome_unidade=nome_unidade,
+                    nome_marca=nome_marca,
+                    data_inicio="unscheduled",  # Special marker
+                    data_fim="unscheduled",      # Special marker
+                    status=status,
+                    driver_id=driver_id,
+                    skip=skip,
+                    limit=page_size,
+                )
+            else:
+                date_bounds = self._merge_scope_with_dates(parsed_dates, scope_bounds)
+                # Get appointments
+                appointments = await self.appointment_repository.find_by_filters(
+                    nome_unidade=nome_unidade,
+                    nome_marca=nome_marca,
+                    data_inicio=date_bounds[0],
+                    data_fim=date_bounds[1],
+                    status=status,
+                    driver_id=driver_id,
+                    skip=skip,
+                    limit=page_size,
+                )
 
             # Get total count for pagination
+            if scope == AppointmentScope.UNSCHEDULED:
+                date_bounds = ("unscheduled", "unscheduled")
             filters = self._build_pagination_filters(
-                nome_unidade, nome_marca, status, parsed_dates
+                nome_unidade, nome_marca, status, date_bounds
             )
             if driver_id:
                 filters["driver_id"] = driver_id
@@ -1060,12 +1124,50 @@ class AppointmentService:
 
         return start_of_day, end_of_day
 
+    def _resolve_scope_bounds(
+        self,
+        scope: AppointmentScope,
+        reference: Optional[datetime] = None,
+    ) -> Tuple[Optional[datetime], Optional[datetime]]:
+        """Return lower/upper bounds based on the requested scope."""
+
+        current_reference = reference or datetime.utcnow()
+        start_of_today = current_reference.replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+
+        if scope == AppointmentScope.CURRENT:
+            return start_of_today, None
+        if scope == AppointmentScope.HISTORY:
+            return None, start_of_today
+        if scope == AppointmentScope.UNSCHEDULED:
+            # Special marker for unscheduled appointments
+            return "unscheduled", "unscheduled"
+        return None, None
+
+    def _merge_scope_with_dates(
+        self,
+        parsed_dates: Tuple[Optional[datetime], Optional[datetime]],
+        scope_bounds: Tuple[Optional[datetime], Optional[datetime]],
+    ) -> Tuple[Optional[datetime], Optional[datetime]]:
+        """Combine explicit date filters with scope boundaries."""
+
+        lower_candidates = [parsed_dates[0], scope_bounds[0]]
+        lower_values = [value for value in lower_candidates if value is not None]
+        merged_lower = max(lower_values) if lower_values else None
+
+        upper_candidates = [parsed_dates[1], scope_bounds[1]]
+        upper_values = [value for value in upper_candidates if value is not None]
+        merged_upper = min(upper_values) if upper_values else None
+
+        return merged_lower, merged_upper
+
     def _build_pagination_filters(
         self,
         nome_unidade: Optional[str],
         nome_marca: Optional[str],
         status: Optional[str],
-        parsed_dates: tuple[Optional[datetime], Optional[datetime]],
+        date_bounds: Tuple[Optional[datetime], Optional[datetime]],
     ) -> Dict[str, Any]:
         """Build filters for pagination count."""
         filters: Dict[str, Any] = {}
@@ -1075,13 +1177,16 @@ class AppointmentService:
             filters["nome_marca"] = {"$regex": nome_marca, "$options": "i"}
         if status:
             filters["status"] = status
-        if parsed_dates[0] or parsed_dates[1]:
+        # Check for special "unscheduled" marker
+        if date_bounds[0] == "unscheduled" and date_bounds[1] == "unscheduled":
+            filters["data_agendamento"] = None
+        elif date_bounds[0] or date_bounds[1]:
             # Use "$lt" for the upper bound to match the repository behavior
             # (start inclusive, end exclusive).
             date_filter: Dict[str, Any] = {}
-            if parsed_dates[0]:
-                date_filter["$gte"] = parsed_dates[0]
-            if parsed_dates[1]:
-                date_filter["$lt"] = parsed_dates[1]
+            if date_bounds[0]:
+                date_filter["$gte"] = date_bounds[0]
+            if date_bounds[1]:
+                date_filter["$lt"] = date_bounds[1]
             filters["data_agendamento"] = date_filter
         return filters

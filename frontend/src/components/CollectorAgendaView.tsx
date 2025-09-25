@@ -17,14 +17,15 @@ interface CollectorAgendaViewProps {
   drivers: ActiveDriver[];
   selectedDate: Date;
   isLoading: boolean;
-  onAppointmentStatusChange: (id: string, status: string) => void;
+  onAppointmentStatusChange?: (id: string, status: string) => void;
   onAppointmentLogisticsPackageChange?: (
     appointmentId: string,
     logisticsPackageId: string | null,
   ) => void;
-  onAppointmentDelete: (id: string) => void;
+  onAppointmentDelete?: (id: string) => void;
   onDateChange?: (date: Date) => void;
   logisticsPackages?: LogisticsPackage[];
+  isReadOnly?: boolean;
 }
 
 interface CollectorAppointments {
@@ -63,6 +64,7 @@ export const CollectorAgendaView: React.FC<CollectorAgendaViewProps> = ({
   onAppointmentDelete,
   onDateChange,
   logisticsPackages = [],
+  isReadOnly = false,
 }) => {
   const selectedDateStr = useMemo(() => {
     return selectedDate.toISOString().split('T')[0];
@@ -435,6 +437,7 @@ export const CollectorAgendaView: React.FC<CollectorAgendaViewProps> = ({
                   onLogisticsPackageChange={onAppointmentLogisticsPackageChange}
                   onDelete={onAppointmentDelete}
                   compact={true}
+                  isReadOnly={isReadOnly}
                 />
               ))}
             </div>

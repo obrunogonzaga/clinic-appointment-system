@@ -146,6 +146,7 @@ export const appointmentAPI = {
     if (filters.driver_id) params.append('driver_id', filters.driver_id);
     if (filters.page) params.append('page', filters.page.toString());
     if (filters.page_size) params.append('page_size', filters.page_size.toString());
+    if (filters.scope) params.append('scope', filters.scope);
     
     const response = await api.get<AppointmentListResponse>(
       `/appointments/?${params.toString()}`,

@@ -20,6 +20,7 @@ export const CalendarDayModal: React.FC<DayModalProps> = ({
   drivers = [],
   collectors = [],
   logisticsPackages = [],
+  isReadOnly = false,
 }) => {
   const dateString = formatCalendarDate(date, 'EEEE, dd \'de\' MMMM \'de\' yyyy');
   const hasAppointments = appointments.length > 0;
@@ -94,11 +95,14 @@ export const CalendarDayModal: React.FC<DayModalProps> = ({
                           appointment={appointment}
                           drivers={drivers as any[]}
                           collectors={collectors as any[]}
-                          onStatusChange={onStatusChange || (() => {})}
+                          onStatusChange={isReadOnly ? undefined : onStatusChange}
                           logisticsPackages={logisticsPackages}
-                          onLogisticsPackageChange={onLogisticsPackageChange}
-                          onDelete={onDelete || (() => {})}
+                          onLogisticsPackageChange={
+                            isReadOnly ? undefined : onLogisticsPackageChange
+                          }
+                          onDelete={isReadOnly ? undefined : onDelete}
                           compact={true}
+                          isReadOnly={isReadOnly}
                         />
                       ))}
                     </div>

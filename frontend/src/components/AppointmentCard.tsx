@@ -22,15 +22,16 @@ interface AppointmentCardProps {
   appointment: AppointmentViewModel;
   drivers: ActiveDriver[];
   collectors?: ActiveCollector[];
-  onStatusChange: (id: string, status: string) => void;
+  onStatusChange?: (id: string, status: string) => void;
   logisticsPackages?: LogisticsPackage[];
   onLogisticsPackageChange?: (
     appointmentId: string,
     logisticsPackageId: string | null,
   ) => void;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
   compact?: boolean;
   onSelect?: (id: string) => void;
+  isReadOnly?: boolean;
 }
 
 const statusOptions = [
@@ -55,6 +56,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
   onDelete,
   compact = false,
   onSelect,
+  isReadOnly = false,
 }) => {
   const getCarInfo = (): string => {
     if (appointment.carro) {
@@ -83,6 +85,10 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
 
   const handleDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
+    if (!onDelete) {
+      return;
+    }
+
     if (window.confirm('Tem certeza que deseja excluir este agendamento?')) {
       onDelete(appointment.id);
     }
@@ -153,11 +159,13 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
         
         <select
           value={appointment.status}
-          onChange={(e) => onStatusChange(appointment.id, e.target.value)}
+          onChange={(e) => onStatusChange?.(appointment.id, e.target.value)}
+          disabled={isReadOnly || !onStatusChange}
           className={`
             ml-3 cursor-pointer transition-all flex-shrink-0
             focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500
             ${getStatusBadgeClass(appointment.status)}
+            ${isReadOnly || !onStatusChange ? 'opacity-60 cursor-not-allowed' : ''}
           `}
         >
           {statusOptions.map((option) => (
@@ -312,9 +320,9 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
 
       {/* Footer */}
       <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-800">
-        {onLogisticsPackageChange && (
-          <div className="flex flex-col gap-2 mb-3 md:flex-row">
-            <div className="flex-1">
+        <div className="flex flex-col gap-2 mb-3 md:flex-row">
+          <div className="flex-1">
+            {onLogisticsPackageChange && !isReadOnly ? (
               <select
                 value={appointment.logistics_package_id || ''}
                 onChange={(event) =>
@@ -324,7 +332,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
                   )
                 }
                 className={`
-                  w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-100 rounded px-2 py-1.5 
+                  w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-100 rounded px-2 py-1.5
                   focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-indigo-400 focus:border-blue-500 dark:focus:border-indigo-400
                   ${compact ? 'text-xs' : 'text-sm'}
                 `}
@@ -337,20 +345,26 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
                   </option>
                 ))}
               </select>
-            </div>
+            ) : (
+              <div className={`rounded-md border border-blue-100 bg-blue-50 px-2 py-1 ${compact ? 'text-xs' : 'text-sm'} text-blue-700`}>
+                {appointment.logistics_package_name || 'Sem pacote logístico'}
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Actions */}
         <div className="flex justify-end">
-          <button
-            onClick={handleDelete}
-            className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
-            title="Excluir agendamento"
-            type="button"
-          >
-            <TrashIcon className="w-4 h-4" />
-          </button>
+          {!isReadOnly && onDelete && (
+            <button
+              onClick={handleDelete}
+              className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+              title="Excluir agendamento"
+              type="button"
+            >
+              <TrashIcon className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
     </div>
