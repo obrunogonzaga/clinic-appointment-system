@@ -4,7 +4,7 @@ Appointment API endpoints.
 
 import io
 import time
-from typing import List, Optional
+from typing import List, Optional, Literal
 
 from fastapi import (
     APIRouter,
@@ -242,6 +242,13 @@ async def get_appointments(
     driver_id: str = Query(None, description="Filtrar por ID do motorista"),
     page: int = Query(1, ge=1, description="Número da página"),
     page_size: int = Query(50, ge=1, le=100, description="Itens por página"),
+    scope: Optional[Literal["current", "history"]] = Query(
+        None,
+        description=(
+            "Escopo temporal: 'current' retorna registros a partir de hoje, "
+            "'history' retorna registros anteriores."
+        ),
+    ),
     service: AppointmentService = Depends(get_appointment_service),
 ) -> AppointmentListResponseDTO:
     """
@@ -255,6 +262,7 @@ async def get_appointments(
         driver_id: Driver ID filter
         page: Page number
         page_size: Items per page
+        scope: Temporal scope filter (current or history)
         service: Appointment service instance
 
     Returns:
@@ -269,6 +277,7 @@ async def get_appointments(
             driver_id=driver_id,
             page=page,
             page_size=page_size,
+            scope=scope,
         )
 
         # Convert to response DTOs

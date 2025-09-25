@@ -169,6 +169,73 @@ async def test_create_appointment_sets_agendado_por_when_status_agendado() -> No
 
 
 @pytest.mark.asyncio
+async def test_get_appointments_with_current_scope_filters_by_today() -> None:
+    """Current scope should clamp results to appointments scheduled from today."""
+
+    repository = MagicMock()
+    repository.find_by_filters = AsyncMock(return_value=[])
+    repository.count = AsyncMock(return_value=0)
+
+    service = AppointmentService(repository, excel_parser=MagicMock())
+
+    result = await service.get_appointments_with_filters(scope="current")
+
+    assert result["success"] is True
+    start_of_today = datetime.utcnow().replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+
+    find_kwargs = repository.find_by_filters.await_args.kwargs
+    assert find_kwargs["data_inicio"] == start_of_today
+    assert find_kwargs["data_fim"] is None
+
+    count_filters = repository.count.await_args.kwargs["filters"]
+    assert count_filters["data_agendamento"]["$gte"] == start_of_today
+
+
+@pytest.mark.asyncio
+async def test_get_appointments_with_history_scope_filters_before_today() -> None:
+    """History scope should clamp results to appointments scheduled before today."""
+
+    repository = MagicMock()
+    repository.find_by_filters = AsyncMock(return_value=[])
+    repository.count = AsyncMock(return_value=0)
+
+    service = AppointmentService(repository, excel_parser=MagicMock())
+
+    result = await service.get_appointments_with_filters(scope="history")
+
+    assert result["success"] is True
+    start_of_today = datetime.utcnow().replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+
+    find_kwargs = repository.find_by_filters.await_args.kwargs
+    assert find_kwargs["data_inicio"] is None
+    assert find_kwargs["data_fim"] == start_of_today
+
+    count_filters = repository.count.await_args.kwargs["filters"]
+    assert count_filters["data_agendamento"]["$lt"] == start_of_today
+
+
+@pytest.mark.asyncio
+async def test_get_appointments_with_filters_rejects_invalid_scope() -> None:
+    """Invalid scopes should surface as validation errors to the caller."""
+
+    repository = MagicMock()
+    repository.find_by_filters = AsyncMock()
+    repository.count = AsyncMock()
+
+    service = AppointmentService(repository, excel_parser=MagicMock())
+
+    result = await service.get_appointments_with_filters(scope="future")
+
+    assert result["success"] is False
+    assert "Escopo inválido" in result["message"]
+    repository.find_by_filters.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_create_appointment_with_logistics_package() -> None:
     """Selecting a logistics package should override logistics fields automatically."""
 

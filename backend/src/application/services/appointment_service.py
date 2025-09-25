@@ -220,6 +220,7 @@ class AppointmentService:
         driver_id: Optional[str] = None,
         page: int = 1,
         page_size: int = 50,
+        scope: Optional[str] = None,
     ) -> Dict:
         """
         Get appointments with filters and pagination.
@@ -232,6 +233,7 @@ class AppointmentService:
             driver_id: Filter by driver ID
             page: Page number (1-based)
             page_size: Number of items per page
+            scope: Temporal scope for appointments ("current" or "history")
 
         Returns:
             Dict: Filtered appointments with pagination info
@@ -242,13 +244,15 @@ class AppointmentService:
 
             # Parse date if provided
             parsed_dates = self._parse_filter_date(data)
+            scope_dates = self._get_scope_date_range(scope)
+            effective_dates = self._combine_date_filters(parsed_dates, scope_dates)
 
             # Get appointments
             appointments = await self.appointment_repository.find_by_filters(
                 nome_unidade=nome_unidade,
                 nome_marca=nome_marca,
-                data_inicio=parsed_dates[0],
-                data_fim=parsed_dates[1],
+                data_inicio=effective_dates[0],
+                data_fim=effective_dates[1],
                 status=status,
                 driver_id=driver_id,
                 skip=skip,
@@ -257,7 +261,7 @@ class AppointmentService:
 
             # Get total count for pagination
             filters = self._build_pagination_filters(
-                nome_unidade, nome_marca, status, parsed_dates
+                nome_unidade, nome_marca, status, effective_dates
             )
             if driver_id:
                 filters["driver_id"] = driver_id
@@ -276,6 +280,21 @@ class AppointmentService:
                     "total_pages": total_pages,
                     "has_next": page < total_pages,
                     "has_previous": page > 1,
+                },
+            }
+
+        except ValueError as exc:
+            return {
+                "success": False,
+                "message": str(exc),
+                "appointments": [],
+                "pagination": {
+                    "page": page,
+                    "page_size": page_size,
+                    "total_items": 0,
+                    "total_pages": 0,
+                    "has_next": False,
+                    "has_previous": False,
                 },
             }
 
@@ -1059,6 +1078,57 @@ class AppointmentService:
         end_of_day = parsed_date + timedelta(days=1)
 
         return start_of_day, end_of_day
+
+    def _get_scope_date_range(
+        self, scope: Optional[str]
+    ) -> tuple[Optional[datetime], Optional[datetime]]:
+        """Return the date bounds associated with a temporal scope."""
+
+        if scope is None:
+            return None, None
+
+        normalized = scope.strip().lower()
+        if normalized not in {"current", "history"}:
+            raise ValueError("Escopo inválido. Utilize 'current' ou 'history'.")
+
+        start_of_today = datetime.utcnow().replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+
+        if normalized == "current":
+            return start_of_today, None
+
+        return None, start_of_today
+
+    def _combine_date_filters(
+        self,
+        explicit_range: tuple[Optional[datetime], Optional[datetime]],
+        scope_range: tuple[Optional[datetime], Optional[datetime]],
+    ) -> tuple[Optional[datetime], Optional[datetime]]:
+        """Merge explicit date filters with scope constraints."""
+
+        explicit_start, explicit_end = explicit_range
+        scope_start, scope_end = scope_range
+
+        start: Optional[datetime]
+        end: Optional[datetime]
+
+        if explicit_start and scope_start:
+            start = max(explicit_start, scope_start)
+        else:
+            start = explicit_start or scope_start
+
+        if explicit_end and scope_end:
+            end = min(explicit_end, scope_end)
+        else:
+            end = explicit_end or scope_end
+
+        if start and end and start >= end:
+            raise ValueError(
+                "Intervalo de datas inválido após aplicar o escopo informado."
+            )
+
+        return start, end
 
     def _build_pagination_filters(
         self,

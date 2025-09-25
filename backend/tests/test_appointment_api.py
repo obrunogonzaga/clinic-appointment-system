@@ -117,6 +117,40 @@ def test_create_appointment_success(client: TestClient) -> None:
     assert data["message"] == "Agendamento criado com sucesso"
 
 
+def test_list_appointments_with_scope(client: TestClient) -> None:
+    """GET endpoint should forward the scope parameter to the service layer."""
+
+    service_mock = MagicMock()
+    service_mock.get_appointments_with_filters = AsyncMock(
+        return_value={
+            "success": True,
+            "message": None,
+            "appointments": [],
+            "pagination": {
+                "page": 1,
+                "page_size": 50,
+                "total_items": 0,
+                "total_pages": 0,
+                "has_next": False,
+                "has_previous": False,
+            },
+        }
+    )
+
+    async def override_service() -> MagicMock:
+        return service_mock
+
+    app.dependency_overrides[get_appointment_service] = override_service
+    try:
+        response = client.get("/api/v1/appointments/?scope=current")
+    finally:
+        app.dependency_overrides.pop(get_appointment_service, None)
+
+    assert response.status_code == 200
+    await_args = service_mock.get_appointments_with_filters.await_args
+    assert await_args.kwargs["scope"] == "current"
+
+
 @pytest.mark.parametrize(
     "error_code,status_code",
     [
