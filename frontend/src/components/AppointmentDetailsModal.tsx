@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { isAxiosError } from 'axios';
 import { Modal } from './ui/Modal';
 import { TagSelector } from './tags/TagSelector';
@@ -12,6 +12,7 @@ import type { ActiveCollector } from '../types/collector';
 import type { ActiveDriver } from '../types/driver';
 import type { Tag } from '../types/tag';
 import type { AppointmentUpdateRequest } from '../types/appointment';
+import type { LogisticsPackage } from '../types/logistics-package';
 
 interface AppointmentDetailsModalProps {
   appointmentId: string | null;
@@ -24,6 +25,7 @@ interface AppointmentDetailsModalProps {
   maxTags?: number;
   onEditSuccess?: (message: string) => void;
   onEditError?: (message: string) => void;
+  logisticsPackages: LogisticsPackage[];
 }
 
 type FormValues = {
@@ -32,6 +34,7 @@ type FormValues = {
   observacoes: string;
   driver_id: string;
   collector_id: string;
+  logistics_package_id: string;
   tags: string[];
   nome_unidade: string;
   nome_marca: string;
@@ -162,6 +165,7 @@ export function AppointmentDetailsModal({
   maxTags = 5,
   onEditSuccess,
   onEditError,
+  logisticsPackages,
 }: AppointmentDetailsModalProps) {
   const { data: appointment, isLoading, isError, error } = useAppointmentDetails(
     appointmentId
@@ -178,6 +182,7 @@ export function AppointmentDetailsModal({
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     defaultValues: {
@@ -186,6 +191,7 @@ export function AppointmentDetailsModal({
       observacoes: '',
       driver_id: '',
       collector_id: '',
+      logistics_package_id: '',
       tags: [],
       nome_unidade: '',
       nome_marca: '',
@@ -236,6 +242,7 @@ export function AppointmentDetailsModal({
         observacoes: appointment.observacoes ?? '',
         driver_id: appointment.driver_id ?? '',
         collector_id: appointment.collector_id ?? '',
+        logistics_package_id: appointment.logistics_package_id ?? '',
         tags: (appointment.tags ?? []).map((tagItem) => tagItem.id),
         nome_unidade: appointment.nome_unidade ?? '',
         nome_marca: appointment.nome_marca ?? '',
@@ -270,6 +277,32 @@ export function AppointmentDetailsModal({
       setActiveTab('appointment');
     }
   }, [isOpen]);
+
+  const logisticsPackagesById = useMemo(
+    () => new Map(logisticsPackages.map(pkg => [pkg.id, pkg])),
+    [logisticsPackages]
+  );
+
+  const selectedLogisticsPackageId = useWatch({
+    control,
+    name: 'logistics_package_id',
+  });
+
+  useEffect(() => {
+    if (!selectedLogisticsPackageId) {
+      return;
+    }
+
+    const selectedPackage = logisticsPackagesById.get(selectedLogisticsPackageId);
+    if (!selectedPackage) {
+      return;
+    }
+
+    const shouldDirty = appointment?.logistics_package_id !== selectedLogisticsPackageId;
+    setValue('driver_id', selectedPackage.driver_id, { shouldDirty });
+    setValue('collector_id', selectedPackage.collector_id, { shouldDirty });
+    setValue('carro', selectedPackage.car_display_name, { shouldDirty });
+  }, [selectedLogisticsPackageId, logisticsPackagesById, setValue, appointment]);
 
   const handleClose = () => {
     setIsEditing(false);
@@ -338,6 +371,11 @@ export function AppointmentDetailsModal({
     const collectorId = values.collector_id || null;
     if (collectorId !== (appointment.collector_id ?? null)) {
       payload.collector_id = collectorId;
+    }
+
+    const packageId = values.logistics_package_id || null;
+    if (packageId !== (appointment.logistics_package_id ?? null)) {
+      payload.logistics_package_id = packageId;
     }
 
     const currentTagIds = (appointment.tags ?? []).map((tagItem) => tagItem.id);
@@ -472,6 +510,7 @@ export function AppointmentDetailsModal({
         observacoes: updated.observacoes ?? '',
         driver_id: updated.driver_id ?? '',
         collector_id: updated.collector_id ?? '',
+        logistics_package_id: updated.logistics_package_id ?? '',
         tags: (updated.tags ?? []).map((tagItem) => tagItem.id),
         nome_unidade: updated.nome_unidade ?? '',
         nome_marca: updated.nome_marca ?? '',
@@ -613,11 +652,15 @@ export function AppointmentDetailsModal({
       {
         key: 'team',
         title: 'Equipe designada',
-        items: [
-          { label: 'Motorista', value: driverName },
-          { label: 'Coletora', value: collectorName },
-        ],
-      },
+      items: [
+        {
+          label: 'Pacote logístico',
+          value: ensureValue(appointment.logistics_package_name),
+        },
+        { label: 'Motorista', value: driverName },
+        { label: 'Coletora', value: collectorName },
+      ],
+    },
     ];
 
     if (hasNormalizedAddress) {
@@ -1095,6 +1138,25 @@ export function AppointmentDetailsModal({
         return (
           <section className="mt-4 space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {logisticsPackages.length > 0 && (
+                <div className="md:col-span-2">
+                  <label className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Pacote logístico
+                  </label>
+                  <select
+                    {...register('logistics_package_id')}
+                    className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isUpdating}
+                  >
+                    <option value="">Sem pacote pré-definido</option>
+                    {logisticsPackages.map((pkg) => (
+                      <option key={pkg.id} value={pkg.id}>
+                        {pkg.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="text-xs font-medium uppercase tracking-wide text-gray-500">
                   Motorista

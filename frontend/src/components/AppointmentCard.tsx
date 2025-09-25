@@ -179,6 +179,12 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
       {/* Body */}
       <div className={`mt-4 grid grid-cols-1 gap-4 ${compact ? '' : 'md:grid-cols-2'}`}>
         <div className="space-y-4">
+          {appointment.logistics_package_name && (
+            <div>
+              <p className={detailLabelClass}>Pacote logístico</p>
+              <p className={detailValueClass}>{appointment.logistics_package_name}</p>
+            </div>
+          )}
           <div>
             <p className={detailLabelClass}>Data e horário</p>
             <div className={`mt-1 flex flex-wrap items-center gap-2 ${detailValueClass}`}>

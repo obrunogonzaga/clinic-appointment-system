@@ -201,6 +201,11 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
 
           return (
             <div className="space-y-3 text-sm text-gray-600">
+              {appointment.logistics_package_name && (
+                <div className="rounded-md border border-blue-100 bg-blue-50 px-2 py-1 text-xs text-blue-700">
+                  Pacote: {appointment.logistics_package_name}
+                </div>
+              )}
               <div>
                 <span className="text-xs font-medium uppercase tracking-wide text-gray-500">Motorista</span>
                 <select

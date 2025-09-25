@@ -40,6 +40,7 @@ from src.infrastructure.config import Settings, get_settings
 from src.infrastructure.container import (
     get_appointment_repository,
     get_car_repository,
+    get_logistics_package_repository,
     get_tag_repository,
 )
 from src.infrastructure.repositories.appointment_repository import (
@@ -62,6 +63,7 @@ async def get_appointment_service(
         get_appointment_repository
     ),
     car_repository=Depends(get_car_repository),
+    logistics_package_repository=Depends(get_logistics_package_repository),
     tag_repository: TagRepository = Depends(get_tag_repository),
     settings: Settings = Depends(get_settings),
 ) -> AppointmentService:
@@ -92,6 +94,7 @@ async def get_appointment_service(
     return AppointmentService(
         appointment_repository,
         excel_parser,
+        logistics_package_repository=logistics_package_repository,
         tag_repository=tag_repository,
         max_tags_per_appointment=settings.max_tags_per_appointment,
     )

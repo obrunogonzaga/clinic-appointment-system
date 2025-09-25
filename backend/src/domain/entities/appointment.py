@@ -47,6 +47,12 @@ class Appointment(Entity):
     carro: Optional[str] = Field(
         None, description="Informações do carro utilizado"
     )
+    logistics_package_id: Optional[str] = Field(
+        None, description="ID do pacote logístico atribuído"
+    )
+    logistics_package_name: Optional[str] = Field(
+        None, description="Nome do pacote logístico selecionado"
+    )
     observacoes: Optional[str] = Field(
         None, description="Observações adicionais"
     )

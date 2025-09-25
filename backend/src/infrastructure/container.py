@@ -16,6 +16,9 @@ from src.infrastructure.repositories.driver_repository import DriverRepository
 from src.infrastructure.repositories.user_repository import UserRepository
 from src.infrastructure.repositories.notification_repository import NotificationRepository
 from src.infrastructure.repositories.tag_repository import TagRepository
+from src.infrastructure.repositories.logistics_package_repository import (
+    LogisticsPackageRepository,
+)
 from src.infrastructure.services.redis_service import RedisService
 from src.infrastructure.services.rate_limiter import RateLimiter
 
@@ -42,6 +45,9 @@ class Container:
         self._user_repository: Optional[UserRepository] = None
         self._notification_repository: Optional[NotificationRepository] = None
         self._tag_repository: Optional[TagRepository] = None
+        self._logistics_package_repository: Optional[
+            LogisticsPackageRepository
+        ] = None
         self._redis_service: Optional[RedisService] = None
         self._rate_limiter: Optional[RateLimiter] = None
 
@@ -136,6 +142,16 @@ class Container:
         return self._collector_repository
 
     @property
+    def logistics_package_repository(self) -> LogisticsPackageRepository:
+        """Get logistics package repository instance."""
+
+        if self._logistics_package_repository is None:
+            self._logistics_package_repository = LogisticsPackageRepository(
+                self.database
+            )
+        return self._logistics_package_repository
+
+    @property
     def user_repository(self) -> UserRepository:
         """
         Get user repository instance.
@@ -214,6 +230,7 @@ class Container:
             await self.user_repository.ensure_indexes()
             await self.notification_repository.create_indexes()
             await self.tag_repository.ensure_indexes()
+            await self.logistics_package_repository.create_indexes()
             print("✅ Database indexes created")
         except Exception as e:
             print(f"❌ Failed to connect to MongoDB: {e}")
@@ -314,3 +331,9 @@ async def get_user_repository() -> UserRepository:
 async def get_tag_repository() -> TagRepository:
     """Dependency for getting tag repository instance."""
     return container.tag_repository
+
+
+async def get_logistics_package_repository() -> LogisticsPackageRepository:
+    """Dependency for getting logistics package repository instance."""
+
+    return container.logistics_package_repository
