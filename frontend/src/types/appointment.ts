@@ -93,7 +93,7 @@ export interface AppointmentFilter {
   driver_id?: string;
   page?: number;
   page_size?: number;
-  scope?: 'current' | 'history';
+  scope?: 'current' | 'history' | 'unscheduled';
 }
 
 export interface PaginationInfo {
