@@ -249,24 +249,6 @@ export const AppointmentsPage: React.FC = () => {
     [filteredAppointments]
   );
 
-  const handleDriverChange = async (appointmentId: string, driverId: string) => {
-    try {
-      await appointmentAPI.updateAppointmentDriver(appointmentId, driverId);
-      queryClient.invalidateQueries({ queryKey: ['appointments'] });
-    } catch (error) {
-      console.error('Error updating appointment driver:', error);
-    }
-  };
-
-  const handleCollectorChange = async (appointmentId: string, collectorId: string) => {
-    try {
-      await appointmentAPI.updateAppointmentCollector(appointmentId, collectorId);
-      queryClient.invalidateQueries({ queryKey: ['appointments'] });
-    } catch (error) {
-      console.error('Error updating appointment collector:', error);
-    }
-  };
-
   const handleLogisticsPackageChange = async (
     appointmentId: string,
     logisticsPackageId: string | null,
