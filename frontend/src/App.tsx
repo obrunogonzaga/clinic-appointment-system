@@ -1,77 +1,42 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState } from 'react';
-import { HashRouter, Route, Routes } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import { Navigation } from './components/Navigation';
+import React from 'react';
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { APP_ROUTES } from './config/appRoutes';
+import MainLayout from './components/layout/MainLayout';
 import { PrivateRoute } from './components/PrivateRoute';
+import { withRole } from './components/withRole';
+import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { AppointmentsPage } from './pages/AppointmentsPage';
-import { CarsPage } from './pages/CarsPage';
-import { CollectorsPage } from './pages/CollectorsPage';
-import { Dashboard } from './pages/Dashboard';
+import { useAuth } from './hooks/useAuth';
+import { PublicRegister } from './pages/PublicRegister';
 import { DriverRoutePage } from './pages/DriverRoutePage';
-import { DriversPage } from './pages/DriversPage';
+import { ForbiddenPage } from './pages/Forbidden';
 import { Login } from './pages/Login';
 import { Setup } from './pages/Setup';
-import { UsersPage } from './pages/UsersPage';
-import { PublicRegister } from './pages/PublicRegister';
 import { VerifyEmail } from './pages/VerifyEmail';
-import { TagsPage } from './pages/TagsPage';
-import { LogisticsPackagesPage } from './pages/LogisticsPackagesPage';
+import { ROLES } from './constants/roles';
+import { resolveUserRole } from './utils/session';
 
-// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 5 * 60 * 1000,
     },
   },
 });
 
-function Shell() {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [isNavigationCollapsed, setIsNavigationCollapsed] = useState(false);
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <Dashboard onTabChange={setActiveTab} />;
-      case 'appointments':
-        return <AppointmentsPage />;
-      case 'drivers':
-        return <DriversPage />;
-      case 'collectors':
-        return <CollectorsPage />;
-      case 'cars':
-        return <CarsPage />;
-      case 'logistics':
-        return <LogisticsPackagesPage />;
-      case 'users':
-        return <UsersPage />;
-      case 'tags':
-        return <TagsPage />;
-      default:
-        return <Dashboard onTabChange={setActiveTab} />;
-    }
-  };
-  return (
-    <PrivateRoute>
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 flex transition-colors duration-300">
-        <Navigation
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          isCollapsed={isNavigationCollapsed}
-          onToggleCollapse={() =>
-            setIsNavigationCollapsed((previousState) => !previousState)
-          }
-        />
-        <main className="flex-1 p-8 transition-all duration-300">
-          {renderContent()}
-        </main>
-      </div>
-    </PrivateRoute>
-  );
-}
+const DashboardRedirect: React.FC = () => {
+  const { user } = useAuth();
+  const role = resolveUserRole(user);
+
+  if (!role) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const target = role === ROLES.ADMIN ? '/dashboard/admin' : '/dashboard/operacao';
+  return <Navigate to={target} replace />;
+};
 
 function App() {
   return (
@@ -80,20 +45,43 @@ function App() {
         <ThemeProvider>
           <HashRouter>
             <Routes>
-              {/* Public routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<PublicRegister />} />
               <Route path="/setup" element={<Setup />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/verify-email/:token" element={<VerifyEmail />} />
 
-              {/* Protected routes */}
-              <Route path="/routes/driver" element={
-                <PrivateRoute>
-                  <DriverRoutePage />
-                </PrivateRoute>
-              } />
-              <Route path="*" element={<Shell />} />
+              <Route
+                path="/routes/driver"
+                element={
+                  <PrivateRoute>
+                    <DriverRoutePage />
+                  </PrivateRoute>
+                }
+              />
+
+              <Route
+                element={
+                  <PrivateRoute>
+                    <MainLayout />
+                  </PrivateRoute>
+                }
+              >
+                <Route path="/dashboard" element={<DashboardRedirect />} />
+                {APP_ROUTES.map((route) => {
+                  const GuardedComponent = withRole(route.Component, route.allowedRoles);
+                  return (
+                    <Route
+                      key={route.id}
+                      path={route.path}
+                      element={<GuardedComponent />}
+                    />
+                  );
+                })}
+                <Route path="/403" element={<ForbiddenPage />} />
+              </Route>
+
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </HashRouter>
         </ThemeProvider>

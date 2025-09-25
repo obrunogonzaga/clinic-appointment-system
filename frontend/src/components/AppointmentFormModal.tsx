@@ -24,7 +24,7 @@ interface AppointmentFormModalProps {
   collectors: ActiveCollector[];
   tags: Tag[];
   maxTags?: number;
-  logisticsPackages: LogisticsPackage[];
+  logisticsPackages?: LogisticsPackage[];
 }
 
 const DEFAULT_BRAND = 'Sergio Franco';
@@ -105,7 +105,7 @@ export function AppointmentFormModal({
   collectors,
   tags,
   maxTags = 5,
-  logisticsPackages,
+  logisticsPackages = [],
 }: AppointmentFormModalProps) {
   const statusChoices = useMemo(() => {
     const provided = statuses && statuses.length > 0 ? statuses : [...APPOINTMENT_STATUS_OPTIONS];
@@ -171,7 +171,7 @@ export function AppointmentFormModal({
   });
 
   const logisticsPackagesById = useMemo(() => {
-    return new Map(logisticsPackages.map(pkg => [pkg.id, pkg]));
+    return new Map(logisticsPackages.map((pkg) => [pkg.id, pkg]));
   }, [logisticsPackages]);
 
   const selectedLogisticsPackageId = useWatch({
