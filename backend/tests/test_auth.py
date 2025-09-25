@@ -18,6 +18,7 @@ from src.infrastructure.config import Settings
 def mock_user_repository():
     """Mock user repository for testing."""
     repository = AsyncMock()
+    repository.get_inactive_by_email.return_value = None
     return repository
 
 

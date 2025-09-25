@@ -16,6 +16,7 @@ from src.presentation.api.v1.endpoints import (
     cars,
     collectors,
     drivers,
+    logistics_packages,
     notifications,
     reports,
     tags,
@@ -54,6 +55,12 @@ api_v1_router.include_router(
 api_v1_router.include_router(cars.router, prefix="/cars", tags=["Cars"])
 
 api_v1_router.include_router(
+    logistics_packages.router,
+    prefix="/logistics-packages",
+    tags=["Logistics Packages"],
+)
+
+api_v1_router.include_router(
     reports.router, prefix="/reports", tags=["Reports"]
 )
 
@@ -79,6 +86,7 @@ async def api_v1_root() -> dict[str, Any]:
             "drivers": f"{settings.api_v1_prefix}/drivers",
             "collectors": f"{settings.api_v1_prefix}/collectors",
             "cars": f"{settings.api_v1_prefix}/cars",
+            "logistics_packages": f"{settings.api_v1_prefix}/logistics-packages",
             "reports": f"{settings.api_v1_prefix}/reports",
             "notifications": f"{settings.api_v1_prefix}/notifications",
         },

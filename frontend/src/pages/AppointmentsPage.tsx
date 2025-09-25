@@ -18,7 +18,7 @@ import { ToastContainer } from '../components/ui/Toast';
 import { ViewModeToggle, type ViewMode } from '../components/ViewModeToggle';
 import { AppointmentTable } from '../components/AppointmentTable';
 import { AppointmentKpiCards } from '../components/AppointmentKpiCards';
-import { appointmentAPI, collectorAPI, driverAPI, tagAPI } from '../services/api';
+import { appointmentAPI, collectorAPI, driverAPI, logisticsPackageAPI, tagAPI } from '../services/api';
 import { useToast } from '../hooks/useToast';
 import type {
   AppointmentCreateRequest,
@@ -90,6 +90,13 @@ export const AppointmentsPage: React.FC = () => {
     queryKey: ['activeCollectors'],
     queryFn: () => collectorAPI.getActiveCollectors(),
     refetchOnWindowFocus: false,
+  });
+
+  const { data: logisticsPackagesData } = useQuery({
+    queryKey: ['activeLogisticsPackages'],
+    queryFn: () => logisticsPackageAPI.listActivePackages(),
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: tagsData } = useQuery({
@@ -260,6 +267,21 @@ export const AppointmentsPage: React.FC = () => {
     }
   };
 
+  const handleLogisticsPackageChange = async (
+    appointmentId: string,
+    logisticsPackageId: string | null,
+  ) => {
+    try {
+      await appointmentAPI.updateAppointment(appointmentId, {
+        logistics_package_id: logisticsPackageId,
+      });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+    } catch (error) {
+      console.error('Error updating appointment logistics package:', error);
+      showToastError('Não foi possível atualizar o pacote logístico.');
+    }
+  };
+
   return (
     <>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
@@ -275,6 +297,7 @@ export const AppointmentsPage: React.FC = () => {
         collectors={collectorsData?.collectors || []}
         tags={tagsData?.data ?? []}
         maxTags={maxTagsPerAppointment}
+        logisticsPackages={logisticsPackagesData?.data ?? []}
       />
 
       <AppointmentDetailsModal
@@ -288,6 +311,7 @@ export const AppointmentsPage: React.FC = () => {
         maxTags={maxTagsPerAppointment}
         onEditSuccess={showToastSuccess}
         onEditError={showToastError}
+        logisticsPackages={logisticsPackagesData?.data ?? []}
       />
 
       <div className="space-y-6">
@@ -413,10 +437,10 @@ export const AppointmentsPage: React.FC = () => {
               appointments={filteredAppointments}
               drivers={driversData?.drivers || []}
               collectors={collectorsData?.collectors || []}
+              logisticsPackages={logisticsPackagesData?.data || []}
               isLoading={isLoadingAppointments}
               onStatusChange={handleStatusChange}
-              onDriverChange={handleDriverChange}
-              onCollectorChange={handleCollectorChange}
+              onLogisticsPackageChange={handleLogisticsPackageChange}
               onDelete={handleDelete}
               onSelect={openAppointmentDetails}
             />
@@ -427,10 +451,10 @@ export const AppointmentsPage: React.FC = () => {
               appointments={filteredAppointments}
               drivers={driversData?.drivers || []}
               collectors={collectorsData?.collectors || []}
+              logisticsPackages={logisticsPackagesData?.data || []}
               isLoading={isLoadingAppointments}
               onStatusChange={handleStatusChange}
-              onDriverChange={handleDriverChange}
-              onCollectorChange={handleCollectorChange}
+              onLogisticsPackageChange={handleLogisticsPackageChange}
               onDelete={handleDelete}
               onSelect={openAppointmentDetails}
             />
@@ -444,11 +468,11 @@ export const AppointmentsPage: React.FC = () => {
               onDateSelect={setSelectedDate}
               onMonthChange={setCurrentCalendarDate}
               onAppointmentStatusChange={handleStatusChange}
-              onAppointmentDriverChange={handleDriverChange}
-              onAppointmentCollectorChange={handleCollectorChange}
+              onAppointmentLogisticsPackageChange={handleLogisticsPackageChange}
               onAppointmentDelete={handleDelete}
               drivers={driversData?.drivers || []}
               collectors={collectorsData?.collectors || []}
+              logisticsPackages={logisticsPackagesData?.data || []}
               isLoading={isLoadingAppointments}
             />
           )}
@@ -478,10 +502,10 @@ export const AppointmentsPage: React.FC = () => {
                 selectedDate={selectedAgendaDate}
                 isLoading={isLoadingAppointments}
                 onAppointmentStatusChange={handleStatusChange}
-                onAppointmentDriverChange={handleDriverChange}
-                onAppointmentCollectorChange={handleCollectorChange}
+                onAppointmentLogisticsPackageChange={handleLogisticsPackageChange}
                 onAppointmentDelete={handleDelete}
                 onDateChange={setSelectedAgendaDate}
+                logisticsPackages={logisticsPackagesData?.data || []}
               />
             </div>
           )}

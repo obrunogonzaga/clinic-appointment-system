@@ -17,6 +17,7 @@ import { UsersPage } from './pages/UsersPage';
 import { PublicRegister } from './pages/PublicRegister';
 import { VerifyEmail } from './pages/VerifyEmail';
 import { TagsPage } from './pages/TagsPage';
+import { LogisticsPackagesPage } from './pages/LogisticsPackagesPage';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -43,6 +44,8 @@ function Shell() {
         return <CollectorsPage />;
       case 'cars':
         return <CarsPage />;
+      case 'logistics':
+        return <LogisticsPackagesPage />;
       case 'users':
         return <UsersPage />;
       case 'tags':

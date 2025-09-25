@@ -3,16 +3,20 @@ import { AppointmentCard } from './AppointmentCard';
 import type { AppointmentViewModel } from '../types/appointment';
 import type { ActiveDriver } from '../types/driver';
 import type { ActiveCollector } from '../types/collector';
+import type { LogisticsPackage } from '../types/logistics-package';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 
 interface AppointmentCardListProps {
   appointments: AppointmentViewModel[];
   drivers: ActiveDriver[];
   collectors?: ActiveCollector[];
+  logisticsPackages?: LogisticsPackage[];
   isLoading?: boolean;
   onStatusChange: (id: string, status: string) => void;
-  onDriverChange: (appointmentId: string, driverId: string) => void;
-  onCollectorChange?: (appointmentId: string, collectorId: string) => void;
+  onLogisticsPackageChange?: (
+    appointmentId: string,
+    logisticsPackageId: string | null,
+  ) => void;
   onDelete: (id: string) => void;
   onSelect?: (id: string) => void;
 }
@@ -39,10 +43,10 @@ export const AppointmentCardList: React.FC<AppointmentCardListProps> = ({
   appointments,
   drivers,
   collectors = [],
+  logisticsPackages = [],
   isLoading = false,
   onStatusChange,
-  onDriverChange,
-  onCollectorChange,
+  onLogisticsPackageChange,
   onDelete,
   onSelect,
 }) => {
@@ -88,9 +92,9 @@ export const AppointmentCardList: React.FC<AppointmentCardListProps> = ({
           appointment={appointment}
           drivers={drivers}
           collectors={collectors}
+          logisticsPackages={logisticsPackages}
           onStatusChange={onStatusChange}
-          onDriverChange={onDriverChange}
-          onCollectorChange={onCollectorChange}
+          onLogisticsPackageChange={onLogisticsPackageChange}
           onDelete={onDelete}
           compact={isMobile}
           onSelect={onSelect}

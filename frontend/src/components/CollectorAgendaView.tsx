@@ -8,6 +8,7 @@ import React, { useMemo } from 'react';
 import type { AppointmentViewModel } from '../types/appointment';
 import type { ActiveCollector } from '../types/collector';
 import type { ActiveDriver } from '../types/driver';
+import type { LogisticsPackage } from '../types/logistics-package';
 import { AppointmentCard } from './AppointmentCard';
 
 interface CollectorAgendaViewProps {
@@ -17,10 +18,13 @@ interface CollectorAgendaViewProps {
   selectedDate: Date;
   isLoading: boolean;
   onAppointmentStatusChange: (id: string, status: string) => void;
-  onAppointmentDriverChange: (appointmentId: string, driverId: string) => void;
-  onAppointmentCollectorChange: (appointmentId: string, collectorId: string) => void;
+  onAppointmentLogisticsPackageChange?: (
+    appointmentId: string,
+    logisticsPackageId: string | null,
+  ) => void;
   onAppointmentDelete: (id: string) => void;
   onDateChange?: (date: Date) => void;
+  logisticsPackages?: LogisticsPackage[];
 }
 
 interface CollectorAppointments {
@@ -55,10 +59,10 @@ export const CollectorAgendaView: React.FC<CollectorAgendaViewProps> = ({
   selectedDate,
   isLoading,
   onAppointmentStatusChange,
-  onAppointmentDriverChange,
-  onAppointmentCollectorChange,
+  onAppointmentLogisticsPackageChange,
   onAppointmentDelete,
   onDateChange,
+  logisticsPackages = [],
 }) => {
   const selectedDateStr = useMemo(() => {
     return selectedDate.toISOString().split('T')[0];
@@ -426,9 +430,9 @@ export const CollectorAgendaView: React.FC<CollectorAgendaViewProps> = ({
                   appointment={appointment}
                   drivers={drivers}
                   collectors={collectors}
+                  logisticsPackages={logisticsPackages}
                   onStatusChange={onAppointmentStatusChange}
-                  onDriverChange={onAppointmentDriverChange}
-                  onCollectorChange={onAppointmentCollectorChange}
+                  onLogisticsPackageChange={onAppointmentLogisticsPackageChange}
                   onDelete={onAppointmentDelete}
                   compact={true}
                 />

@@ -12,16 +12,20 @@ import React from 'react';
 import type { AppointmentViewModel } from '../types/appointment.ts';
 import type { ActiveCollector } from '../types/collector.ts';
 import type { ActiveDriver } from '../types/driver.ts';
+import type { LogisticsPackage } from '../types/logistics-package';
 import { TagBadge } from './tags/TagBadge';
 
 interface AppointmentTableProps {
   appointments: AppointmentViewModel[];
   drivers?: ActiveDriver[];
   collectors?: ActiveCollector[];
+  logisticsPackages?: LogisticsPackage[];
   isLoading?: boolean;
   onStatusChange?: (id: string, status: string) => void;
-  onDriverChange?: (appointmentId: string, driverId: string) => void;
-  onCollectorChange?: (appointmentId: string, collectorId: string) => void;
+  onLogisticsPackageChange?: (
+    appointmentId: string,
+    logisticsPackageId: string | null,
+  ) => void;
   onDelete?: (id: string) => void;
   onSelect?: (appointmentId: string) => void;
 }
@@ -54,16 +58,28 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
   appointments,
   drivers = [],
   collectors = [],
+  logisticsPackages = [],
   isLoading = false,
   onStatusChange,
-  onDriverChange,
-  onCollectorChange,
+  onLogisticsPackageChange,
   onDelete,
   onSelect,
 }) => {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: 'data_agendamento', desc: false },
   ]);
+
+  const resolveAssignedName = (
+    assignedId: string | undefined | null,
+    people: Array<{ id: string; nome_completo: string }>,
+  ): string => {
+    if (!assignedId) {
+      return 'Não atribuído';
+    }
+
+    const match = people.find(person => person.id === assignedId);
+    return match?.nome_completo ?? 'Não atribuído';
+  };
 
   const columns = React.useMemo<ColumnDef<AppointmentViewModel>[]>(
     () => [
@@ -198,39 +214,50 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
           const carroInfo = appointment.carro || '';
           const carroMatch = carroInfo.match(/Carro:\s*([^|]+)/);
           const carro = carroMatch ? carroMatch[1].trim() : carroInfo;
+          const driverName = resolveAssignedName(appointment.driver_id, drivers);
+          const collectorName = resolveAssignedName(appointment.collector_id, collectors);
 
           return (
             <div className="space-y-3 text-sm text-gray-600">
-              <div>
-                <span className="text-xs font-medium uppercase tracking-wide text-gray-500">Motorista</span>
-                <select
-                  value={appointment.driver_id || ''}
-                  onChange={(e) => onDriverChange?.(appointment.id, e.target.value)}
-                  className="mt-1 w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Selecionar motorista</option>
-                  {drivers.map((driver) => (
-                    <option key={driver.id} value={driver.id}>
-                      {driver.nome_completo}
-                    </option>
-                  ))}
-                </select>
+              <div className="space-y-1">
+                <span className="text-xs font-medium uppercase tracking-wide text-gray-500">Pacote logístico</span>
+                {onLogisticsPackageChange ? (
+                  <select
+                    value={appointment.logistics_package_id || ''}
+                    onChange={(event) =>
+                      onLogisticsPackageChange(
+                        appointment.id,
+                        event.target.value ? event.target.value : null,
+                      )
+                    }
+                    className="w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Sem pacote logístico</option>
+                    {logisticsPackages.map(logisticsPackage => (
+                      <option key={logisticsPackage.id} value={logisticsPackage.id}>
+                        {logisticsPackage.nome}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="rounded-md border border-blue-100 bg-blue-50 px-2 py-1 text-xs text-blue-700">
+                    {appointment.logistics_package_name || 'Sem pacote atribuído'}
+                  </div>
+                )}
               </div>
 
               <div>
                 <span className="text-xs font-medium uppercase tracking-wide text-gray-500">Coletora</span>
-                <select
-                  value={appointment.collector_id || ''}
-                  onChange={(e) => onCollectorChange?.(appointment.id, e.target.value)}
-                  className="mt-1 w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="">Selecionar coletora</option>
-                  {collectors.map((collector) => (
-                    <option key={collector.id} value={collector.id}>
-                      {collector.nome_completo}
-                    </option>
-                  ))}
-                </select>
+                <div className="mt-1 rounded-md border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-700">
+                  {collectorName}
+                </div>
+              </div>
+
+              <div>
+                <span className="text-xs font-medium uppercase tracking-wide text-gray-500">Motorista</span>
+                <div className="mt-1 rounded-md border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-700">
+                  {driverName}
+                </div>
               </div>
 
               {carro && (
@@ -263,7 +290,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
         ),
       },
     ],
-    [collectors, drivers, onCollectorChange, onDelete, onDriverChange, onSelect, onStatusChange]
+    [collectors, drivers, logisticsPackages, onDelete, onLogisticsPackageChange, onSelect, onStatusChange]
   );
 
   const table = useReactTable({

@@ -20,6 +20,8 @@ export interface Appointment {
   driver_id?: string;
   collector_id?: string;
   car_id?: string;
+   logistics_package_id?: string;
+   logistics_package_name?: string;
   canal_confirmacao?: string;
   data_confirmacao?: string;
   hora_confirmacao?: string;
@@ -75,6 +77,8 @@ export interface AppointmentCreateRequest {
   observacoes?: string;
   driver_id?: string;
   collector_id?: string;
+  car_id?: string;
+  logistics_package_id?: string;
   numero_convenio?: string;
   nome_convenio?: string;
   carteira_convenio?: string;
@@ -162,6 +166,7 @@ export interface AppointmentUpdateRequest {
   driver_id?: string | null;
   collector_id?: string | null;
   car_id?: string | null;
+  logistics_package_id?: string | null;
   numero_convenio?: string | null;
   nome_convenio?: string | null;
   carteira_convenio?: string | null;

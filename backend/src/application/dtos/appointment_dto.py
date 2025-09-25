@@ -32,6 +32,10 @@ class AppointmentCreateDTO(BaseModel):
     carro: Optional[str] = Field(
         None, description="Informações do carro utilizado"
     )
+    car_id: Optional[str] = Field(None, description="ID do carro selecionado")
+    logistics_package_id: Optional[str] = Field(
+        None, description="ID do pacote logístico aplicado"
+    )
     observacoes: Optional[str] = Field(None, description="Observações")
     driver_id: Optional[str] = Field(None, description="ID do Motorista")
     collector_id: Optional[str] = Field(None, description="ID da Coletora")
@@ -71,6 +75,8 @@ class AppointmentResponseDTO(BaseModel):
     telefone: Optional[str] = None
     carro: Optional[str] = None
     car_id: Optional[str] = None
+    logistics_package_id: Optional[str] = None
+    logistics_package_name: Optional[str] = None
     observacoes: Optional[str] = None
     driver_id: Optional[str] = None
     collector_id: Optional[str] = None
@@ -199,6 +205,7 @@ class AppointmentFullUpdateDTO(BaseModel):
     driver_id: Optional[str] = None
     collector_id: Optional[str] = None
     car_id: Optional[str] = None
+    logistics_package_id: Optional[str] = None
     # Campos de convênio
     numero_convenio: Optional[str] = None
     nome_convenio: Optional[str] = None

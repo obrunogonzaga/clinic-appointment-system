@@ -18,11 +18,11 @@ export const AppointmentCalendarView: React.FC<CalendarViewProps> = ({
   onDateSelect,
   onMonthChange,
   onAppointmentStatusChange,
-  onAppointmentDriverChange,
-  onAppointmentCollectorChange,
+  onAppointmentLogisticsPackageChange,
   onAppointmentDelete,
   drivers = [],
   collectors = [],
+  logisticsPackages = [],
   isLoading = false,
 }) => {
   const [modalDate, setModalDate] = useState<Date | null>(null);
@@ -159,11 +159,11 @@ export const AppointmentCalendarView: React.FC<CalendarViewProps> = ({
           date={modalDate}
           appointments={modalAppointments}
           onStatusChange={onAppointmentStatusChange}
-          onDriverChange={onAppointmentDriverChange}
-          onCollectorChange={onAppointmentCollectorChange}
+          onLogisticsPackageChange={onAppointmentLogisticsPackageChange}
           onDelete={onAppointmentDelete}
           drivers={drivers}
           collectors={collectors}
+          logisticsPackages={logisticsPackages}
         />
       )}
     </div>

@@ -1,4 +1,5 @@
 import type { AppointmentViewModel } from './appointment';
+import type { LogisticsPackage } from './logistics-package';
 
 export interface CalendarDay {
   date: Date;
@@ -27,11 +28,14 @@ export interface CalendarViewProps {
   onDateSelect: (date: Date) => void;
   onMonthChange: (date: Date) => void;
   onAppointmentStatusChange?: (id: string, status: string) => void;
-  onAppointmentDriverChange?: (appointmentId: string, driverId: string) => void;
-  onAppointmentCollectorChange?: (appointmentId: string, collectorId: string) => void;
+  onAppointmentLogisticsPackageChange?: (
+    appointmentId: string,
+    logisticsPackageId: string | null,
+  ) => void;
   onAppointmentDelete?: (id: string) => void;
   drivers?: Array<{ id: string; nome_completo: string; cnh?: string; telefone?: string }>;
   collectors?: Array<{ id: string; nome_completo: string; cpf?: string; telefone?: string }>;
+  logisticsPackages?: LogisticsPackage[];
   isLoading?: boolean;
 }
 
@@ -41,11 +45,14 @@ export interface DayModalProps {
   date: Date;
   appointments: AppointmentViewModel[];
   onStatusChange?: (id: string, status: string) => void;
-  onDriverChange?: (appointmentId: string, driverId: string) => void;
-  onCollectorChange?: (appointmentId: string, collectorId: string) => void;
+  onLogisticsPackageChange?: (
+    appointmentId: string,
+    logisticsPackageId: string | null,
+  ) => void;
   onDelete?: (id: string) => void;
   drivers?: Array<{ id: string; nome_completo: string; cnh?: string; telefone?: string }>;
   collectors?: Array<{ id: string; nome_completo: string; cpf?: string; telefone?: string }>;
+  logisticsPackages?: LogisticsPackage[];
 }
 
 export interface CalendarNavigationProps {
