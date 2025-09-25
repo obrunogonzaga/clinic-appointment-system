@@ -451,10 +451,10 @@ export const AppointmentsPage: React.FC = () => {
               appointments={filteredAppointments}
               drivers={driversData?.drivers || []}
               collectors={collectorsData?.collectors || []}
+              logisticsPackages={logisticsPackagesData?.data || []}
               isLoading={isLoadingAppointments}
               onStatusChange={handleStatusChange}
-              onDriverChange={handleDriverChange}
-              onCollectorChange={handleCollectorChange}
+              onLogisticsPackageChange={handleLogisticsPackageChange}
               onDelete={handleDelete}
               onSelect={openAppointmentDetails}
             />
