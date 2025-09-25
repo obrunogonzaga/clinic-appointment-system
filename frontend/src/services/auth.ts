@@ -21,7 +21,19 @@ import type {
   VerifyEmailResponse,
 } from '../types/auth';
 
-const API_BASE_URL = window.ENV?.API_URL || import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const resolveBaseUrl = (): string => {
+  if (typeof window !== 'undefined' && window?.ENV?.API_URL) {
+    return window.ENV.API_URL;
+  }
+
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL as string;
+  }
+
+  return 'http://localhost:8000';
+};
+
+const API_BASE_URL = resolveBaseUrl();
 
 // Create axios instance with default configuration
 const authApi = axios.create({
@@ -48,9 +60,11 @@ authApi.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Only redirect if not already on auth pages
-      const currentPath = window.location.pathname;
-      if (!currentPath.includes('/login') && !currentPath.includes('/setup')) {
-        window.location.href = '/login';
+      if (typeof window !== 'undefined') {
+        const currentPath = window.location.pathname;
+        if (!currentPath.includes('/login') && !currentPath.includes('/setup')) {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);
@@ -61,9 +75,11 @@ adminApi.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      const currentPath = window.location.pathname;
-      if (!currentPath.includes('/login') && !currentPath.includes('/setup')) {
-        window.location.href = '/login';
+      if (typeof window !== 'undefined') {
+        const currentPath = window.location.pathname;
+        if (!currentPath.includes('/login') && !currentPath.includes('/setup')) {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);

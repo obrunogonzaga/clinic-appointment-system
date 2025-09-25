@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node -e \"const fs=require('node:fs');fs.rmSync('dist-tests',{recursive:true,force:true});require('esbuild').buildSync({entryPoints:['src/tests/smoke/appointments.test.tsx'],bundle:true,platform:'node',format:'cjs',outfile:'dist-tests/appointments.test.cjs',logLevel:'error',jsx:'automatic'});\" && node --test dist-tests/appointments.test.cjs"
+    "test": "node -e \"const fs=require('node:fs');fs.rmSync('dist-tests',{recursive:true,force:true});require('esbuild').buildSync({entryPoints:['src/tests/smoke/appointments.test.tsx','src/tests/navigation/rbac-navigation.test.tsx','src/tests/navigation/rbac-routes.test.tsx'],bundle:true,platform:'node',format:'cjs',outdir:'dist-tests',logLevel:'error',jsx:'automatic',outExtension:{'.js':'.cjs'}});\" && node --test dist-tests"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",

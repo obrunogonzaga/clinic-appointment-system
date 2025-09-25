@@ -59,7 +59,7 @@ import type {
 } from '../types/logistics-package';
 
 const resolveApiBaseUrl = (): string => {
-  if (typeof window !== 'undefined' && window.ENV?.API_URL) {
+  if (typeof window !== 'undefined' && window?.ENV?.API_URL) {
     return window.ENV.API_URL;
   }
 
