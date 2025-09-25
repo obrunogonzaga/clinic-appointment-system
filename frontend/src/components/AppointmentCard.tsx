@@ -11,9 +11,9 @@ import {
 } from '@heroicons/react/24/outline';
 import React from 'react';
 import type { AppointmentViewModel } from '../types/appointment';
-import type { ActiveCar } from '../types/car';
 import type { ActiveCollector } from '../types/collector';
 import type { ActiveDriver } from '../types/driver';
+import type { LogisticsPackage } from '../types/logistics-package';
 import { formatDate } from '../utils/dateUtils';
 import { getStatusBadgeClass } from '../utils/statusColors';
 import { TagBadge } from './tags/TagBadge';
@@ -22,11 +22,12 @@ interface AppointmentCardProps {
   appointment: AppointmentViewModel;
   drivers: ActiveDriver[];
   collectors?: ActiveCollector[];
-  cars?: ActiveCar[];
   onStatusChange: (id: string, status: string) => void;
-  onDriverChange: (appointmentId: string, driverId: string) => void;
-  onCollectorChange?: (appointmentId: string, collectorId: string) => void;
-  onCarChange?: (appointmentId: string, carId: string) => void;
+  logisticsPackages?: LogisticsPackage[];
+  onLogisticsPackageChange?: (
+    appointmentId: string,
+    logisticsPackageId: string | null,
+  ) => void;
   onDelete: (id: string) => void;
   compact?: boolean;
   onSelect?: (id: string) => void;
@@ -48,30 +49,14 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
   appointment,
   drivers,
   collectors = [],
-  cars = [],
+  logisticsPackages = [],
   onStatusChange,
-  onDriverChange,
-  onCollectorChange,
-  onCarChange,
+  onLogisticsPackageChange,
   onDelete,
   compact = false,
   onSelect,
 }) => {
-  // Get car info from linked car or carro field
   const getCarInfo = (): string => {
-    // First try to get info from linked car (car_id)
-    if (appointment.car_id && cars.length > 0) {
-      const linkedCar = cars.find(car => car.id === appointment.car_id);
-      if (linkedCar) {
-        let info = linkedCar.nome;
-        if (linkedCar.placa) {
-          info += ` (${linkedCar.placa})`;
-        }
-        return info;
-      }
-    }
-
-    // Fallback to carro field (string format from Excel)
     if (appointment.carro) {
       const carroRegex = /Carro:\s*([^|]+)/;
       const carroMatch = carroRegex.exec(appointment.carro);
@@ -80,6 +65,21 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
 
     return '-';
   };
+
+  const resolveAssignedName = (
+    assignedId: string | undefined | null,
+    people: Array<{ id: string; nome_completo: string }>,
+  ): string => {
+    if (!assignedId) {
+      return 'Não atribuído';
+    }
+
+    const match = people.find(person => person.id === assignedId);
+    return match?.nome_completo ?? 'Não atribuído';
+  };
+
+  const driverName = resolveAssignedName(appointment.driver_id, drivers);
+  const collectorName = resolveAssignedName(appointment.collector_id, collectors);
 
   const handleDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -179,12 +179,12 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
       {/* Body */}
       <div className={`mt-4 grid grid-cols-1 gap-4 ${compact ? '' : 'md:grid-cols-2'}`}>
         <div className="space-y-4">
-          {appointment.logistics_package_name && (
-            <div>
-              <p className={detailLabelClass}>Pacote logístico</p>
-              <p className={detailValueClass}>{appointment.logistics_package_name}</p>
-            </div>
-          )}
+          <div>
+            <p className={detailLabelClass}>Pacote logístico</p>
+            <p className={detailValueClass}>
+              {appointment.logistics_package_name || 'Sem pacote atribuído'}
+            </p>
+          </div>
           <div>
             <p className={detailLabelClass}>Data e horário</p>
             <div className={`mt-1 flex flex-wrap items-center gap-2 ${detailValueClass}`}>
@@ -291,76 +291,55 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
               </div>
             </div>
           )}
+
+          <div>
+            <p className={detailLabelClass}>Motorista</p>
+            <div className={`mt-1 flex items-center gap-2 ${detailValueClass}`}>
+              <UserIcon className="w-4 h-4 text-gray-400" />
+              <span className="leading-snug">{driverName}</span>
+            </div>
+          </div>
+
+          <div>
+            <p className={detailLabelClass}>Coletor(a)</p>
+            <div className={`mt-1 flex items-center gap-2 ${detailValueClass}`}>
+              <UserIcon className="w-4 h-4 text-gray-400" />
+              <span className="leading-snug">{collectorName}</span>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Footer */}
       <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-800">
-        <div className="flex flex-col gap-2 mb-3 md:flex-row">
-          {/* Driver Selection */}
-          <div className="flex-1">
-            <select
-              value={appointment.driver_id || ''}
-              onChange={(e) => onDriverChange(appointment.id, e.target.value)}
-              className={`
-                w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-100 rounded px-2 py-1.5 
-                focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-indigo-400 focus:border-blue-500 dark:focus:border-indigo-400
-                ${compact ? 'text-xs' : 'text-sm'}
-              `}
-            >
-              <option value="">Selecionar motorista</option>
-              {drivers.map((driver) => (
-                <option key={driver.id} value={driver.id}>
-                  {driver.nome_completo}
-                </option>
-              ))}
-            </select>
+        {onLogisticsPackageChange && (
+          <div className="flex flex-col gap-2 mb-3 md:flex-row">
+            <div className="flex-1">
+              <select
+                value={appointment.logistics_package_id || ''}
+                onChange={(event) =>
+                  onLogisticsPackageChange(
+                    appointment.id,
+                    event.target.value ? event.target.value : null,
+                  )
+                }
+                className={`
+                  w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-100 rounded px-2 py-1.5 
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-indigo-400 focus:border-blue-500 dark:focus:border-indigo-400
+                  ${compact ? 'text-xs' : 'text-sm'}
+                `}
+                aria-label="Selecionar pacote logístico"
+              >
+                <option value="">Sem pacote logístico</option>
+                {logisticsPackages.map((logisticsPackage) => (
+                  <option key={logisticsPackage.id} value={logisticsPackage.id}>
+                    {logisticsPackage.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-
-          {/* Collector Selection */}
-          {onCollectorChange && (
-            <div className="flex-1">
-              <select
-                value={appointment.collector_id || ''}
-                onChange={(e) => onCollectorChange(appointment.id, e.target.value)}
-                className={`
-                  w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-100 rounded px-2 py-1.5 
-                  focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-indigo-400 focus:border-blue-500 dark:focus:border-indigo-400
-                  ${compact ? 'text-xs' : 'text-sm'}
-                `}
-              >
-                <option value="">Selecionar coletor</option>
-                {collectors.map((collector) => (
-                  <option key={collector.id} value={collector.id}>
-                    {collector.nome_completo}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Car Selection */}
-          {onCarChange && cars.length > 0 && (
-            <div className="flex-1">
-              <select
-                value={appointment.car_id || ''}
-                onChange={(e) => onCarChange(appointment.id, e.target.value)}
-                className={`
-                  w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-100 rounded px-2 py-1.5 
-                  focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-indigo-400 focus:border-blue-500 dark:focus:border-indigo-400
-                  ${compact ? 'text-xs' : 'text-sm'}
-                `}
-              >
-                <option value="">Selecionar carro</option>
-                {cars.map((car) => (
-                  <option key={car.id} value={car.id}>
-                    {car.nome} {car.placa ? `(${car.placa})` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
+        )}
 
         {/* Actions */}
         <div className="flex justify-end">
