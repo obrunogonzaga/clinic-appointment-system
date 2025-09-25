@@ -43,7 +43,7 @@ export const AppointmentsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedAppointmentId = searchParams.get('itemId');
 
-  const [scope, setScope] = useState<'current' | 'history'>('current');
+  const [scope, setScope] = useState<'current' | 'history' | 'unscheduled'>('current');
   const [filters, setFilters] = useState<AppointmentFilter>({
     page: 1,
     page_size: 50,
@@ -161,9 +161,10 @@ export const AppointmentsPage: React.FC = () => {
   }, [scope, selectedAppointmentId]);
 
   const isHistoryScope = scope === 'history';
+  const isUnscheduledScope = scope === 'unscheduled';
   const canEdit = !isHistoryScope;
 
-  const handleScopeChange = (nextScope: 'current' | 'history') => {
+  const handleScopeChange = (nextScope: 'current' | 'history' | 'unscheduled') => {
     if (nextScope === scope) {
       return;
     }
@@ -352,6 +353,17 @@ export const AppointmentsPage: React.FC = () => {
             >
               Histórico
             </button>
+            <button
+              type="button"
+              onClick={() => handleScopeChange('unscheduled')}
+              className={`px-4 py-2 text-sm font-medium rounded-full transition ${
+                scope === 'unscheduled'
+                  ? 'bg-blue-600 text-white shadow'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Sem Data
+            </button>
           </div>
 
           {isHistoryScope && (
@@ -369,7 +381,9 @@ export const AppointmentsPage: React.FC = () => {
               Gerenciamento de Agendamentos
             </h1>
             <p className="mt-2 text-gray-500">
-              {canEdit
+              {isUnscheduledScope
+                ? 'Agendamentos sem data definida aguardando agendamento.'
+                : canEdit
                 ? 'Faça upload de arquivos Excel e gerencie agendamentos.'
                 : 'Visualize agendamentos concluídos para fins de consulta e auditoria.'}
             </p>

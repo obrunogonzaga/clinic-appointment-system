@@ -289,21 +289,37 @@ class AppointmentService:
             # Parse date if provided
             parsed_dates = self._parse_filter_date(data)
             scope_bounds = self._resolve_scope_bounds(scope)
-            date_bounds = self._merge_scope_with_dates(parsed_dates, scope_bounds)
-
-            # Get appointments
-            appointments = await self.appointment_repository.find_by_filters(
-                nome_unidade=nome_unidade,
-                nome_marca=nome_marca,
-                data_inicio=date_bounds[0],
-                data_fim=date_bounds[1],
-                status=status,
-                driver_id=driver_id,
-                skip=skip,
-                limit=page_size,
-            )
+            
+            # Check if this is unscheduled scope
+            if scope == AppointmentScope.UNSCHEDULED:
+                # For unscheduled, we need to filter by null dates
+                appointments = await self.appointment_repository.find_by_filters(
+                    nome_unidade=nome_unidade,
+                    nome_marca=nome_marca,
+                    data_inicio="unscheduled",  # Special marker
+                    data_fim="unscheduled",      # Special marker
+                    status=status,
+                    driver_id=driver_id,
+                    skip=skip,
+                    limit=page_size,
+                )
+            else:
+                date_bounds = self._merge_scope_with_dates(parsed_dates, scope_bounds)
+                # Get appointments
+                appointments = await self.appointment_repository.find_by_filters(
+                    nome_unidade=nome_unidade,
+                    nome_marca=nome_marca,
+                    data_inicio=date_bounds[0],
+                    data_fim=date_bounds[1],
+                    status=status,
+                    driver_id=driver_id,
+                    skip=skip,
+                    limit=page_size,
+                )
 
             # Get total count for pagination
+            if scope == AppointmentScope.UNSCHEDULED:
+                date_bounds = ("unscheduled", "unscheduled")
             filters = self._build_pagination_filters(
                 nome_unidade, nome_marca, status, date_bounds
             )
@@ -1124,6 +1140,9 @@ class AppointmentService:
             return start_of_today, None
         if scope == AppointmentScope.HISTORY:
             return None, start_of_today
+        if scope == AppointmentScope.UNSCHEDULED:
+            # Special marker for unscheduled appointments
+            return "unscheduled", "unscheduled"
         return None, None
 
     def _merge_scope_with_dates(
@@ -1158,7 +1177,10 @@ class AppointmentService:
             filters["nome_marca"] = {"$regex": nome_marca, "$options": "i"}
         if status:
             filters["status"] = status
-        if date_bounds[0] or date_bounds[1]:
+        # Check for special "unscheduled" marker
+        if date_bounds[0] == "unscheduled" and date_bounds[1] == "unscheduled":
+            filters["data_agendamento"] = None
+        elif date_bounds[0] or date_bounds[1]:
             # Use "$lt" for the upper bound to match the repository behavior
             # (start inclusive, end exclusive).
             date_filter: Dict[str, Any] = {}

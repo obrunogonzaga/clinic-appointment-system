@@ -173,7 +173,11 @@ class AppointmentRepository(AppointmentRepositoryInterface):
         if nome_marca:
             query["nome_marca"] = {"$regex": nome_marca, "$options": "i"}
 
-        if data_inicio or data_fim:
+        # Check for special "unscheduled" marker
+        if data_inicio == "unscheduled" and data_fim == "unscheduled":
+            # Filter for appointments without a date
+            query["data_agendamento"] = None
+        elif data_inicio or data_fim:
             date_filter = {}
             if data_inicio:
                 date_filter["$gte"] = data_inicio

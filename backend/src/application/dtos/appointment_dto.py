@@ -15,6 +15,7 @@ class AppointmentScope(str, Enum):
 
     CURRENT = "current"
     HISTORY = "history"
+    UNSCHEDULED = "unscheduled"
 
 
 class AppointmentCreateDTO(BaseModel):

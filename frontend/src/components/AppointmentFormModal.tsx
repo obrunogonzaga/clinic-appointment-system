@@ -36,7 +36,23 @@ const formSchema = z.object({
   nome_marca: z.string().trim().min(1, 'Informe a marca/clinica'),
   nome_unidade: z.string().trim().min(1, 'Informe a unidade'),
   nome_paciente: z.string().trim().min(1, 'Informe o nome do paciente'),
-  date: z.string().trim().optional(),
+  date: z
+    .string()
+    .trim()
+    .optional()
+    .refine((value) => {
+      if (!value) return true;
+      
+      // Parse the date string to get year, month, day
+      const [year, month, day] = value.split('-').map(Number);
+      const selected = new Date(year, month - 1, day);
+      selected.setHours(0, 0, 0, 0);
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      return selected >= today;
+    }, 'Data deve ser hoje ou no futuro'),
   time: z
     .string()
     .trim()
@@ -71,6 +87,11 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+const getMinDate = () => {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+};
 
 export function AppointmentFormModal({
   isOpen,
@@ -190,10 +211,19 @@ export function AppointmentFormModal({
 
     let scheduledAt: string | undefined;
 
-    if (trimmedDate && trimmedTime) {
-      const composed = new Date(`${trimmedDate}T${trimmedTime}:00`);
-      if (!Number.isNaN(composed.getTime())) {
-        scheduledAt = composed.toISOString();
+    if (trimmedDate) {
+      if (trimmedTime) {
+        // Com data e hora: usar ambos
+        const composed = new Date(`${trimmedDate}T${trimmedTime}:00`);
+        if (!Number.isNaN(composed.getTime())) {
+          scheduledAt = composed.toISOString();
+        }
+      } else {
+        // Apenas data: adicionar horário padrão 00:00:00
+        const composed = new Date(`${trimmedDate}T00:00:00`);
+        if (!Number.isNaN(composed.getTime())) {
+          scheduledAt = composed.toISOString();
+        }
       }
     }
 
@@ -320,6 +350,7 @@ export function AppointmentFormModal({
             <input
               type="date"
               {...register('date')}
+              min={getMinDate()}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               disabled={isSubmitting}
             />
