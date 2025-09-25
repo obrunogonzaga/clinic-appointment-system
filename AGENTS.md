@@ -13,6 +13,7 @@ Python modules use 4-space indentation, snake_case for files/functions, and Pasc
 - The project uses TanStack Query v5. Always pass explicit generics to hooks like `useQuery`/`useMutation` so the compiler knows the data shape.
 - To preserve previous data while paginating, use `placeholderData: keepPreviousData` (imported from `@tanstack/react-query`) instead of the deprecated `keepPreviousData` option.
 - Keep the config aligned with TypeScript `noImplicitAny`; if a callback parameter needs typing (e.g., `map(tag => …)`), annotate it.
+- TypeScript builds run with `noUnusedLocals`. Quando desabilitar interações (ex.: selects in-line), remova ou reutilize handlers ligados a elas e execute `npm run build` antes do deploy para evitar falhas na pipeline.
 
 ## Testing Guidelines
 Mirror backend module names with `test_<module>.py` files and lean on fixtures in `backend/tests/conftest.py`; add integration tests whenever repositories or external gateways change. Frontend specs belong next to their components with a `.test.tsx` suffix and run through `npm test`. End-to-end flows live in the top-level `tests/` package—seed sample data via `make db-seed` and execute `npm run e2e` from that directory.
