@@ -1,10 +1,13 @@
 """Tests for appointment service business logic."""
 
-from datetime import datetime
+import io
+from datetime import datetime, timedelta
 from uuid import uuid4
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+
+from types import SimpleNamespace
 
 from src.application.dtos.appointment_dto import (
     AppointmentCreateDTO,
@@ -117,6 +120,53 @@ async def test_create_appointment_internal_error() -> None:
 
     assert result["success"] is False
     assert result["error_code"] == "internal"
+
+
+@pytest.mark.asyncio
+async def test_import_excel_blocks_past_dates() -> None:
+    """Import should fail when appointments contain past-dated entries."""
+
+    today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    past_day = today - timedelta(days=1)
+
+    appointment = Appointment(
+        nome_marca="Marca",
+        nome_unidade="Unidade",
+        nome_paciente="Paciente",
+        data_agendamento=past_day,
+        hora_agendamento="09:00",
+        status="Confirmado",
+        telefone="11999988888",
+    )
+
+    parse_result = SimpleNamespace(
+        success=True,
+        appointments=[appointment],
+        errors=[],
+        total_rows=1,
+        valid_rows=1,
+        invalid_rows=0,
+    )
+
+    repository = MagicMock()
+    repository.create_many = AsyncMock()
+    excel_parser = MagicMock()
+    excel_parser.parse_excel_file = AsyncMock(return_value=parse_result)
+
+    service = AppointmentService(repository, excel_parser=excel_parser)
+
+    result = await service.import_appointments_from_excel(
+        io.BytesIO(b""),
+        "agendamentos.xlsx",
+        replace_existing=False,
+        uploaded_by="Analista",
+    )
+
+    assert result["success"] is False
+    assert result["past_appointments_blocked"] == 1
+    assert result["imported_appointments"] == 0
+    assert any("passado" in message.lower() for message in result["errors"])
+    repository.create_many.assert_not_awaited()
 
 
 @pytest.mark.asyncio

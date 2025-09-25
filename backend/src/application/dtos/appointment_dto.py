@@ -1,14 +1,20 @@
-"""
-Data Transfer Objects for appointment operations.
-"""
+"""Data Transfer Objects for appointment operations."""
 
 from datetime import datetime
+from enum import Enum
 from typing import Dict, List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from src.application.dtos.tag_dto import TagSummaryDTO
+
+
+class AppointmentScope(str, Enum):
+    """Allowed temporal segments for appointment listings."""
+
+    CURRENT = "current"
+    HISTORY = "history"
 
 
 class AppointmentCreateDTO(BaseModel):
@@ -130,6 +136,10 @@ class AppointmentFilterDTO(BaseModel):
     status: Optional[str] = None
     page: int = Field(1, ge=1, description="Página")
     page_size: int = Field(50, ge=1, le=100, description="Itens por página")
+    scope: AppointmentScope = Field(
+        default=AppointmentScope.CURRENT,
+        description="Conjunto temporal (current|history)",
+    )
 
 
 class PaginationDTO(BaseModel):
@@ -165,6 +175,8 @@ class ExcelUploadResponseDTO(BaseModel):
     duplicates_found: int = 0
     errors: List[str] = []
     processing_time: Optional[float] = None
+    past_appointments_blocked: int = 0
+    past_appointments_examples: List[str] = []
 
 
 class FilterOptionsDTO(BaseModel):

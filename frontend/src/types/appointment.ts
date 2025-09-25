@@ -93,6 +93,7 @@ export interface AppointmentFilter {
   driver_id?: string;
   page?: number;
   page_size?: number;
+  scope?: 'current' | 'history';
 }
 
 export interface PaginationInfo {
@@ -122,6 +123,8 @@ export interface ExcelUploadResponse {
   duplicates_found: number;
   errors: string[];
   processing_time?: number;
+  past_appointments_blocked?: number;
+  past_appointments_examples?: string[];
 }
 
 export interface FilterOptions {

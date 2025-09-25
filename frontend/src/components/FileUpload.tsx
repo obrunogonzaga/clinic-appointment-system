@@ -97,6 +97,34 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       setUploadProgress(100);
 
       setTimeout(() => {
+        if (!result.success) {
+          stopUploading();
+          setIsModalOpen(false);
+
+          const summarySegments: string[] = [];
+          if (result.message) {
+            summarySegments.push(result.message);
+          }
+          if (result.past_appointments_blocked) {
+            summarySegments.push(
+              `Datas no passado: ${result.past_appointments_blocked}`
+            );
+          }
+          if (result.past_appointments_examples && result.past_appointments_examples.length > 0) {
+            summarySegments.push(
+              `Exemplos: ${result.past_appointments_examples.slice(0, 3).join(' | ')}`
+            );
+          }
+          if (result.errors && result.errors.length > 0) {
+            summarySegments.push(
+              `Detalhes: ${result.errors.slice(0, 3).join(' | ')}`
+            );
+          }
+
+          onUploadError(summarySegments.join(' — ') || 'Planilha contém inconsistências.');
+          return;
+        }
+
         onUploadSuccess(result);
         stopUploading();
         setIsModalOpen(false);

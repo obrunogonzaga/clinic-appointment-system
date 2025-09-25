@@ -24,6 +24,7 @@ export const AppointmentCalendarView: React.FC<CalendarViewProps> = ({
   collectors = [],
   logisticsPackages = [],
   isLoading = false,
+  isReadOnly = false,
 }) => {
   const [modalDate, setModalDate] = useState<Date | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -164,6 +165,7 @@ export const AppointmentCalendarView: React.FC<CalendarViewProps> = ({
           drivers={drivers}
           collectors={collectors}
           logisticsPackages={logisticsPackages}
+          isReadOnly={isReadOnly}
         />
       )}
     </div>

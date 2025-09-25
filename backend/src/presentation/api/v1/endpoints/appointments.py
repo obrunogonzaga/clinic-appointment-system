@@ -21,6 +21,7 @@ from src.application.dtos.appointment_dto import (
     AppointmentFullUpdateDTO,
     AppointmentListResponseDTO,
     AppointmentResponseDTO,
+    AppointmentScope,
     AppointmentUpdateDTO,
     DashboardStatsDTO,
     ExcelUploadResponseDTO,
@@ -242,6 +243,10 @@ async def get_appointments(
     driver_id: str = Query(None, description="Filtrar por ID do motorista"),
     page: int = Query(1, ge=1, description="Número da página"),
     page_size: int = Query(50, ge=1, le=100, description="Itens por página"),
+    scope: AppointmentScope = Query(
+        AppointmentScope.CURRENT,
+        description="Segmento temporal (current|history)",
+    ),
     service: AppointmentService = Depends(get_appointment_service),
 ) -> AppointmentListResponseDTO:
     """
@@ -269,6 +274,7 @@ async def get_appointments(
             driver_id=driver_id,
             page=page,
             page_size=page_size,
+            scope=scope,
         )
 
         # Convert to response DTOs

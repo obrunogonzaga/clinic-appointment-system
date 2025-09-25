@@ -37,6 +37,7 @@ export interface CalendarViewProps {
   collectors?: Array<{ id: string; nome_completo: string; cpf?: string; telefone?: string }>;
   logisticsPackages?: LogisticsPackage[];
   isLoading?: boolean;
+  isReadOnly?: boolean;
 }
 
 export interface DayModalProps {
@@ -53,6 +54,7 @@ export interface DayModalProps {
   drivers?: Array<{ id: string; nome_completo: string; cnh?: string; telefone?: string }>;
   collectors?: Array<{ id: string; nome_completo: string; cpf?: string; telefone?: string }>;
   logisticsPackages?: LogisticsPackage[];
+  isReadOnly?: boolean;
 }
 
 export interface CalendarNavigationProps {

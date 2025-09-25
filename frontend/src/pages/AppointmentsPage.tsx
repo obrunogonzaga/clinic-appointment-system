@@ -5,7 +5,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { isAxiosError } from 'axios';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AppointmentCardList } from '../components/AppointmentCardList';
 import { AppointmentCalendarView } from '../components/AppointmentCalendarView';
@@ -43,9 +43,11 @@ export const AppointmentsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedAppointmentId = searchParams.get('itemId');
 
+  const [scope, setScope] = useState<'current' | 'history'>('current');
   const [filters, setFilters] = useState<AppointmentFilter>({
     page: 1,
-    page_size: 50
+    page_size: 50,
+    scope: 'current'
   });
   const [uploadResult, setUploadResult] = useState<ExcelUploadResponse | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -138,11 +140,39 @@ export const AppointmentsPage: React.FC = () => {
   const handleUploadError = (error: string) => {
     setUploadError(error);
     setUploadResult(null);
-    
+
     // Auto-hide error message after 5 seconds
     setTimeout(() => {
       setUploadError(null);
     }, 5000);
+
+    if (error) {
+      showToastError(error);
+    }
+  };
+
+  useEffect(() => {
+    if (scope === 'history') {
+      setIsCreateModalOpen(false);
+      if (selectedAppointmentId) {
+        closeAppointmentDetails();
+      }
+    }
+  }, [scope, selectedAppointmentId]);
+
+  const isHistoryScope = scope === 'history';
+  const canEdit = !isHistoryScope;
+
+  const handleScopeChange = (nextScope: 'current' | 'history') => {
+    if (nextScope === scope) {
+      return;
+    }
+    setScope(nextScope);
+    setFilters(prev => ({
+      ...prev,
+      scope: nextScope,
+      page: 1,
+    }));
   };
 
   const handleCreateAppointment = async (formData: AppointmentCreateRequest) => {
@@ -268,7 +298,7 @@ export const AppointmentsPage: React.FC = () => {
     <>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       <AppointmentFormModal
-        isOpen={isCreateModalOpen}
+        isOpen={isCreateModalOpen && canEdit}
         onClose={() => setIsCreateModalOpen(false)}
         onSubmit={handleCreateAppointment}
         isSubmitting={isCreatingAppointment}
@@ -283,8 +313,8 @@ export const AppointmentsPage: React.FC = () => {
       />
 
       <AppointmentDetailsModal
-        isOpen={Boolean(selectedAppointmentId)}
-        appointmentId={selectedAppointmentId}
+        isOpen={Boolean(selectedAppointmentId) && canEdit}
+        appointmentId={canEdit ? selectedAppointmentId : null}
         onClose={closeAppointmentDetails}
         drivers={driversData?.drivers || []}
         collectors={collectorsData?.collectors || []}
@@ -297,42 +327,83 @@ export const AppointmentsPage: React.FC = () => {
       />
 
       <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold text-gray-900">
-            Gerenciamento de Agendamentos
-          </h1>
-          <p className="mt-2 text-gray-500">
-            Faça upload de arquivos Excel e gerencie agendamentos
-          </p>
+        {/* Scope Toggle */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="inline-flex rounded-full border border-gray-200 bg-white p-1 shadow-sm">
+            <button
+              type="button"
+              onClick={() => handleScopeChange('current')}
+              className={`px-4 py-2 text-sm font-medium rounded-full transition ${
+                scope === 'current'
+                  ? 'bg-blue-600 text-white shadow'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Agendamentos Atuais
+            </button>
+            <button
+              type="button"
+              onClick={() => handleScopeChange('history')}
+              className={`px-4 py-2 text-sm font-medium rounded-full transition ${
+                scope === 'history'
+                  ? 'bg-blue-600 text-white shadow'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Histórico
+            </button>
+          </div>
+
+          {isHistoryScope && (
+            <div className="flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-sm text-amber-700">
+              <span className="font-medium">Modo somente leitura</span>
+              <span>Importações e edições estão desativadas.</span>
+            </div>
+          )}
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-          <button
-            type="button"
-            onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
-            disabled={isCreatingAppointment}
-          >
-            <PlusIcon className="h-5 w-5 mr-2" />
-            Adicionar Agendamento
-          </button>
-          <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 shadow-sm">
-            <span className="text-sm font-medium text-gray-600">Mostrar:</span>
-            <ViewModeToggle
-              viewMode={viewMode}
-              onViewChange={setViewMode}
-              variant="minimal"
-              className="gap-1"
-            />
+        {/* Header */}
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold text-gray-900">
+              Gerenciamento de Agendamentos
+            </h1>
+            <p className="mt-2 text-gray-500">
+              {canEdit
+                ? 'Faça upload de arquivos Excel e gerencie agendamentos.'
+                : 'Visualize agendamentos concluídos para fins de consulta e auditoria.'}
+            </p>
           </div>
-          <FileUpload
-            onUploadSuccess={handleUploadSuccess}
-            onUploadError={handleUploadError}
-          />
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => setIsCreateModalOpen(true)}
+                className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
+                disabled={isCreatingAppointment}
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Adicionar Agendamento
+              </button>
+            )}
+            <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 shadow-sm">
+              <span className="text-sm font-medium text-gray-600">Mostrar:</span>
+              <ViewModeToggle
+                viewMode={viewMode}
+                onViewChange={setViewMode}
+                variant="minimal"
+                className="gap-1"
+              />
+            </div>
+            {canEdit && (
+              <FileUpload
+                onUploadSuccess={handleUploadSuccess}
+                onUploadError={handleUploadError}
+              />
+            )}
+          </div>
         </div>
-      </div>
 
       {(uploadResult || uploadError) && (
         <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
@@ -421,10 +492,13 @@ export const AppointmentsPage: React.FC = () => {
               collectors={collectorsData?.collectors || []}
               logisticsPackages={logisticsPackagesData?.data || []}
               isLoading={isLoadingAppointments}
-              onStatusChange={handleStatusChange}
-              onLogisticsPackageChange={handleLogisticsPackageChange}
-              onDelete={handleDelete}
-              onSelect={openAppointmentDetails}
+              onStatusChange={canEdit ? handleStatusChange : undefined}
+              onLogisticsPackageChange={
+                canEdit ? handleLogisticsPackageChange : undefined
+              }
+              onDelete={canEdit ? handleDelete : undefined}
+              onSelect={canEdit ? openAppointmentDetails : undefined}
+              isReadOnly={!canEdit}
             />
           )}
 
@@ -435,10 +509,13 @@ export const AppointmentsPage: React.FC = () => {
               collectors={collectorsData?.collectors || []}
               logisticsPackages={logisticsPackagesData?.data || []}
               isLoading={isLoadingAppointments}
-              onStatusChange={handleStatusChange}
-              onLogisticsPackageChange={handleLogisticsPackageChange}
-              onDelete={handleDelete}
-              onSelect={openAppointmentDetails}
+              onStatusChange={canEdit ? handleStatusChange : undefined}
+              onLogisticsPackageChange={
+                canEdit ? handleLogisticsPackageChange : undefined
+              }
+              onDelete={canEdit ? handleDelete : undefined}
+              onSelect={canEdit ? openAppointmentDetails : undefined}
+              isReadOnly={!canEdit}
             />
           )}
 
@@ -449,13 +526,18 @@ export const AppointmentsPage: React.FC = () => {
               selectedDate={selectedDate}
               onDateSelect={setSelectedDate}
               onMonthChange={setCurrentCalendarDate}
-              onAppointmentStatusChange={handleStatusChange}
-              onAppointmentLogisticsPackageChange={handleLogisticsPackageChange}
-              onAppointmentDelete={handleDelete}
+              onAppointmentStatusChange={
+                canEdit ? handleStatusChange : undefined
+              }
+              onAppointmentLogisticsPackageChange={
+                canEdit ? handleLogisticsPackageChange : undefined
+              }
+              onAppointmentDelete={canEdit ? handleDelete : undefined}
               drivers={driversData?.drivers || []}
               collectors={collectorsData?.collectors || []}
               logisticsPackages={logisticsPackagesData?.data || []}
               isLoading={isLoadingAppointments}
+              isReadOnly={!canEdit}
             />
           )}
 
@@ -483,11 +565,16 @@ export const AppointmentsPage: React.FC = () => {
                 drivers={driversData?.drivers || []}
                 selectedDate={selectedAgendaDate}
                 isLoading={isLoadingAppointments}
-                onAppointmentStatusChange={handleStatusChange}
-                onAppointmentLogisticsPackageChange={handleLogisticsPackageChange}
-                onAppointmentDelete={handleDelete}
+                onAppointmentStatusChange={
+                  canEdit ? handleStatusChange : undefined
+                }
+                onAppointmentLogisticsPackageChange={
+                  canEdit ? handleLogisticsPackageChange : undefined
+                }
+                onAppointmentDelete={canEdit ? handleDelete : undefined}
                 onDateChange={setSelectedAgendaDate}
                 logisticsPackages={logisticsPackagesData?.data || []}
+                isReadOnly={!canEdit}
               />
             </div>
           )}

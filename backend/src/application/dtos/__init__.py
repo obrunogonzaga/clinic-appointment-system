@@ -7,6 +7,7 @@ from .appointment_dto import (
     AppointmentFilterDTO,
     AppointmentListResponseDTO,
     AppointmentResponseDTO,
+    AppointmentScope,
     DashboardStatsDTO,
     ExcelUploadResponseDTO,
 )
@@ -23,6 +24,7 @@ __all__ = [
     "AppointmentResponseDTO",
     "AppointmentFilterDTO",
     "AppointmentListResponseDTO",
+    "AppointmentScope",
     "ExcelUploadResponseDTO",
     "DashboardStatsDTO",
     "TagCreateDTO",

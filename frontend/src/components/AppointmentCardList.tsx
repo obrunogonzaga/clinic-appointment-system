@@ -12,13 +12,14 @@ interface AppointmentCardListProps {
   collectors?: ActiveCollector[];
   logisticsPackages?: LogisticsPackage[];
   isLoading?: boolean;
-  onStatusChange: (id: string, status: string) => void;
+  onStatusChange?: (id: string, status: string) => void;
   onLogisticsPackageChange?: (
     appointmentId: string,
     logisticsPackageId: string | null,
   ) => void;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
   onSelect?: (id: string) => void;
+  isReadOnly?: boolean;
 }
 
 const CardSkeleton: React.FC = () => (
@@ -49,6 +50,7 @@ export const AppointmentCardList: React.FC<AppointmentCardListProps> = ({
   onLogisticsPackageChange,
   onDelete,
   onSelect,
+  isReadOnly = false,
 }) => {
   const { isMobile } = useResponsiveLayout();
 
@@ -98,6 +100,7 @@ export const AppointmentCardList: React.FC<AppointmentCardListProps> = ({
           onDelete={onDelete}
           compact={isMobile}
           onSelect={onSelect}
+          isReadOnly={isReadOnly}
         />
       ))}
     </div>
