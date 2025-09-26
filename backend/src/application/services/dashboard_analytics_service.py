@@ -88,7 +88,12 @@ class DashboardAnalyticsService:
         confirmed_count = self._sum_statuses(status_counts, self._CONFIRMED_STATUSES)
         cancelled_count = self._sum_statuses(status_counts, self._CANCELLATION_STATUSES)
         no_show_count = self._sum_statuses(status_counts, self._NO_SHOW_STATUSES)
-        pending_count = self._sum_statuses(status_counts, self._PENDING_STATUSES)
+        pending_period_count = self._sum_statuses(
+            status_counts, self._PENDING_STATUSES
+        )
+        pending_alert_count = int(
+            appointment_metrics.get("pending_future_total", pending_period_count)
+        )
 
         confirmation_rate = self._compute_percentage(
             confirmed_count, total_appointments
@@ -120,7 +125,7 @@ class DashboardAnalyticsService:
         )
 
         alerts = self._compose_alerts(
-            pending_count,
+            pending_alert_count,
             no_show_count,
             cancellation_rate,
             confirmation_rate,

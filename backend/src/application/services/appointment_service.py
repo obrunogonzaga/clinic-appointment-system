@@ -618,7 +618,9 @@ class AppointmentService:
                 "statuses": [],
             }
 
-    async def get_dashboard_stats(self) -> Dict:
+    async def get_dashboard_stats(
+        self, start_date: Optional[str] = None, end_date: Optional[str] = None
+    ) -> Dict:
         """
         Get dashboard statistics.
 
@@ -626,7 +628,13 @@ class AppointmentService:
             Dict: Dashboard statistics
         """
         try:
-            stats = await self.appointment_repository.get_appointment_stats()
+            start = self._parse_optional_date(start_date)
+            end = self._parse_optional_date(end_date)
+
+            if start and end and end <= start:
+                raise ValueError("end_date must be greater than start_date")
+
+            stats = await self.appointment_repository.get_appointment_stats(start, end)
 
             return {"success": True, "stats": stats}
 
@@ -642,6 +650,22 @@ class AppointmentService:
                     "total_brands": 0,
                 },
             }
+
+    @staticmethod
+    def _parse_optional_date(raw_date: Optional[str]) -> Optional[datetime]:
+        if not raw_date:
+            return None
+
+        cleaned = raw_date.strip()
+        if not cleaned:
+            return None
+
+        try:
+            parsed = datetime.strptime(cleaned, "%Y-%m-%d")
+        except ValueError as exc:
+            raise ValueError("Formato de data inválido. Use YYYY-MM-DD.") from exc
+
+        return parsed.replace(hour=0, minute=0, second=0, microsecond=0)
 
     async def delete_appointment(self, appointment_id: str) -> Dict:
         """

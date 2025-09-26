@@ -91,19 +91,53 @@ function normalizeUpcomingAppointments(response: AppointmentListResponse | null)
     unit: appointment.nome_unidade ?? 'Unidade não informada',
     brand: appointment.nome_marca ?? 'Marca não informada',
     patient: appointment.nome_paciente ?? 'Paciente não informado',
-    scheduledFor: appointment.data_agendamento ?? '',
+    scheduledFor: buildScheduledDateTime(
+      appointment.data_agendamento,
+      appointment.hora_agendamento,
+    ),
     status: appointment.status ?? 'pendente',
   }));
+}
+
+function buildScheduledDateTime(
+  dateValue: string | null | undefined,
+  timeValue: string | null | undefined,
+): string {
+  if (!dateValue) {
+    return '';
+  }
+
+  if (!timeValue) {
+    return dateValue;
+  }
+
+  const trimmedTime = timeValue.trim();
+  if (!trimmedTime) {
+    return dateValue;
+  }
+
+  const datePart = dateValue.split('T')[0];
+  if (!datePart) {
+    return dateValue;
+  }
+
+  const timeHasSeconds = trimmedTime.split(':').length === 3;
+  const normalizedTime = timeHasSeconds ? trimmedTime : `${trimmedTime}:00`;
+
+  return `${datePart}T${normalizedTime}`;
 }
 
 export async function getOperationDashboardData(
   filter: OperationDateFilter,
 ): Promise<OperationDashboardData> {
   try {
-    const filters = buildOperationFilters(filter);
+    const { appointments, stats: statsRange } = buildOperationFilters(filter);
     const [dashboardStats, upcomingAppointments] = await Promise.all([
-      appointmentAPI.getDashboardStats(),
-      appointmentAPI.getAppointments(filters),
+      appointmentAPI.getDashboardStats({
+        start_date: statsRange.startDate,
+        end_date: statsRange.endDate,
+      }),
+      appointmentAPI.getAppointments(appointments),
     ]);
 
     const stats = dashboardStats.stats;
@@ -127,7 +161,12 @@ export async function getOperationDashboardData(
   }
 }
 
-function buildOperationFilters(filter: OperationDateFilter): AppointmentFilter {
+interface OperationFilters {
+  appointments: AppointmentFilter;
+  stats: { startDate: string; endDate: string };
+}
+
+function buildOperationFilters(filter: OperationDateFilter): OperationFilters {
   const baseDate = new Date();
   baseDate.setHours(0, 0, 0, 0);
 
@@ -137,15 +176,52 @@ function buildOperationFilters(filter: OperationDateFilter): AppointmentFilter {
     scope: 'current',
   };
 
+  const rangeStart = new Date(baseDate);
+
   if (filter === 'today') {
-    params.data = formatAsISODate(baseDate);
-  } else if (filter === 'tomorrow') {
-    const tomorrow = new Date(baseDate);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    params.data = formatAsISODate(tomorrow);
+    const startDate = new Date(rangeStart);
+    const endDate = new Date(rangeStart);
+    endDate.setDate(endDate.getDate() + 1);
+
+    params.data = formatAsISODate(startDate);
+
+    return {
+      appointments: params,
+      stats: {
+        startDate: formatAsISODate(startDate),
+        endDate: formatAsISODate(endDate),
+      },
+    };
   }
 
-  return params;
+  if (filter === 'tomorrow') {
+    const startDate = new Date(rangeStart);
+    startDate.setDate(startDate.getDate() + 1);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 1);
+
+    params.data = formatAsISODate(startDate);
+
+    return {
+      appointments: params,
+      stats: {
+        startDate: formatAsISODate(startDate),
+        endDate: formatAsISODate(endDate),
+      },
+    };
+  }
+
+  const startDate = new Date(rangeStart);
+  const endDate = new Date(rangeStart);
+  endDate.setDate(endDate.getDate() + 7);
+
+  return {
+    appointments: params,
+    stats: {
+      startDate: formatAsISODate(startDate),
+      endDate: formatAsISODate(endDate),
+    },
+  };
 }
 
 export async function getAdminDashboardData(

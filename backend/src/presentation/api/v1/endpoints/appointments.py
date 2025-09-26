@@ -346,6 +346,12 @@ async def get_filter_options(
     description="Get appointment statistics for dashboard",
 )
 async def get_dashboard_stats(
+    start_date: Optional[str] = Query(
+        None, description="Data inicial no formato YYYY-MM-DD"
+    ),
+    end_date: Optional[str] = Query(
+        None, description="Data final exclusiva no formato YYYY-MM-DD"
+    ),
     service: AppointmentService = Depends(get_appointment_service),
 ) -> DashboardStatsDTO:
     """
@@ -358,7 +364,9 @@ async def get_dashboard_stats(
         DashboardStatsDTO: Dashboard statistics
     """
     try:
-        result = await service.get_dashboard_stats()
+        result = await service.get_dashboard_stats(
+            start_date=start_date, end_date=end_date
+        )
 
         return DashboardStatsDTO(
             success=result["success"],

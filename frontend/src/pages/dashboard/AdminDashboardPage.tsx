@@ -213,10 +213,7 @@ const TrendPreview: React.FC<TrendPreviewProps> = ({ trend, loading }) => {
               />
             </div>
             <span className="text-xs text-gray-600 dark:text-slate-300">
-              {new Date(point.date).toLocaleDateString('pt-BR', {
-                day: '2-digit',
-                month: '2-digit',
-              })}
+              {formatTrendLabel(point.date)}
             </span>
           </div>
         ))}
@@ -248,5 +245,24 @@ const EmptyState: React.FC<EmptyStateProps> = ({ message, compact = false }) => 
     {message}
   </div>
 );
+
+function formatTrendLabel(dateValue: string): string {
+  const [datePart] = dateValue.split('T');
+  if (!datePart) {
+    return dateValue;
+  }
+
+  const parts = datePart.split('-');
+  if (parts.length !== 3) {
+    return dateValue;
+  }
+
+  const [year, month, day] = parts;
+  if (!year || !month || !day) {
+    return dateValue;
+  }
+
+  return `${day.padStart(2, '0')}/${month.padStart(2, '0')}`;
+}
 
 export default AdminDashboardPage;

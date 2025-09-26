@@ -5,7 +5,7 @@ MongoDB implementation of AppointmentRepository.
 import asyncio
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -14,6 +14,20 @@ from pymongo import ASCENDING, DESCENDING
 from src.domain.entities.appointment import Appointment
 from src.domain.repositories.appointment_repository_interface import (
     AppointmentRepositoryInterface,
+)
+
+
+_PENDING_STATUS_VALUES: Tuple[str, ...] = (
+    "Pendente",
+    "Autorização",
+    "Autorizacao",
+    "Cadastrar",
+    "Agendado",
+    "Alterar",
+    "Recoleta",
+)
+_PENDING_STATUS_VALUES_LOWER: Tuple[str, ...] = tuple(
+    status.lower() for status in _PENDING_STATUS_VALUES
 )
 
 
@@ -432,33 +446,53 @@ class AppointmentRepository(AppointmentRepositoryInterface):
             # Log error but don't fail startup
             print(f"Warning: Could not create indexes: {e}")
 
-    async def get_appointment_stats(self) -> Dict[str, any]:
+    async def get_appointment_stats(
+        self,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+    ) -> Dict[str, any]:
         """
         Get appointment statistics for dashboard.
 
         Returns:
             Dictionary with appointment statistics
         """
-        pipeline = [
-            {
-                "$group": {
-                    "_id": None,
-                    "total_appointments": {"$sum": 1},
-                    "confirmed_appointments": {
-                        "$sum": {
-                            "$cond": [{"$eq": ["$status", "Confirmado"]}, 1, 0]
-                        }
-                    },
-                    "cancelled_appointments": {
-                        "$sum": {
-                            "$cond": [{"$eq": ["$status", "Cancelado"]}, 1, 0]
-                        }
-                    },
-                    "units": {"$addToSet": "$nome_unidade"},
-                    "brands": {"$addToSet": "$nome_marca"},
+        match_stage: Dict[str, Any] = {}
+        date_conditions: Dict[str, Any] = {}
+        if start_date is not None:
+            date_conditions["$gte"] = start_date
+        if end_date is not None:
+            date_conditions["$lt"] = end_date
+        if date_conditions:
+            match_stage["data_agendamento"] = {**date_conditions}
+
+        pipeline = []
+
+        if match_stage:
+            pipeline.append({"$match": match_stage})
+
+        pipeline.extend(
+            [
+                {
+                    "$group": {
+                        "_id": None,
+                        "total_appointments": {"$sum": 1},
+                        "confirmed_appointments": {
+                            "$sum": {
+                                "$cond": [{"$eq": ["$status", "Confirmado"]}, 1, 0]
+                            }
+                        },
+                        "cancelled_appointments": {
+                            "$sum": {
+                                "$cond": [{"$eq": ["$status", "Cancelado"]}, 1, 0]
+                            }
+                        },
+                        "units": {"$addToSet": "$nome_unidade"},
+                        "brands": {"$addToSet": "$nome_marca"},
+                    }
                 }
-            }
-        ]
+            ]
+        )
 
         result = await self.collection.aggregate(pipeline).to_list(1)
 
@@ -549,11 +583,48 @@ class AppointmentRepository(AppointmentRepositoryInterface):
             },
         ]
 
-        status_result, trend_result, top_units_result, assignments_result = await asyncio.gather(
+        today_utc = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        pending_future_pipeline = [
+            {
+                "$match": {
+                    "$and": [
+                        {
+                            "$expr": {
+                                "$in": [
+                                    {
+                                        "$toLower": {
+                                            "$ifNull": ["$status", ""]
+                                        }
+                                    },
+                                    list(_PENDING_STATUS_VALUES_LOWER),
+                                ]
+                            }
+                        },
+                        {
+                            "$or": [
+                                {"data_agendamento": None},
+                                {"data_agendamento": {"$exists": False}},
+                                {"data_agendamento": {"$gte": today_utc}},
+                            ]
+                        },
+                    ]
+                }
+            },
+            {"$count": "count"},
+        ]
+
+        (
+            status_result,
+            trend_result,
+            top_units_result,
+            assignments_result,
+            pending_future_result,
+        ) = await asyncio.gather(
             self.collection.aggregate(status_pipeline).to_list(None),
             self.collection.aggregate(trend_pipeline).to_list(None),
             self.collection.aggregate(top_units_pipeline).to_list(None),
             self.collection.aggregate(assignments_pipeline).to_list(1),
+            self.collection.aggregate(pending_future_pipeline).to_list(1),
         )
 
         status_counts: Dict[str, int] = {
@@ -593,10 +664,17 @@ class AppointmentRepository(AppointmentRepositoryInterface):
                 ),
             }
 
+        pending_future_total = (
+            int(pending_future_result[0]["count"])
+            if pending_future_result
+            else 0
+        )
+
         return {
             "status_counts": status_counts,
             "trend": trend_points,
             "top_units": top_units,
             "resource_assignments": assignments_summary,
             "total": sum(status_counts.values()),
+            "pending_future_total": pending_future_total,
         }
