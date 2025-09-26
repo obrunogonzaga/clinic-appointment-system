@@ -13,6 +13,9 @@ from src.infrastructure.repositories.collector_repository import (
     CollectorRepository,
 )
 from src.infrastructure.repositories.driver_repository import DriverRepository
+from src.infrastructure.repositories.patient_document_repository import (
+    PatientDocumentRepository,
+)
 from src.infrastructure.repositories.user_repository import UserRepository
 from src.infrastructure.repositories.notification_repository import NotificationRepository
 from src.infrastructure.repositories.tag_repository import TagRepository
@@ -21,6 +24,7 @@ from src.infrastructure.repositories.logistics_package_repository import (
 )
 from src.infrastructure.services.redis_service import RedisService
 from src.infrastructure.services.rate_limiter import RateLimiter
+from src.infrastructure.services.r2_storage_service import R2StorageService
 
 
 class Container:
@@ -50,6 +54,10 @@ class Container:
         ] = None
         self._redis_service: Optional[RedisService] = None
         self._rate_limiter: Optional[RateLimiter] = None
+        self._patient_document_repository: Optional[
+            PatientDocumentRepository
+        ] = None
+        self._r2_storage_service: Optional[R2StorageService] = None
 
     @property
     def settings(self) -> Settings:
@@ -142,6 +150,16 @@ class Container:
         return self._collector_repository
 
     @property
+    def patient_document_repository(self) -> PatientDocumentRepository:
+        """Get patient document repository instance."""
+
+        if self._patient_document_repository is None:
+            self._patient_document_repository = PatientDocumentRepository(
+                self.database
+            )
+        return self._patient_document_repository
+
+    @property
     def logistics_package_repository(self) -> LogisticsPackageRepository:
         """Get logistics package repository instance."""
 
@@ -206,6 +224,14 @@ class Container:
             self._rate_limiter = RateLimiter(self.settings, self.redis_service)
         return self._rate_limiter
 
+    @property
+    def r2_storage_service(self) -> R2StorageService:
+        """Get Cloudflare R2 storage service instance."""
+
+        if self._r2_storage_service is None:
+            self._r2_storage_service = R2StorageService(self.settings)
+        return self._r2_storage_service
+
     async def startup(self) -> None:
         """
         Initialize resources on application startup.
@@ -231,6 +257,7 @@ class Container:
             await self.notification_repository.create_indexes()
             await self.tag_repository.ensure_indexes()
             await self.logistics_package_repository.create_indexes()
+            await self.patient_document_repository.ensure_indexes()
             print("✅ Database indexes created")
         except Exception as e:
             print(f"❌ Failed to connect to MongoDB: {e}")
@@ -337,3 +364,15 @@ async def get_logistics_package_repository() -> LogisticsPackageRepository:
     """Dependency for getting logistics package repository instance."""
 
     return container.logistics_package_repository
+
+
+async def get_patient_document_repository() -> PatientDocumentRepository:
+    """Dependency for getting patient document repository instance."""
+
+    return container.patient_document_repository
+
+
+async def get_r2_storage_service() -> R2StorageService:
+    """Dependency for getting R2 storage service instance."""
+
+    return container.r2_storage_service

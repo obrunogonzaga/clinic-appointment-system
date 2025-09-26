@@ -275,6 +275,8 @@ export const appointmentAPI = {
   },
 };
 
+export { api };
+
 export const tagAPI = {
   listTags: async ({
     page = 1,

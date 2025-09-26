@@ -8,12 +8,18 @@ from src.application.services.dashboard_analytics_service import (
 from src.application.services.notification_manager_service import (
     NotificationManagerService,
 )
+from src.application.services.patient_document_service import (
+    PatientDocumentService,
+)
 from src.infrastructure.container import (
     container,
     get_appointment_repository,
     get_car_repository,
     get_collector_repository,
     get_driver_repository,
+    get_patient_document_repository,
+    get_r2_storage_service,
+    get_app_settings,
 )
 from src.infrastructure.repositories.appointment_repository import (
     AppointmentRepository,
@@ -23,6 +29,11 @@ from src.infrastructure.repositories.collector_repository import (
     CollectorRepository,
 )
 from src.infrastructure.repositories.driver_repository import DriverRepository
+from src.infrastructure.repositories.patient_document_repository import (
+    PatientDocumentRepository,
+)
+from src.infrastructure.services.r2_storage_service import R2StorageService
+from src.infrastructure.config import Settings
 
 
 async def get_notification_manager_service() -> NotificationManagerService:
@@ -48,4 +59,24 @@ async def get_dashboard_analytics_service(
         driver_repository=driver_repository,
         collector_repository=collector_repository,
         car_repository=car_repository,
+    )
+
+
+async def get_patient_document_service(
+    document_repository: PatientDocumentRepository = Depends(
+        get_patient_document_repository
+    ),
+    appointment_repository: AppointmentRepository = Depends(
+        get_appointment_repository
+    ),
+    storage_service: R2StorageService = Depends(get_r2_storage_service),
+    settings: Settings = Depends(get_app_settings),
+) -> PatientDocumentService:
+    """Provide patient document service wired with repositories and storage."""
+
+    return PatientDocumentService(
+        document_repository=document_repository,
+        appointment_repository=appointment_repository,
+        storage_service=storage_service,
+        settings=settings,
     )
