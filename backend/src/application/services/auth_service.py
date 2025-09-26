@@ -1,7 +1,6 @@
-"""
-Authentication service for user management and JWT operations.
-"""
+"""Authentication service for user management and JWT operations."""
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 
@@ -41,8 +40,14 @@ from src.infrastructure.config import Settings
 from src.infrastructure.services.email_service import EmailService
 from src.infrastructure.services.redis_service import RedisService
 
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Password hashing context configured to surface bcrypt truncation errors.
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__truncate_error=True,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class AuthService:
@@ -574,13 +579,12 @@ class AuthService:
         Returns:
             Hashed password
         """
-        # Bcrypt has a 72-byte limit. Encode to bytes and truncate if necessary
-        password_bytes = password.encode('utf-8')
-        if len(password_bytes) > 72:
-            password_bytes = password_bytes[:72]
-            password = password_bytes.decode('utf-8', errors='ignore')
-        
-        return pwd_context.hash(password)
+        try:
+            return pwd_context.hash(password)
+        except ValueError as exc:
+            raise DomainException(
+                "Senha excede o limite suportado pelo algoritmo de segurança."
+            ) from exc
 
     def verify_password(
         self, plain_password: str, hashed_password: str
@@ -595,13 +599,14 @@ class AuthService:
         Returns:
             True if password matches, False otherwise
         """
-        # Bcrypt has a 72-byte limit. Encode to bytes and truncate if necessary
-        password_bytes = plain_password.encode('utf-8')
-        if len(password_bytes) > 72:
-            password_bytes = password_bytes[:72]
-            plain_password = password_bytes.decode('utf-8', errors='ignore')
-        
-        return pwd_context.verify(plain_password, hashed_password)
+        try:
+            return pwd_context.verify(plain_password, hashed_password)
+        except ValueError:
+            logger.warning(
+                "Password verification failed due to bcrypt length limits.",
+                extra={"hash_prefix": hashed_password[:10]},
+            )
+            return False
 
     def _is_email_in_admin_whitelist(self, email: str) -> bool:
         """
