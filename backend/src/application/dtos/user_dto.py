@@ -17,7 +17,12 @@ class UserCreateRequest(BaseModel):
     name: str = Field(
         ..., min_length=2, max_length=100, description="User full name"
     )
-    password: str = Field(..., min_length=8, description="User password")
+    password: str = Field(
+        ...,
+        min_length=8,
+        max_length=72,
+        description="User password (minimum 8, maximum 72 characters)",
+    )
     is_admin: bool = Field(
         False, description="Whether user has admin privileges"
     )
@@ -48,7 +53,11 @@ class LoginRequest(BaseModel):
     """DTO for user login request."""
 
     email: str = Field(..., description="User email address")
-    password: str = Field(..., description="User password")
+    password: str = Field(
+        ...,
+        max_length=72,
+        description="User password (maximum 72 characters)",
+    )
 
     @field_validator("email", mode="before")
     @classmethod

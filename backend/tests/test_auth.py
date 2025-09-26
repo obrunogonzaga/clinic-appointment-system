@@ -6,6 +6,7 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from pydantic import ValidationError
 
 from src.application.dtos.user_dto import LoginRequest, UserCreateRequest
 from src.application.services.auth_service import AuthService
@@ -256,6 +257,20 @@ class TestAuthService:
 
         assert auth_service.verify_password(password, hashed) is True
         assert auth_service.verify_password(wrong_password, hashed) is False
+
+    def test_login_request_rejects_password_above_bcrypt_limit(self):
+        """Login DTO should enforce bcrypt 72 character limit."""
+        with pytest.raises(ValidationError):
+            LoginRequest(email="test@example.com", password="x" * 73)
+
+    def test_user_create_rejects_password_above_bcrypt_limit(self):
+        """User creation DTO should enforce bcrypt 72 character limit."""
+        with pytest.raises(ValidationError):
+            UserCreateRequest(
+                email="test@example.com",
+                name="Tester",
+                password="x" * 73,
+            )
 
     @pytest.mark.asyncio
     async def test_get_current_user_valid_token(
