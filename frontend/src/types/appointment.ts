@@ -148,6 +148,49 @@ export interface DashboardStats {
   };
 }
 
+export interface AdminDashboardKpi {
+  label: string;
+  value: number;
+  trend?: number;
+}
+
+export interface AdminDashboardTrendPoint {
+  date: string;
+  value: number;
+}
+
+export interface AdminDashboardTopUnit {
+  name: string;
+  value: number;
+}
+
+export interface AdminDashboardResourceUtilization {
+  label: string;
+  utilization: number;
+}
+
+export type AdminDashboardAlertType = 'info' | 'warning' | 'error';
+
+export interface AdminDashboardAlert {
+  id: string;
+  message: string;
+  type: AdminDashboardAlertType;
+}
+
+export interface AdminDashboardMetricsResponse {
+  success: boolean;
+  message?: string;
+  kpis: AdminDashboardKpi[];
+  trend: AdminDashboardTrendPoint[];
+  top_units: AdminDashboardTopUnit[];
+  resource_utilization: AdminDashboardResourceUtilization[];
+  alerts: AdminDashboardAlert[];
+  period: {
+    start: string;
+    end: string;
+  };
+}
+
 export interface AppointmentCreateResponse {
   success: boolean;
   message: string;

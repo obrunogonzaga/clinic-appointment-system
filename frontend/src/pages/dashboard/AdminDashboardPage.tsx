@@ -7,6 +7,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { getAdminDashboardData } from '../../services/dashboard';
+import type { AdminKpiCard } from '../../services/dashboard';
 
 const PERIOD_OPTIONS = [
   { value: '7d', label: 'Últimos 7 dias' },
@@ -19,7 +20,7 @@ export const AdminDashboardPage: React.FC = () => {
 
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard', 'admin', period],
-    queryFn: () => getAdminDashboardData(),
+    queryFn: () => getAdminDashboardData(period),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -73,7 +74,7 @@ export const AdminDashboardPage: React.FC = () => {
             <div>
               <p className="text-sm text-gray-600 dark:text-slate-300">{card.label}</p>
               <p className="text-3xl font-semibold text-gray-900 dark:text-slate-100">
-                {isLoading ? '—' : card.value}
+                {isLoading ? '—' : formatKpiValue(card)}
               </p>
               {typeof card.trend === 'number' ? (
                 <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
@@ -223,6 +224,19 @@ const TrendPreview: React.FC<TrendPreviewProps> = ({ trend, loading }) => {
     </div>
   );
 };
+
+function formatKpiValue(card: AdminKpiCard): string {
+  if (typeof card.value !== 'number' || Number.isNaN(card.value)) {
+    return '0';
+  }
+
+  const isRate = card.label.toLowerCase().includes('taxa');
+  const formatted = Number.isInteger(card.value)
+    ? card.value.toString()
+    : card.value.toFixed(1);
+
+  return isRate ? `${formatted}%` : formatted;
+}
 
 interface EmptyStateProps {
   message: string;

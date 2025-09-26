@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -199,6 +199,48 @@ class DashboardStatsDTO(BaseModel):
     success: bool
     message: Optional[str] = None
     stats: Dict = {}
+
+
+class AdminKpiDTO(BaseModel):
+    label: str
+    value: float
+    trend: Optional[float] = None
+
+
+class AdminTrendPointDTO(BaseModel):
+    date: str
+    value: int
+
+
+class AdminTopUnitDTO(BaseModel):
+    name: str
+    value: int
+
+
+class AdminResourceUtilizationDTO(BaseModel):
+    label: str
+    utilization: float
+
+
+class AdminAlertDTO(BaseModel):
+    id: str
+    message: str
+    type: Literal["info", "warning", "error"]
+
+
+class AdminDashboardMetricsDTO(BaseModel):
+    """DTO encapsulating admin dashboard analytics."""
+
+    success: bool
+    message: Optional[str] = None
+    kpis: List[AdminKpiDTO] = Field(default_factory=list)
+    trend: List[AdminTrendPointDTO] = Field(default_factory=list)
+    top_units: List[AdminTopUnitDTO] = Field(default_factory=list)
+    resource_utilization: List[AdminResourceUtilizationDTO] = Field(
+        default_factory=list
+    )
+    alerts: List[AdminAlertDTO] = Field(default_factory=list)
+    period: Dict[str, str] = Field(default_factory=dict)
 
 
 class AppointmentFullUpdateDTO(BaseModel):

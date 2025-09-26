@@ -199,3 +199,10 @@ class AppointmentRepositoryInterface(ABC):
             Dictionary with appointment statistics
         """
         pass
+
+    @abstractmethod
+    async def get_admin_dashboard_metrics(
+        self, start_date: datetime, end_date: datetime
+    ) -> Dict[str, Any]:
+        """Aggregate analytics required by the administrative dashboard."""
+        pass

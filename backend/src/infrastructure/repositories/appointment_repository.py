@@ -2,6 +2,8 @@
 MongoDB implementation of AppointmentRepository.
 """
 
+import asyncio
+from copy import deepcopy
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
@@ -476,4 +478,125 @@ class AppointmentRepository(AppointmentRepositoryInterface):
             "cancelled_appointments": stats["cancelled_appointments"],
             "total_units": len(stats["units"]),
             "total_brands": len(stats["brands"]),
+        }
+
+    async def get_admin_dashboard_metrics(
+        self, start_date: datetime, end_date: datetime
+    ) -> Dict[str, Any]:
+        """Aggregate analytics required by the administrative dashboard."""
+
+        if start_date >= end_date:
+            raise ValueError("start_date must be earlier than end_date")
+
+        date_filter: Dict[str, Any] = {"$ne": None}
+        if start_date:
+            date_filter["$gte"] = start_date
+        if end_date:
+            date_filter["$lt"] = end_date
+
+        base_match = {"data_agendamento": date_filter}
+
+        status_pipeline = [
+            {"$match": deepcopy(base_match)},
+            {
+                "$group": {
+                    "_id": {"$ifNull": ["$status", "Indefinido"]},
+                    "count": {"$sum": 1},
+                }
+            },
+        ]
+
+        trend_pipeline = [
+            {"$match": deepcopy(base_match)},
+            {
+                "$group": {
+                    "_id": {
+                        "$dateToString": {
+                            "format": "%Y-%m-%d",
+                            "date": "$data_agendamento",
+                        }
+                    },
+                    "count": {"$sum": 1},
+                }
+            },
+            {"$sort": {"_id": 1}},
+        ]
+
+        top_units_pipeline = [
+            {"$match": deepcopy(base_match)},
+            {
+                "$group": {
+                    "_id": {
+                        "unit": {"$ifNull": ["$nome_unidade", "Unidade não informada"]},
+                        "brand": {"$ifNull": ["$nome_marca", "Marca não informada"]},
+                    },
+                    "count": {"$sum": 1},
+                }
+            },
+            {"$sort": {"count": -1}},
+            {"$limit": 5},
+        ]
+
+        assignments_pipeline = [
+            {"$match": deepcopy(base_match)},
+            {
+                "$group": {
+                    "_id": None,
+                    "drivers": {"$addToSet": "$driver_id"},
+                    "collectors": {"$addToSet": "$collector_id"},
+                    "cars": {"$addToSet": "$car_id"},
+                }
+            },
+        ]
+
+        status_result, trend_result, top_units_result, assignments_result = await asyncio.gather(
+            self.collection.aggregate(status_pipeline).to_list(None),
+            self.collection.aggregate(trend_pipeline).to_list(None),
+            self.collection.aggregate(top_units_pipeline).to_list(None),
+            self.collection.aggregate(assignments_pipeline).to_list(1),
+        )
+
+        status_counts: Dict[str, int] = {
+            item["_id"]: int(item["count"]) for item in status_result
+        }
+
+        trend_points = [
+            {"date": item["_id"], "value": int(item["count"])}
+            for item in trend_result
+        ]
+
+        top_units = [
+            {
+                "unit": item["_id"]["unit"],
+                "brand": item["_id"]["brand"],
+                "count": int(item["count"]),
+            }
+            for item in top_units_result
+        ]
+
+        assignments_summary = {
+            "drivers": 0,
+            "collectors": 0,
+            "cars": 0,
+        }
+        if assignments_result:
+            assignment_record = assignments_result[0]
+            assignments_summary = {
+                "drivers": len(
+                    [value for value in assignment_record.get("drivers", []) if value]
+                ),
+                "collectors": len(
+                    [value for value in assignment_record.get("collectors", []) if value]
+                ),
+                "cars": len(
+                    [value for value in assignment_record.get("cars", []) if value]
+                ),
+            }
+
+        return {
+            "status_counts": status_counts,
+            "trend": trend_points,
+            "top_units": top_units,
+            "resource_assignments": assignments_summary,
+            "total": sum(status_counts.values()),
         }

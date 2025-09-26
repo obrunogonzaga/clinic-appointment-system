@@ -1,5 +1,6 @@
 import { appointmentAPI } from './api';
 import type {
+  AdminDashboardMetricsResponse,
   AppointmentFilter,
   AppointmentListResponse,
   DashboardStats,
@@ -147,29 +148,23 @@ function buildOperationFilters(filter: OperationDateFilter): AppointmentFilter {
   return params;
 }
 
-export async function getAdminDashboardData(): Promise<AdminDashboardData> {
+export async function getAdminDashboardData(
+  period: string,
+  options?: { startDate?: string; endDate?: string }
+): Promise<AdminDashboardData> {
   try {
-    const stats = await appointmentAPI.getDashboardStats();
-    const normalizedKpis: AdminKpiCard[] = [
-      { label: 'Agendamentos', value: stats.stats.total_appointments },
-      { label: 'Taxa de confirmação', value: calculatePercentage(stats.stats.confirmed_appointments, stats.stats.total_appointments) },
-      { label: 'No-show', value: 0 },
-      { label: 'Cancelamentos', value: stats.stats.cancelled_appointments },
-    ];
+    const metrics = await appointmentAPI.getAdminDashboardMetrics({
+      period,
+      start_date: options?.startDate,
+      end_date: options?.endDate,
+    });
 
-    const trend: TrendPoint[] = buildTrendPlaceholder();
-    const topUnits = buildTopUnitsPlaceholder();
-    const resourceUtilization = buildResourceUtilizationPlaceholder();
-
-    return {
-      kpis: normalizedKpis,
-      trend,
-      topUnits,
-      resourceUtilization,
-      alerts: [],
-    };
+    return mapAdminDashboardMetrics(metrics);
   } catch (error) {
-    console.warn('Falha ao carregar dados do dashboard administrativo, usando fallback.', error);
+    console.warn(
+      'Falha ao carregar dados do dashboard administrativo, usando fallback.',
+      error,
+    );
     return {
       ...FALLBACK_ADMIN_DATA,
       kpis: FALLBACK_ADMIN_DATA.kpis.map((item) => ({ ...item })),
@@ -181,43 +176,46 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   }
 }
 
-function calculatePercentage(partial: number, total: number): number {
-  if (total === 0) {
+function mapAdminDashboardMetrics(
+  metrics: AdminDashboardMetricsResponse,
+): AdminDashboardData {
+  const kpis = (metrics.kpis ?? []).map((item) => ({
+    label: item.label,
+    value: sanitizeNumber(item.value),
+    trend: typeof item.trend === 'number' ? item.trend : undefined,
+  }));
+
+  const trend = (metrics.trend ?? []).map((point) => ({
+    date: point.date,
+    value: point.value,
+  }));
+
+  const topUnits = (metrics.top_units ?? []).map((unit) => ({
+    name: unit.name,
+    value: unit.value,
+  }));
+
+  const resourceUtilization = (metrics.resource_utilization ?? []).map(
+    (resource) => ({
+      label: resource.label,
+      utilization: sanitizeNumber(resource.utilization),
+    }),
+  );
+
+  const alerts = (metrics.alerts ?? []).map((alert) => ({
+    id: alert.id,
+    message: alert.message,
+    type: alert.type,
+  }));
+
+  return { kpis, trend, topUnits, resourceUtilization, alerts };
+}
+
+function sanitizeNumber(value: number): number {
+  if (typeof value !== 'number' || Number.isNaN(value) || !Number.isFinite(value)) {
     return 0;
   }
-
-  const percentage = (partial / total) * 100;
-  return Math.round((percentage + Number.EPSILON) * 100) / 100;
-}
-
-function buildTrendPlaceholder(): TrendPoint[] {
-  const today = startOfDay();
-  return Array.from({ length: 7 }).map((_, index) => ({
-    date: formatAsISODate(new Date(today.getTime() - (6 - index) * 24 * 60 * 60 * 1000)),
-    value: Math.floor(Math.random() * 50) + 10,
-  }));
-}
-
-function buildTopUnitsPlaceholder(): { name: string; value: number }[] {
-  return [
-    { name: 'Unidade Central', value: 120 },
-    { name: 'Clínica Zona Sul', value: 94 },
-    { name: 'Hospital Norte', value: 78 },
-  ];
-}
-
-function buildResourceUtilizationPlaceholder(): ResourceUtilization[] {
-  return [
-    { label: 'Motoristas', utilization: 72 },
-    { label: 'Coletoras', utilization: 64 },
-    { label: 'Carros', utilization: 81 },
-  ];
-}
-
-function startOfDay(date: Date = new Date()): Date {
-  const cloned = new Date(date);
-  cloned.setHours(0, 0, 0, 0);
-  return cloned;
+  return Number(value.toFixed(2));
 }
 
 function formatAsISODate(date: Date): string {

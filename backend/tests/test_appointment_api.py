@@ -16,7 +16,11 @@ from src.main import app
 from src.presentation.api.v1.endpoints.appointments import (
     get_appointment_service,
 )
-from src.presentation.dependencies.auth import get_current_active_user
+from src.presentation.dependencies.auth import (
+    get_current_active_user,
+    get_current_admin_user,
+)
+from src.presentation.dependencies.services import get_dashboard_analytics_service
 
 
 @pytest.fixture
@@ -40,12 +44,14 @@ def client(active_user: User) -> TestClient:
         return active_user
 
     app.dependency_overrides[get_current_active_user] = override_current_user
+    app.dependency_overrides[get_current_admin_user] = override_current_user
 
     try:
         with TestClient(app) as test_client:
             yield test_client
     finally:
         app.dependency_overrides.pop(get_current_active_user, None)
+        app.dependency_overrides.pop(get_current_admin_user, None)
 
 
 def _build_response_dto() -> AppointmentResponseDTO:
@@ -350,3 +356,41 @@ def test_partial_update_appointment_not_found(client: TestClient) -> None:
     assert response.status_code == 404
     error = response.json()
     assert error["message"] == "Agendamento não encontrado"
+
+
+def test_get_admin_dashboard_analytics(client: TestClient) -> None:
+    """Admin analytics endpoint should return normalized metrics."""
+
+    analytics_mock = MagicMock()
+    analytics_mock.get_admin_dashboard_metrics = AsyncMock(
+        return_value={
+            "success": True,
+            "kpis": [{"label": "Agendamentos", "value": 42.0, "trend": 10.0}],
+            "trend": [{"date": "2025-01-01", "value": 10}],
+            "top_units": [{"name": "UBS Centro", "value": 5}],
+            "resource_utilization": [
+                {"label": "Motoristas", "utilization": 75.0}
+            ],
+            "alerts": [
+                {"id": "pending-appointments", "message": "Atenção", "type": "warning"}
+            ],
+            "period": {"start": "2025-01-01T00:00:00", "end": "2025-01-07T23:59:59"},
+        }
+    )
+
+    async def override_service() -> MagicMock:
+        return analytics_mock
+
+    app.dependency_overrides[get_dashboard_analytics_service] = override_service
+    try:
+        response = client.get("/api/v1/appointments/analytics/admin?period=7d")
+    finally:
+        app.dependency_overrides.pop(get_dashboard_analytics_service, None)
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+    assert payload["kpis"][0]["label"] == "Agendamentos"
+    analytics_mock.get_admin_dashboard_metrics.assert_awaited_once_with(
+        period="7d", start_date=None, end_date=None
+    )

@@ -210,6 +210,66 @@ class TestAppointmentRepository:
         )
         assert len(combined) == 2
 
+    async def test_get_admin_dashboard_metrics(
+        self, repository: AppointmentRepository
+    ) -> None:
+        """Repository should aggregate metrics for admin dashboard."""
+
+        base_date = datetime(2025, 1, 20)
+        await repository.create_many(
+            [
+                Appointment(
+                    nome_unidade="UBS Centro",
+                    nome_marca="Clínica Alpha",
+                    nome_paciente="Paciente 1",
+                    data_agendamento=base_date - timedelta(days=2),
+                    hora_agendamento="10:00",
+                    status="Confirmado",
+                    driver_id="driver-1",
+                    collector_id="collector-1",
+                    car_id="car-1",
+                ),
+                Appointment(
+                    nome_unidade="UBS Centro",
+                    nome_marca="Clínica Alpha",
+                    nome_paciente="Paciente 2",
+                    data_agendamento=base_date - timedelta(days=1),
+                    hora_agendamento="11:00",
+                    status="Cancelado",
+                    driver_id="driver-2",
+                    collector_id="collector-1",
+                    car_id="car-2",
+                ),
+                Appointment(
+                    nome_unidade="UBS Sul",
+                    nome_marca="Clínica Beta",
+                    nome_paciente="Paciente 3",
+                    data_agendamento=base_date,
+                    hora_agendamento="09:30",
+                    status="Pendente",
+                    driver_id="driver-1",
+                    collector_id="collector-2",
+                    car_id="car-1",
+                ),
+            ]
+        )
+
+        start = base_date - timedelta(days=5)
+        end = base_date + timedelta(days=1)
+
+        metrics = await repository.get_admin_dashboard_metrics(start, end)
+
+        assert metrics["total"] == 3
+        assert metrics["status_counts"]["Confirmado"] == 1
+        assert metrics["status_counts"]["Cancelado"] == 1
+        assert len(metrics["trend"]) == (end - start).days
+        assert metrics["resource_assignments"]["drivers"] == 2
+        assert metrics["resource_assignments"]["collectors"] == 2
+        assert any(item["unit"] == "UBS Centro" for item in metrics["top_units"])
+
+        with pytest.raises(ValueError):
+            await repository.get_admin_dashboard_metrics(end, start)
+
     async def test_count_appointments(self, repository: AppointmentRepository):
         """Test counting appointments."""
         # Empty database
