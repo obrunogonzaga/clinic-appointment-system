@@ -40,7 +40,7 @@ class PatientDocumentRepository(PatientDocumentRepositoryInterface):
             pass
 
     async def create(self, document: PatientDocument) -> PatientDocument:
-        payload = document.model_dump()
+        payload = document.model_dump(exclude_none=True)
         payload["id"] = str(document.id)
         await self._collection.insert_one(payload)
         return document
@@ -63,7 +63,10 @@ class PatientDocumentRepository(PatientDocumentRepositoryInterface):
         if tenant_id is not None:
             query["tenant_id"] = tenant_id
         if not include_deleted:
-            query["deleted_at"] = {"$exists": False}
+            query["$or"] = [
+                {"deleted_at": {"$exists": False}},
+                {"deleted_at": None},
+            ]
 
         cursor = self._collection.find(query).sort("created_at", ASCENDING)
         results: List[PatientDocument] = []
