@@ -191,11 +191,20 @@ class AppointmentRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    async def get_appointment_stats(self) -> Dict[str, Any]:
+    async def get_appointment_stats(
+        self, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None
+    ) -> Dict[str, Any]:
         """
         Get appointment statistics for dashboard.
 
         Returns:
             Dictionary with appointment statistics
         """
+        pass
+
+    @abstractmethod
+    async def get_admin_dashboard_metrics(
+        self, start_date: datetime, end_date: datetime
+    ) -> Dict[str, Any]:
+        """Aggregate analytics required by the administrative dashboard."""
         pass

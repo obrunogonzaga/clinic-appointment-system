@@ -21,7 +21,8 @@ import type {
   VerifyEmailResponse,
 } from '../types/auth';
 
-const API_BASE_URL = window.ENV?.API_URL || import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL =
+  window.ENV?.API_URL || import.meta?.env?.VITE_API_URL || 'http://localhost:8000';
 
 // Create axios instance with default configuration
 const authApi = axios.create({

@@ -73,6 +73,50 @@ async def test_create_appointment_duplicate() -> None:
 
 
 @pytest.mark.asyncio
+async def test_get_dashboard_stats_applies_date_range() -> None:
+    """Service should pass parsed datetime bounds to repository."""
+    repository = MagicMock()
+    stats_payload = {
+        "total_appointments": 2,
+        "confirmed_appointments": 1,
+        "cancelled_appointments": 1,
+        "total_units": 1,
+        "total_brands": 1,
+    }
+    repository.get_appointment_stats = AsyncMock(return_value=stats_payload)
+
+    service = AppointmentService(repository, excel_parser=MagicMock())
+
+    result = await service.get_dashboard_stats(
+        start_date="2025-09-25", end_date="2025-09-26"
+    )
+
+    assert result["success"] is True
+    assert result["stats"] == stats_payload
+    repository.get_appointment_stats.assert_awaited_once()
+    called_start, called_end = repository.get_appointment_stats.await_args.args
+    assert called_start == datetime(2025, 9, 25)
+    assert called_end == datetime(2025, 9, 26)
+
+
+@pytest.mark.asyncio
+async def test_get_dashboard_stats_invalid_range() -> None:
+    """Service should reject ranges where end is before or equal start."""
+    repository = MagicMock()
+    repository.get_appointment_stats = AsyncMock()
+
+    service = AppointmentService(repository, excel_parser=MagicMock())
+
+    result = await service.get_dashboard_stats(
+        start_date="2025-01-10", end_date="2025-01-09"
+    )
+
+    assert result["success"] is False
+    assert "end_date" in (result.get("message") or "")
+    repository.get_appointment_stats.assert_not_called()
+
+
+@pytest.mark.asyncio
 async def test_create_appointment_validation_error() -> None:
     """Invalid domain data should surface as validation error."""
     repository = MagicMock()

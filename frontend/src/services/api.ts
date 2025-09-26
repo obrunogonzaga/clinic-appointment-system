@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type {
+    AdminDashboardMetricsResponse,
     Appointment,
     AppointmentCreateRequest,
     AppointmentCreateResponse,
@@ -178,10 +179,47 @@ export const appointmentAPI = {
   },
 
   // Get dashboard statistics
-  getDashboardStats: async (): Promise<DashboardStats> => {
-    const response = await api.get<DashboardStats>('/appointments/stats', {
-      withCredentials: true,
-    });
+  getDashboardStats: async (
+    params?: { start_date?: string; end_date?: string }
+  ): Promise<DashboardStats> => {
+    const searchParams = new URLSearchParams();
+    if (params?.start_date) {
+      searchParams.append('start_date', params.start_date);
+    }
+    if (params?.end_date) {
+      searchParams.append('end_date', params.end_date);
+    }
+
+    const query = searchParams.toString();
+    const response = await api.get<DashboardStats>(
+      `/appointments/stats${query ? `?${query}` : ''}`,
+      {
+        withCredentials: true,
+      }
+    );
+    return response.data;
+  },
+
+  getAdminDashboardMetrics: async (
+    params?: { period?: string; start_date?: string; end_date?: string }
+  ): Promise<AdminDashboardMetricsResponse> => {
+    const searchParams = new URLSearchParams();
+
+    if (params?.period) {
+      searchParams.append('period', params.period);
+    }
+    if (params?.start_date) {
+      searchParams.append('start_date', params.start_date);
+    }
+    if (params?.end_date) {
+      searchParams.append('end_date', params.end_date);
+    }
+
+    const query = searchParams.toString();
+    const response = await api.get<AdminDashboardMetricsResponse>(
+      `/appointments/analytics/admin${query ? `?${query}` : ''}`,
+      { withCredentials: true }
+    );
     return response.data;
   },
 

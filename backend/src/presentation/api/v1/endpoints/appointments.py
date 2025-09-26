@@ -16,6 +16,7 @@ from fastapi import (
     status,
 )
 from src.application.dtos.appointment_dto import (
+    AdminDashboardMetricsDTO,
     AppointmentCreateDTO,
     AppointmentFilterDTO,
     AppointmentFullUpdateDTO,
@@ -32,6 +33,9 @@ from src.application.services.address_normalization_service import (
 )
 from src.application.services.appointment_service import AppointmentService
 from src.application.services.car_service import CarService
+from src.application.services.dashboard_analytics_service import (
+    DashboardAnalyticsService,
+)
 from src.application.services.document_normalization_service import (
     DocumentNormalizationService,
 )
@@ -47,13 +51,17 @@ from src.infrastructure.container import (
 from src.infrastructure.repositories.appointment_repository import (
     AppointmentRepository,
 )
-from src.presentation.dependencies.auth import get_current_active_user
+from src.presentation.dependencies.auth import (
+    get_current_active_user,
+    get_current_admin_user,
+)
 from src.presentation.api.responses import (
     BaseResponse,
     DataResponse,
     ListResponse,
 )
 from src.infrastructure.repositories.tag_repository import TagRepository
+from src.presentation.dependencies.services import get_dashboard_analytics_service
 
 router = APIRouter()
 
@@ -338,6 +346,12 @@ async def get_filter_options(
     description="Get appointment statistics for dashboard",
 )
 async def get_dashboard_stats(
+    start_date: Optional[str] = Query(
+        None, description="Data inicial no formato YYYY-MM-DD"
+    ),
+    end_date: Optional[str] = Query(
+        None, description="Data final exclusiva no formato YYYY-MM-DD"
+    ),
     service: AppointmentService = Depends(get_appointment_service),
 ) -> DashboardStatsDTO:
     """
@@ -350,7 +364,9 @@ async def get_dashboard_stats(
         DashboardStatsDTO: Dashboard statistics
     """
     try:
-        result = await service.get_dashboard_stats()
+        result = await service.get_dashboard_stats(
+            start_date=start_date, end_date=end_date
+        )
 
         return DashboardStatsDTO(
             success=result["success"],
@@ -362,6 +378,41 @@ async def get_dashboard_stats(
         raise HTTPException(
             status_code=500, detail=f"Erro interno do servidor: {str(e)}"
         )
+
+
+@router.get(
+    "/analytics/admin",
+    response_model=AdminDashboardMetricsDTO,
+    summary="Get admin dashboard analytics",
+    description="Retorna métricas consolidadas para o dashboard administrativo",
+    dependencies=[Depends(get_current_admin_user)],
+)
+async def get_admin_dashboard_analytics(
+    period: str = Query(
+        "30d",
+        description="Intervalo em dias (ex.: 7d, 30d). Ignorado quando datas são informadas.",
+    ),
+    start_date: Optional[str] = Query(
+        None, description="Data inicial no formato YYYY-MM-DD"
+    ),
+    end_date: Optional[str] = Query(
+        None, description="Data final no formato YYYY-MM-DD"
+    ),
+    service: DashboardAnalyticsService = Depends(get_dashboard_analytics_service),
+) -> AdminDashboardMetricsDTO:
+    """Expose admin dashboard analytics with optional period overrides."""
+
+    try:
+        metrics = await service.get_admin_dashboard_metrics(
+            period=period, start_date=start_date, end_date=end_date
+        )
+        return AdminDashboardMetricsDTO(**metrics)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # pragma: no cover - defensive fallback
+        raise HTTPException(
+            status_code=500, detail=f"Erro interno do servidor: {str(exc)}"
+        ) from exc
 
 
 @router.get(
