@@ -574,6 +574,12 @@ class AuthService:
         Returns:
             Hashed password
         """
+        # Bcrypt has a 72-byte limit. Encode to bytes and truncate if necessary
+        password_bytes = password.encode('utf-8')
+        if len(password_bytes) > 72:
+            password_bytes = password_bytes[:72]
+            password = password_bytes.decode('utf-8', errors='ignore')
+        
         return pwd_context.hash(password)
 
     def verify_password(
@@ -589,6 +595,12 @@ class AuthService:
         Returns:
             True if password matches, False otherwise
         """
+        # Bcrypt has a 72-byte limit. Encode to bytes and truncate if necessary
+        password_bytes = plain_password.encode('utf-8')
+        if len(password_bytes) > 72:
+            password_bytes = password_bytes[:72]
+            plain_password = password_bytes.decode('utf-8', errors='ignore')
+        
         return pwd_context.verify(plain_password, hashed_password)
 
     def _is_email_in_admin_whitelist(self, email: str) -> bool:
