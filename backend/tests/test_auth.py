@@ -257,6 +257,8 @@ class TestAuthService:
 
         assert auth_service.verify_password(password, hashed) is True
         assert auth_service.verify_password(wrong_password, hashed) is False
+        # Ensure overly long secrets do not raise unexpected errors
+        assert auth_service.verify_password("x" * 200, hashed) is False
 
     def test_login_request_rejects_password_above_bcrypt_limit(self):
         """Login DTO should enforce bcrypt 72 character limit."""
