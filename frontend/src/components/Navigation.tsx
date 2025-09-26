@@ -4,7 +4,6 @@ import {
   ChevronDoubleRightIcon,
   MoonIcon,
   SunIcon,
-  UserIcon,
 } from '@heroicons/react/24/outline';
 import React, { useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -17,6 +16,8 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
 import { resolveUserRole } from '../utils/session';
+import sergioFrancoLogo from '../assets/sergio-franco-logo.svg';
+import sergioFrancoMark from '../assets/sergio-franco-mark.svg';
 
 interface NavigationProps {
   isCollapsed: boolean;
@@ -174,27 +175,22 @@ export const Navigation: React.FC<NavigationProps> = ({
             </span>
           )}
         </button>
-        <div
-          className={`flex items-center ${
-            isCollapsed ? 'justify-center' : 'gap-3'
-          }`}
-        >
-          <UserIcon
-            className={`text-blue-600 dark:text-blue-400 ${isCollapsed ? 'w-7 h-7' : 'w-9 h-9'}`}
-            aria-hidden="true"
+        <div className={isCollapsed ? 'flex flex-col items-center gap-2' : 'flex flex-col gap-3'}>
+          <img
+            src={isCollapsed ? sergioFrancoMark : sergioFrancoLogo}
+            alt="Sérgio Franco Medicina Diagnóstica - Sistema de Agendamentos"
+            className={isCollapsed ? 'h-12 w-12' : 'h-16 w-auto'}
+            draggable={false}
           />
-          {!isCollapsed && (
-            <div className="flex flex-col">
-              <span className="text-lg font-bold text-gray-900 dark:text-slate-100">
-                Sistema de Agendamentos
-              </span>
-              {user ? (
-                <span className="text-xs text-gray-500 dark:text-slate-400 truncate">
-                  {user.name}
-                </span>
-              ) : null}
-            </div>
-          )}
+          {user ? (
+            <span
+              className={`text-xs font-medium text-gray-500 dark:text-slate-400 truncate ${
+                isCollapsed ? 'text-center w-full' : ''
+              }`}
+            >
+              {user.name}
+            </span>
+          ) : null}
         </div>
       </div>
 

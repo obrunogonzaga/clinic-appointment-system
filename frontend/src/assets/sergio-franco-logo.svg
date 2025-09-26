@@ -1,0 +1,33 @@
+<svg width="320" height="84" viewBox="0 0 320 84" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="brandTitle brandSubtitle" focusable="false">
+  <title id="brandTitle">Sérgio Franco Medicina Diagnóstica</title>
+  <desc id="brandSubtitle">Sistema de agendamentos</desc>
+  <defs>
+    <radialGradient id="sfGradient" cx="50%" cy="32%" r="68%" fx="40%" fy="24%">
+      <stop offset="0%" stop-color="#1FA7FF" />
+      <stop offset="55%" stop-color="#0C6AC9" />
+      <stop offset="100%" stop-color="#00438C" />
+    </radialGradient>
+    <linearGradient id="sfRibbon" x1="18" y1="14" x2="62" y2="70" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F9FEFF" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#D9F3FF" stop-opacity="0.4" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(6 8)">
+    <circle cx="36" cy="34" r="32" fill="url(#sfGradient)" />
+    <path d="M18 56.5c8.2 9.3 21.8 9.3 30 0 6.4-7.3 6.7-18.4 0.8-26.4C43.4 22 30.9 19 24.7 24.8 18 30.9 17.1 41.6 24 48c6.1 5.6 16.5 5.4 21.9-0.4" stroke="url(#sfRibbon)" stroke-width="5" stroke-linecap="round" fill="none" />
+    <circle cx="36" cy="34" r="31.5" stroke="rgba(255,255,255,0.28)" stroke-width="1.2" fill="none" />
+  </g>
+  <g transform="translate(94 28)">
+    <text x="0" y="0" font-family="'Inter', 'Segoe UI', sans-serif" font-weight="600" font-size="26" fill="#0D6E8B">
+      Sérgio
+      <tspan x="103" fill="#137C64">Franco</tspan>
+    </text>
+    <text x="0" y="24" font-family="'Inter', 'Segoe UI', sans-serif" font-weight="500" font-size="16" letter-spacing="0.02em" fill="#48A79C">
+      Medicina Diagnóstica
+    </text>
+    <rect x="0" y="32" width="178" height="2" rx="1" fill="#C1E9E2" />
+    <text x="0" y="52" font-family="'Inter', 'Segoe UI', sans-serif" font-weight="500" font-size="14" letter-spacing="0.04em" fill="#235789">
+      Sistema de Agendamentos
+    </text>
+  </g>
+</svg>
