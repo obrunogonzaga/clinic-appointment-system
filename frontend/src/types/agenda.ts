@@ -30,6 +30,7 @@ export interface CalendarViewProps {
   onAppointmentDriverChange?: (appointmentId: string, driverId: string) => void;
   onAppointmentCollectorChange?: (appointmentId: string, collectorId: string) => void;
   onAppointmentDelete?: (id: string) => void;
+  onAppointmentViewDetails?: (appointment: Appointment) => void;
   drivers?: Array<{ id: string; nome_completo: string; cnh?: string; telefone?: string }>;
   collectors?: Array<{ id: string; nome_completo: string; cpf?: string; telefone?: string }>;
   isLoading?: boolean;
@@ -44,6 +45,7 @@ export interface DayModalProps {
   onDriverChange?: (appointmentId: string, driverId: string) => void;
   onCollectorChange?: (appointmentId: string, collectorId: string) => void;
   onDelete?: (id: string) => void;
+  onViewDetails?: (appointment: Appointment) => void;
   drivers?: Array<{ id: string; nome_completo: string; cnh?: string; telefone?: string }>;
   collectors?: Array<{ id: string; nome_completo: string; cpf?: string; telefone?: string }>;
 }

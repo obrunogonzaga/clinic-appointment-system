@@ -20,6 +20,7 @@ export const CalendarDayModal: React.FC<DayModalProps> = ({
   onDelete,
   drivers = [],
   collectors = [],
+  onViewDetails,
 }) => {
   const dateString = formatCalendarDate(date, 'EEEE, dd \'de\' MMMM \'de\' yyyy');
   const hasAppointments = appointments.length > 0;
@@ -98,6 +99,7 @@ export const CalendarDayModal: React.FC<DayModalProps> = ({
                           onDriverChange={onDriverChange || (() => {})}
                           onCollectorChange={onCollectorChange || (() => {})}
                           onDelete={onDelete || (() => {})}
+                          onViewDetails={onViewDetails}
                           compact={true}
                         />
                       ))}

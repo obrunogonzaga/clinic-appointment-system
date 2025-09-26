@@ -14,6 +14,7 @@ interface AppointmentCardListProps {
   onDriverChange: (appointmentId: string, driverId: string) => void;
   onCollectorChange?: (appointmentId: string, collectorId: string) => void;
   onDelete: (id: string) => void;
+  onViewDetails?: (appointment: Appointment) => void;
 }
 
 const CardSkeleton: React.FC = () => (
@@ -42,7 +43,8 @@ export const AppointmentCardList: React.FC<AppointmentCardListProps> = ({
   onStatusChange,
   onDriverChange,
   onCollectorChange,
-  onDelete
+  onDelete,
+  onViewDetails
 }) => {
   const { isMobile, isTablet } = useResponsiveLayout();
 
@@ -88,6 +90,7 @@ export const AppointmentCardList: React.FC<AppointmentCardListProps> = ({
           onDriverChange={onDriverChange}
           onCollectorChange={onCollectorChange}
           onDelete={onDelete}
+          onViewDetails={onViewDetails}
           compact={isMobile}
         />
       ))}

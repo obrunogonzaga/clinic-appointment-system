@@ -13,6 +13,10 @@ from src.infrastructure.repositories.collector_repository import (
     CollectorRepository,
 )
 from src.infrastructure.repositories.driver_repository import DriverRepository
+from src.infrastructure.repositories.patient_document_repository import (
+    PatientDocumentRepository,
+)
+from src.infrastructure.storage.r2_client import R2StorageClient
 
 
 class Container:
@@ -34,6 +38,10 @@ class Container:
         self._car_repository: Optional[CarRepository] = None
         self._driver_repository: Optional[DriverRepository] = None
         self._collector_repository: Optional[CollectorRepository] = None
+        self._patient_document_repository: Optional[
+            PatientDocumentRepository
+        ] = None
+        self._r2_storage_client: Optional[R2StorageClient] = None
 
     @property
     def settings(self) -> Settings:
@@ -125,6 +133,24 @@ class Container:
             self._collector_repository = CollectorRepository(self.database)
         return self._collector_repository
 
+    @property
+    def patient_document_repository(self) -> PatientDocumentRepository:
+        """Get patient document repository instance."""
+
+        if self._patient_document_repository is None:
+            self._patient_document_repository = PatientDocumentRepository(
+                self.database
+            )
+        return self._patient_document_repository
+
+    @property
+    def r2_storage_client(self) -> R2StorageClient:
+        """Get shared Cloudflare R2 storage client."""
+
+        if self._r2_storage_client is None:
+            self._r2_storage_client = R2StorageClient(self.settings)
+        return self._r2_storage_client
+
     async def startup(self) -> None:
         """
         Initialize resources on application startup.
@@ -139,6 +165,7 @@ class Container:
             await self.car_repository.create_indexes()
             await self.driver_repository.create_indexes()
             await self.collector_repository.create_indexes()
+            await self.patient_document_repository.create_indexes()
             print("✅ Database indexes created")
         except Exception as e:
             print(f"❌ Failed to connect to MongoDB: {e}")
@@ -198,6 +225,18 @@ async def get_car_repository() -> CarRepository:
         CarRepository: Repository instance
     """
     return container.car_repository
+
+
+async def get_patient_document_repository() -> PatientDocumentRepository:
+    """Dependency for getting patient document repository instance."""
+
+    return container.patient_document_repository
+
+
+async def get_r2_storage_client() -> R2StorageClient:
+    """Dependency for getting the Cloudflare R2 client."""
+
+    return container.r2_storage_client
 
 
 async def get_driver_repository() -> DriverRepository:

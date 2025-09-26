@@ -21,6 +21,7 @@ interface CollectorAgendaViewProps {
   onAppointmentCollectorChange: (appointmentId: string, collectorId: string) => void;
   onAppointmentDelete: (id: string) => void;
   onDateChange?: (date: Date) => void;
+  onAppointmentViewDetails?: (appointment: Appointment) => void;
 }
 
 interface CollectorAppointments {
@@ -51,6 +52,7 @@ export const CollectorAgendaView: React.FC<CollectorAgendaViewProps> = ({
   onAppointmentCollectorChange,
   onAppointmentDelete,
   onDateChange,
+  onAppointmentViewDetails,
 }) => {
   const selectedDateStr = useMemo(() => {
     return selectedDate.toISOString().split('T')[0];
@@ -383,6 +385,7 @@ export const CollectorAgendaView: React.FC<CollectorAgendaViewProps> = ({
                   onDriverChange={onAppointmentDriverChange}
                   onCollectorChange={onAppointmentCollectorChange}
                   onDelete={onAppointmentDelete}
+                  onViewDetails={onAppointmentViewDetails}
                   compact={true}
                 />
               ))}

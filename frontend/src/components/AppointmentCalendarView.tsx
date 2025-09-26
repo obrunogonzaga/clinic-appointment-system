@@ -21,6 +21,7 @@ export const AppointmentCalendarView: React.FC<CalendarViewProps> = ({
   onAppointmentDriverChange,
   onAppointmentCollectorChange,
   onAppointmentDelete,
+  onAppointmentViewDetails,
   drivers = [],
   collectors = [],
   isLoading = false,
@@ -164,6 +165,7 @@ export const AppointmentCalendarView: React.FC<CalendarViewProps> = ({
           onDelete={onAppointmentDelete}
           drivers={drivers}
           collectors={collectors}
+          onViewDetails={onAppointmentViewDetails}
         />
       )}
     </div>

@@ -142,6 +142,54 @@ class Settings(BaseSettings):
         description="Formato do log (json, text)",
     )
 
+    # Patient documents storage (Cloudflare R2 / S3 compatible)
+    r2_account_id: Optional[str] = Field(
+        default=None,
+        description="ID da conta R2",
+        validation_alias="R2_ACCOUNT_ID",
+    )
+    r2_access_key_id: Optional[str] = Field(
+        default=None,
+        description="Access key ID para R2",
+        validation_alias="R2_ACCESS_KEY_ID",
+    )
+    r2_secret_access_key: Optional[str] = Field(
+        default=None,
+        description="Secret access key para R2",
+        validation_alias="R2_SECRET_ACCESS_KEY",
+    )
+    r2_bucket_patient_docs: Optional[str] = Field(
+        default=None,
+        description="Bucket S3/R2 para documentos de pacientes",
+        validation_alias="R2_BUCKET_PATIENT_DOCS",
+    )
+    r2_presign_ttl_seconds: int = Field(
+        default=600,
+        description="Tempo de expiração (segundos) dos links pré-assinados",
+        validation_alias="R2_PRESIGN_TTL_SECONDS",
+    )
+    patient_docs_max_upload_mb: int = Field(
+        default=10,
+        description="Tamanho máximo do upload de documentos em MB",
+        validation_alias="MAX_UPLOAD_MB",
+    )
+    allowed_patient_document_mime_types: List[str] = Field(
+        default=[
+            "application/pdf",
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/heic",
+        ],
+        description="Lista de MIME types permitidos para documentos",
+        validation_alias="ALLOWED_MIME_LIST",
+    )
+    s3_endpoint: Optional[str] = Field(
+        default=None,
+        description="Endpoint customizado para S3 compatível (ex.: MinIO)",
+        validation_alias="S3_ENDPOINT",
+    )
+
     # Email settings (optional, for notifications)
     smtp_host: Optional[str] = Field(
         default=None,
@@ -231,10 +279,52 @@ class Settings(BaseSettings):
             raise ValueError(f"Log level must be one of: {allowed}")
         return v
 
+    @field_validator("allowed_patient_document_mime_types", mode="before")
+    @classmethod
+    def validate_mime_list(cls, value: Any) -> List[str]:
+        """Normalize MIME list coming from environment variable."""
+
+        if isinstance(value, str):
+            return [mime.strip() for mime in value.split(",") if mime.strip()]
+        if isinstance(value, list):
+            return value
+        return [
+            "application/pdf",
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/heic",
+        ]
+
+    @field_validator("patient_docs_max_upload_mb")
+    @classmethod
+    def validate_max_upload_mb(cls, value: int) -> int:
+        """Ensure upload limit is positive."""
+
+        if value <= 0:
+            raise ValueError("MAX_UPLOAD_MB deve ser maior que zero")
+        return value
+
     @property
     def is_development(self) -> bool:
         """Check if running in development mode."""
         return self.environment == "development"
+
+    @property
+    def patient_docs_max_upload_bytes(self) -> int:
+        """Return max upload size for patient documents in bytes."""
+
+        return self.patient_docs_max_upload_mb * 1024 * 1024
+
+    @property
+    def r2_endpoint_url(self) -> Optional[str]:
+        """Build the default R2 endpoint if not explicitly configured."""
+
+        if self.s3_endpoint:
+            return self.s3_endpoint
+        if self.r2_account_id:
+            return f"https://{self.r2_account_id}.r2.cloudflarestorage.com"
+        return None
 
     @property
     def is_production(self) -> bool:

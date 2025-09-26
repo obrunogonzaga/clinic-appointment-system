@@ -5,6 +5,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useState } from 'react';
+import AppointmentDetailDrawer from '../components/AppointmentDetailDrawer';
 import { AppointmentCardList } from '../components/AppointmentCardList';
 import { AppointmentCalendarView } from '../components/AppointmentCalendarView';
 import { AppointmentFilters } from '../components/AppointmentFilters';
@@ -12,7 +13,7 @@ import { CollectorAgendaView } from '../components/CollectorAgendaView';
 import { FileUpload } from '../components/FileUpload';
 import { ViewModeToggle, type ViewMode } from '../components/ViewModeToggle';
 import { appointmentAPI, collectorAPI, driverAPI } from '../services/api';
-import type { AppointmentFilter, ExcelUploadResponse } from '../types/appointment';
+import type { Appointment, AppointmentFilter, ExcelUploadResponse } from '../types/appointment';
 
 export const AppointmentsPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -27,6 +28,8 @@ export const AppointmentsPage: React.FC = () => {
   const [currentCalendarDate, setCurrentCalendarDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedAgendaDate, setSelectedAgendaDate] = useState<Date>(new Date());
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   // Fetch appointments
   const { 
@@ -134,6 +137,16 @@ export const AppointmentsPage: React.FC = () => {
     } catch (error) {
       console.error('Error updating appointment collector:', error);
     }
+  };
+
+  const handleViewDocuments = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setIsDetailOpen(true);
+  };
+
+  const handleCloseDetails = () => {
+    setIsDetailOpen(false);
+    setSelectedAppointment(null);
   };
 
   return (
@@ -262,6 +275,7 @@ export const AppointmentsPage: React.FC = () => {
               onDriverChange={handleDriverChange}
               onCollectorChange={handleCollectorChange}
               onDelete={handleDelete}
+              onViewDetails={handleViewDocuments}
             />
           )}
 
@@ -276,6 +290,7 @@ export const AppointmentsPage: React.FC = () => {
               onAppointmentDriverChange={handleDriverChange}
               onAppointmentCollectorChange={handleCollectorChange}
               onAppointmentDelete={handleDelete}
+              onAppointmentViewDetails={handleViewDocuments}
               drivers={driversData?.drivers || []}
               collectors={collectorsData?.collectors || []}
               isLoading={isLoadingAppointments}
@@ -311,6 +326,7 @@ export const AppointmentsPage: React.FC = () => {
                 onAppointmentCollectorChange={handleCollectorChange}
                 onAppointmentDelete={handleDelete}
                 onDateChange={setSelectedAgendaDate}
+                onAppointmentViewDetails={handleViewDocuments}
               />
             </div>
           )}
@@ -343,6 +359,12 @@ export const AppointmentsPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      <AppointmentDetailDrawer
+        appointment={selectedAppointment}
+        isOpen={isDetailOpen}
+        onClose={handleCloseDetails}
+      />
     </div>
   );
 };

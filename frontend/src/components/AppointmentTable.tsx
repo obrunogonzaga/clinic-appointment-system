@@ -216,18 +216,36 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
         header: 'Ações',
         cell: ({ row }) => (
           <div className="flex space-x-2">
+            {onViewDetails && (
+              <button
+                onClick={() => onViewDetails(row.original)}
+                className="inline-flex items-center rounded-md border border-indigo-200 bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100"
+                title="Ver documentos"
+              >
+                <DocumentTextIcon className="w-4 h-4 mr-1" />
+                Documentos
+              </button>
+            )}
             <button
               onClick={() => onDelete?.(row.original.id)}
-              className="p-1 text-red-600 hover:text-red-800 transition-colors"
+              className="inline-flex items-center rounded-md border border-red-200 bg-white px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
               title="Excluir agendamento"
             >
-              <TrashIcon className="w-4 h-4" />
+              <TrashIcon className="w-4 h-4 mr-1" />
+              Excluir
             </button>
           </div>
         ),
       },
     ],
-    [onStatusChange, onDriverChange, onCollectorChange, onDelete, drivers, collectors]
+    [
+      onStatusChange,
+      onDriverChange,
+      onCollectorChange,
+      onDelete,
+      drivers,
+      collectors,
+    ]
   );
 
   const table = useReactTable({

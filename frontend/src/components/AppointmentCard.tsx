@@ -3,6 +3,7 @@ import {
     CalendarIcon,
     ClockIcon,
     CreditCardIcon,
+    DocumentTextIcon,
     IdentificationIcon,
     PhoneIcon,
     TrashIcon,
@@ -27,6 +28,7 @@ interface AppointmentCardProps {
   onCollectorChange?: (appointmentId: string, collectorId: string) => void;
   onCarChange?: (appointmentId: string, carId: string) => void;
   onDelete: (id: string) => void;
+  onViewDetails?: (appointment: Appointment) => void;
   compact?: boolean;
 }
 
@@ -49,6 +51,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
   onCollectorChange,
   onCarChange,
   onDelete,
+  onViewDetails,
   compact = false
 }) => {
   // Get car info from linked car or carro field
@@ -212,6 +215,19 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
           </div>
         )}
       </div>
+
+      {onViewDetails && (
+        <div className="mt-4 flex justify-end">
+          <button
+            type="button"
+            onClick={() => onViewDetails(appointment)}
+            className="inline-flex items-center space-x-2 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100"
+          >
+            <DocumentTextIcon className="w-4 h-4" />
+            <span>Documentos</span>
+          </button>
+        </div>
+      )}
 
       {/* Footer */}
       <div className="mt-4 pt-3 border-t border-gray-100">

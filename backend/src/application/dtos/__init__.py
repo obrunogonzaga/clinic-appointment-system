@@ -10,6 +10,14 @@ from .appointment_dto import (
     DashboardStatsDTO,
     ExcelUploadResponseDTO,
 )
+from .patient_document_dto import (
+    ConfirmUploadRequestDTO,
+    DownloadUrlResponseDTO,
+    PatientDocumentDTO,
+    PatientDocumentListResponseDTO,
+    PresignUploadRequestDTO,
+    PresignUploadResponseDTO,
+)
 
 __all__ = [
     "AppointmentCreateDTO",
@@ -18,4 +26,10 @@ __all__ = [
     "AppointmentListResponseDTO",
     "ExcelUploadResponseDTO",
     "DashboardStatsDTO",
+    "ConfirmUploadRequestDTO",
+    "DownloadUrlResponseDTO",
+    "PatientDocumentDTO",
+    "PatientDocumentListResponseDTO",
+    "PresignUploadRequestDTO",
+    "PresignUploadResponseDTO",
 ]

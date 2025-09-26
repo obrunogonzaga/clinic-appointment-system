@@ -38,14 +38,30 @@ import type {
     CarStats,
     CarUpdateRequest
 } from '../types/car';
+import type {
+    ApiDataResponse,
+    ConfirmUploadRequest,
+    DownloadUrlPayload,
+    PatientDocument,
+    PatientDocumentList,
+    PresignUploadRequest,
+    PresignUploadResponse,
+} from '../types/patientDocument';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+const defaultUserId = import.meta.env.VITE_API_USER_ID ?? 'dev-user';
+const defaultUserRole = import.meta.env.VITE_API_USER_ROLE ?? 'admin';
+const defaultTenantId = import.meta.env.VITE_API_TENANT_ID ?? 'default';
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api/v1`,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
+    'X-User-Id': defaultUserId,
+    'X-User-Role': defaultUserRole,
+    'X-Tenant-Id': defaultTenantId,
   },
 });
 
@@ -142,6 +158,58 @@ export const appointmentAPI = {
   // Update appointment collector
   updateAppointmentCollector: async (appointmentId: string, collectorId: string): Promise<void> => {
     await api.put(`/appointments/${appointmentId}/collector?collector_id=${collectorId || ''}`);
+  },
+
+  // Patient document helpers
+  getAppointmentDocuments: async (appointmentId: string): Promise<PatientDocumentList> => {
+    const response = await api.get<ApiDataResponse<PatientDocumentList>>(
+      `/appointments/${appointmentId}/documents`
+    );
+    return response.data.data;
+  },
+
+  presignDocumentUpload: async (
+    appointmentId: string,
+    payload: PresignUploadRequest,
+  ): Promise<PresignUploadResponse> => {
+    const response = await api.post<ApiDataResponse<PresignUploadResponse>>(
+      `/appointments/${appointmentId}/documents/presign`,
+      payload,
+    );
+    return response.data.data;
+  },
+
+  confirmDocumentUpload: async (
+    appointmentId: string,
+    documentId: string,
+    payload: ConfirmUploadRequest,
+  ): Promise<PatientDocument> => {
+    const response = await api.post<ApiDataResponse<PatientDocument>>(
+      `/appointments/${appointmentId}/documents/${documentId}/confirm`,
+      payload,
+    );
+    return response.data.data;
+  },
+
+  getDocumentDownloadUrl: async (
+    appointmentId: string,
+    documentId: string,
+  ): Promise<DownloadUrlPayload> => {
+    const response = await api.get<ApiDataResponse<DownloadUrlPayload>>(
+      `/appointments/${appointmentId}/documents/${documentId}/download`
+    );
+    return response.data.data;
+  },
+
+  deleteDocument: async (
+    appointmentId: string,
+    documentId: string,
+    hard = false,
+  ): Promise<PatientDocument> => {
+    const response = await api.delete<ApiDataResponse<PatientDocument>>(
+      `/appointments/${appointmentId}/documents/${documentId}?hard=${hard}`
+    );
+    return response.data.data;
   },
 };
 
