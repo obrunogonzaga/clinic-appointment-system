@@ -11,6 +11,14 @@ from .appointment_dto import (
     DashboardStatsDTO,
     ExcelUploadResponseDTO,
 )
+from .client_dto import (
+    ClientCreateDTO,
+    ClientDetailResponseDTO,
+    ClientListResponseDTO,
+    ClientResponseDTO,
+    ClientSummaryDTO,
+    ClientUpdateDTO,
+)
 from .tag_dto import (
     TagCreateDTO,
     TagListResponseDTO,
@@ -27,6 +35,12 @@ __all__ = [
     "AppointmentScope",
     "ExcelUploadResponseDTO",
     "DashboardStatsDTO",
+    "ClientCreateDTO",
+    "ClientUpdateDTO",
+    "ClientResponseDTO",
+    "ClientDetailResponseDTO",
+    "ClientListResponseDTO",
+    "ClientSummaryDTO",
     "TagCreateDTO",
     "TagUpdateDTO",
     "TagResponseDTO",

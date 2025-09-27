@@ -16,6 +16,7 @@ from src.application.services.document_normalization_service import (
     DocumentNormalizationService,
 )
 from src.domain.entities.appointment import Appointment
+from src.domain.utils import normalize_cpf
 from src.infrastructure.config import get_settings
 
 # Import CarService for type annotation
@@ -344,6 +345,7 @@ class ExcelParserService:
             documento_completo = self._clean_string(
                 row.get("Documento(s) do Paciente")
             )
+            cpf_value = self._extract_cpf(row, documento_completo)
             numero_convenio = self._clean_string(
                 row.get("Convênio")
                 or row.get("Numero Convenio")
@@ -404,7 +406,7 @@ class ExcelParserService:
                 endereco_normalizado=endereco_normalizado,
                 documento_completo=documento_completo,
                 documento_normalizado=None,  # Will be set during normalization
-                cpf=None,  # Will be extracted during normalization
+                cpf=cpf_value,
                 rg=None,  # Will be extracted during normalization
                 numero_convenio=numero_convenio,
                 nome_convenio=nome_convenio,
@@ -479,6 +481,26 @@ class ExcelParserService:
             return contiguous[0]
 
         # If nothing with DDD was found, ignore shorter numbers
+        return None
+
+    def _extract_cpf(self, row: pd.Series, documento_completo: Optional[str]) -> Optional[str]:
+        """Extract CPF information from spreadsheet row or document field."""
+
+        candidates: List[str] = []
+
+        for key in ("CPF", "Cpf", "cpf"):
+            value = row.get(key)
+            if value is not None and not pd.isna(value):
+                candidates.append(str(value))
+
+        if documento_completo:
+            candidates.append(documento_completo)
+
+        for candidate in candidates:
+            normalized = normalize_cpf(candidate)
+            if normalized and len(normalized) == 11:
+                return normalized
+
         return None
 
     def _parse_datetime(self, value: Any) -> Tuple[datetime, str]:
@@ -706,7 +728,9 @@ class ExcelParserService:
                         # Create a new appointment with normalized documents
                         appointment_dict = appointment.model_dump()
                         appointment_dict["documento_normalizado"] = normalized
-                        appointment_dict["cpf"] = normalized.get("cpf")
+                        cpf_normalized = normalized.get("cpf")
+                        if cpf_normalized:
+                            appointment_dict["cpf"] = cpf_normalized
                         appointment_dict["rg"] = normalized.get("rg")
                         normalized_appointments.append(
                             Appointment(**appointment_dict)

@@ -96,6 +96,7 @@ def test_create_appointment_success(client: TestClient) -> None:
         "hora_agendamento": "09:00",
         "status": "Confirmado",
         "telefone": "11999988888",
+        "cpf": "12345678901",
     }
 
     service_mock = MagicMock()
@@ -143,6 +144,7 @@ def test_create_appointment_error_responses(
         "hora_agendamento": "09:00",
         "status": "Confirmado",
         "telefone": "11999988888",
+        "cpf": "12345678901",
     }
 
     service_mock = MagicMock()

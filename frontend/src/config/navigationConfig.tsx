@@ -68,6 +68,15 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     allowedRoles: [ROLES.ADMIN, ROLES.COLABORADOR],
   },
   {
+    id: 'clientes',
+    label: 'Clientes',
+    description: 'Gerencie pacientes e históricos',
+    group: 'cadastros',
+    icon: UsersIcon,
+    to: '/cadastros/clientes',
+    allowedRoles: [ROLES.ADMIN, ROLES.COLABORADOR],
+  },
+  {
     id: 'carros',
     label: 'Carros',
     description: 'Gerencie a frota disponível',

@@ -4,7 +4,7 @@ MongoDB implementation of AppointmentRepository.
 
 import asyncio
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
@@ -635,6 +635,21 @@ class AppointmentRepository(AppointmentRepositoryInterface):
             {"date": item["_id"], "value": int(item["count"])}
             for item in trend_result
         ]
+
+        if start_date and end_date:
+            total_days = (end_date - start_date).days
+            if total_days > 0:
+                trend_index = {point["date"]: point["value"] for point in trend_points}
+                trend_points = [
+                    {
+                        "date": (start_date + timedelta(days=offset)).strftime("%Y-%m-%d"),
+                        "value": trend_index.get(
+                            (start_date + timedelta(days=offset)).strftime("%Y-%m-%d"),
+                            0,
+                        ),
+                    }
+                    for offset in range(total_days)
+                ]
 
         top_units = [
             {

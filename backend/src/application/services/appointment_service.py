@@ -13,6 +13,7 @@ from src.application.dtos.appointment_dto import (
     AppointmentResponseDTO,
     AppointmentScope,
 )
+from src.application.services.client_service import ClientService
 from src.application.services.excel_parser_service import ExcelParserService
 from src.domain.entities.appointment import Appointment
 from src.domain.entities.tag import TagReference
@@ -44,6 +45,7 @@ class AppointmentService:
         ] = None,
         tag_repository: Optional[TagRepositoryInterface] = None,
         max_tags_per_appointment: int = 5,
+        client_service: Optional[ClientService] = None,
     ):
         """
         Initialize the service with dependencies.
@@ -57,6 +59,7 @@ class AppointmentService:
         self.logistics_package_repository = logistics_package_repository
         self.tag_repository = tag_repository
         self.max_tags_per_appointment = max(max_tags_per_appointment, 0)
+        self.client_service = client_service
 
     async def _load_logistics_package(
         self, package_id: str
@@ -158,8 +161,8 @@ class AppointmentService:
                 errors.insert(
                     0,
                     (
-                        f"{len(blocked_by_past_dates)} agendamentos com data anterior a hoje "
-                        "foram encontrados na planilha."
+                        "Planilha contém "
+                        f"{len(blocked_by_past_dates)} agendamentos com data no passado."
                     ),
                 )
 
@@ -223,6 +226,10 @@ class AppointmentService:
                             new_appointments
                         )
                     )
+                    if self.client_service:
+                        await self.client_service.sync_from_appointments(
+                            saved_appointments
+                        )
 
             # Build success message based on duplicates found
             if duplicates_found > 0:
@@ -496,6 +503,7 @@ class AppointmentService:
                 cip=cip_value,
                 status=appointment_data.status,
                 telefone=phone,
+                cpf=appointment_data.cpf,
                 carro=carro_value,
                 logistics_package_id=logistics_package_id,
                 logistics_package_name=logistics_package_name,
@@ -522,6 +530,9 @@ class AppointmentService:
                 }
 
             created = await self.appointment_repository.create(appointment)
+
+            if self.client_service:
+                await self.client_service.sync_from_appointment(created)
 
             return {
                 "success": True,
