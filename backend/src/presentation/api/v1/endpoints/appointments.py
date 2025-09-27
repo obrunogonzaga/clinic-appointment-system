@@ -32,6 +32,7 @@ from src.application.services.address_normalization_service import (
     AddressNormalizationService,
 )
 from src.application.services.appointment_service import AppointmentService
+from src.application.services.client_service import ClientService
 from src.application.services.car_service import CarService
 from src.application.services.dashboard_analytics_service import (
     DashboardAnalyticsService,
@@ -45,12 +46,14 @@ from src.infrastructure.config import Settings, get_settings
 from src.infrastructure.container import (
     get_appointment_repository,
     get_car_repository,
+    get_client_repository,
     get_logistics_package_repository,
     get_tag_repository,
 )
 from src.infrastructure.repositories.appointment_repository import (
     AppointmentRepository,
 )
+from src.infrastructure.repositories.client_repository import ClientRepository
 from src.presentation.dependencies.auth import (
     get_current_active_user,
     get_current_admin_user,
@@ -74,6 +77,7 @@ async def get_appointment_service(
     car_repository=Depends(get_car_repository),
     logistics_package_repository=Depends(get_logistics_package_repository),
     tag_repository: TagRepository = Depends(get_tag_repository),
+    client_repository: ClientRepository = Depends(get_client_repository),
     settings: Settings = Depends(get_settings),
 ) -> AppointmentService:
     """Get appointment service instance."""
@@ -100,12 +104,15 @@ async def get_appointment_service(
     except ValueError:
         # OpenRouter not configured, continue without normalization services
         excel_parser = ExcelParserService(car_service=car_service)
+    client_service = ClientService(client_repository)
+
     return AppointmentService(
         appointment_repository,
         excel_parser,
         logistics_package_repository=logistics_package_repository,
         tag_repository=tag_repository,
         max_tags_per_appointment=settings.max_tags_per_appointment,
+        client_service=client_service,
     )
 
 

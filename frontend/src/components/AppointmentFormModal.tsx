@@ -75,6 +75,11 @@ const formSchema = z.object({
       const digits = value.replace(/\D/g, '');
       return digits.length === 10 || digits.length === 11;
     }, 'Telefone deve conter 10 ou 11 dígitos'),
+  cpf: z
+    .string()
+    .trim()
+    .min(1, 'Informe o CPF do paciente')
+    .refine((value) => value.replace(/\D/g, '').length === 11, 'CPF deve conter 11 dígitos'),
   carro: z.string().trim().default(''),
   logistics_package_id: z.string().trim().default(''),
   observacoes: z.string().trim().default(''),
@@ -139,6 +144,7 @@ export function AppointmentFormModal({
       nome_marca: DEFAULT_BRAND,
       nome_unidade: DEFAULT_UNIT,
       nome_paciente: '',
+      cpf: '',
       date: '',
       time: '',
       tipo_consulta: '',
@@ -228,6 +234,7 @@ export function AppointmentFormModal({
     }
 
     const phoneDigits = values.telefone.replace(/\D/g, '');
+    const cpfDigits = values.cpf.replace(/\D/g, '');
 
     const payload: AppointmentCreateRequest = {
       nome_marca: values.nome_marca.trim(),
@@ -237,6 +244,7 @@ export function AppointmentFormModal({
       cip: values.cip.trim() || undefined,
       status: values.status || DEFAULT_STATUS,
       telefone: phoneDigits,
+      cpf: cpfDigits,
       carro: values.carro.trim() || undefined,
       observacoes: values.observacoes.trim() || undefined,
       driver_id: values.driver_id || undefined,
@@ -401,6 +409,19 @@ export function AppointmentFormModal({
             />
             {errors.telefone && (
               <p className="mt-1 text-sm text-red-600">{errors.telefone.message}</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">CPF *</label>
+            <input
+              type="text"
+              {...register('cpf')}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              placeholder="00000000000"
+              disabled={isSubmitting}
+            />
+            {errors.cpf && (
+              <p className="mt-1 text-sm text-red-600">{errors.cpf.message}</p>
             )}
           </div>
           {logisticsPackages.length > 0 && (

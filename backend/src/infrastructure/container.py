@@ -9,6 +9,7 @@ from src.infrastructure.repositories.appointment_repository import (
     AppointmentRepository,
 )
 from src.infrastructure.repositories.car_repository import CarRepository
+from src.infrastructure.repositories.client_repository import ClientRepository
 from src.infrastructure.repositories.collector_repository import (
     CollectorRepository,
 )
@@ -42,6 +43,7 @@ class Container:
         self._car_repository: Optional[CarRepository] = None
         self._driver_repository: Optional[DriverRepository] = None
         self._collector_repository: Optional[CollectorRepository] = None
+        self._client_repository: Optional[ClientRepository] = None
         self._user_repository: Optional[UserRepository] = None
         self._notification_repository: Optional[NotificationRepository] = None
         self._tag_repository: Optional[TagRepository] = None
@@ -142,6 +144,14 @@ class Container:
         return self._collector_repository
 
     @property
+    def client_repository(self) -> ClientRepository:
+        """Get client repository instance."""
+
+        if self._client_repository is None:
+            self._client_repository = ClientRepository(self.database)
+        return self._client_repository
+
+    @property
     def logistics_package_repository(self) -> LogisticsPackageRepository:
         """Get logistics package repository instance."""
 
@@ -227,6 +237,7 @@ class Container:
             await self.car_repository.create_indexes()
             await self.driver_repository.create_indexes()
             await self.collector_repository.create_indexes()
+            await self.client_repository.ensure_indexes()
             await self.user_repository.ensure_indexes()
             await self.notification_repository.create_indexes()
             await self.tag_repository.ensure_indexes()
@@ -316,6 +327,12 @@ async def get_collector_repository() -> CollectorRepository:
         CollectorRepository: Repository instance
     """
     return container.collector_repository
+
+
+async def get_client_repository() -> ClientRepository:
+    """Dependency for getting client repository instance."""
+
+    return container.client_repository
 
 
 async def get_user_repository() -> UserRepository:

@@ -58,6 +58,14 @@ import type {
     LogisticsPackageResponse,
     LogisticsPackageUpdateRequest,
 } from '../types/logistics-package';
+import type {
+    ClientCreateRequest,
+    ClientDataResponse,
+    ClientDetailResponse,
+    ClientListParams,
+    ClientListResponse,
+    ClientUpdateRequest,
+} from '../types/client';
 
 const resolveApiBaseUrl = (): string => {
   if (typeof window !== 'undefined' && window.ENV?.API_URL) {
@@ -466,6 +474,48 @@ export const collectorAPI = {
   // Get collector filter options
   getCollectorFilterOptions: async (): Promise<CollectorFilterOptions> => {
     const response = await api.get<CollectorFilterOptions>('/collectors/filter-options');
+    return response.data;
+  },
+};
+
+export const clientAPI = {
+  getClients: async (params: ClientListParams = {}): Promise<ClientListResponse> => {
+    const searchParams = new URLSearchParams();
+
+    if (params.search) searchParams.append('search', params.search);
+    if (params.page) searchParams.append('page', params.page.toString());
+    if (params.page_size) searchParams.append('page_size', params.page_size.toString());
+
+    const query = searchParams.toString();
+    const response = await api.get<ClientListResponse>(
+      `/clients${query ? `?${query}` : ''}`,
+      { withCredentials: true }
+    );
+
+    return response.data;
+  },
+
+  createClient: async (payload: ClientCreateRequest): Promise<ClientDataResponse> => {
+    const response = await api.post<ClientDataResponse>('/clients', payload, {
+      withCredentials: true,
+    });
+    return response.data;
+  },
+
+  updateClient: async (
+    id: string,
+    payload: ClientUpdateRequest
+  ): Promise<ClientDataResponse> => {
+    const response = await api.put<ClientDataResponse>(`/clients/${id}`, payload, {
+      withCredentials: true,
+    });
+    return response.data;
+  },
+
+  getClientDetail: async (id: string): Promise<ClientDetailResponse> => {
+    const response = await api.get<ClientDetailResponse>(`/clients/${id}`, {
+      withCredentials: true,
+    });
     return response.data;
   },
 };

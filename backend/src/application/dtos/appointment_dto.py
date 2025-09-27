@@ -5,9 +5,10 @@ from enum import Enum
 from typing import Dict, List, Literal, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from src.application.dtos.tag_dto import TagSummaryDTO
+from src.domain.utils import normalize_cpf
 
 
 class AppointmentScope(str, Enum):
@@ -36,6 +37,7 @@ class AppointmentCreateDTO(BaseModel):
     )
     status: str = Field("Pendente", description="Status do Agendamento")
     telefone: Optional[str] = Field(None, description="Telefone do Paciente")
+    cpf: str = Field(..., description="CPF do Paciente (apenas dígitos)")
     carro: Optional[str] = Field(
         None, description="Informações do carro utilizado"
     )
@@ -58,6 +60,14 @@ class AppointmentCreateDTO(BaseModel):
         default_factory=list,
         description="Lista de IDs de tags associadas ao agendamento",
     )
+
+    @field_validator("cpf", mode="before")
+    @classmethod
+    def normalize_cpf_value(cls, value: str) -> str:
+        normalized = normalize_cpf(value)
+        if not normalized or len(normalized) != 11:
+            raise ValueError("CPF inválido. Informe 11 dígitos válidos.")
+        return normalized
 
 
 class AppointmentUpdateDTO(BaseModel):

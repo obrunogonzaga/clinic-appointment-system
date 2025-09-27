@@ -3,6 +3,7 @@ import { ROLES, type Role } from '../constants/roles';
 import { AppointmentsPage } from '../pages/AppointmentsPage';
 import { CarsPage } from '../pages/CarsPage';
 import { CollectorsPage } from '../pages/CollectorsPage';
+import { ClientsPage } from '../pages/ClientsPage';
 import AdminDashboardPage from '../pages/dashboard/AdminDashboardPage';
 import OperationDashboardPage from '../pages/dashboard/OperationDashboardPage';
 import { DriversPage } from '../pages/DriversPage';
@@ -53,6 +54,13 @@ export const APP_ROUTES: AppRoute[] = [
     Component: CollectorsPage,
     allowedRoles: [ROLES.ADMIN, ROLES.COLABORADOR],
     breadcrumb: ['Cadastros', 'Coletoras'],
+  },
+  {
+    id: 'clients',
+    path: '/cadastros/clientes',
+    Component: ClientsPage,
+    allowedRoles: [ROLES.ADMIN, ROLES.COLABORADOR],
+    breadcrumb: ['Cadastros', 'Clientes'],
   },
   {
     id: 'cars',
