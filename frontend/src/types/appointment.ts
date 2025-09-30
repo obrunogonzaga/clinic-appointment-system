@@ -56,6 +56,7 @@ export interface Appointment {
   cadastrado_por?: string;
   agendado_por?: string;
   tags?: AppointmentTag[];
+  origin?: 'DASA' | 'Manual';
 }
 
 export interface AppointmentViewModel extends Appointment {
@@ -83,6 +84,7 @@ export interface AppointmentCreateRequest {
   nome_convenio?: string;
   carteira_convenio?: string;
   tags?: string[];
+  origin?: 'DASA' | 'Manual';
 }
 
 export interface AppointmentFilter {

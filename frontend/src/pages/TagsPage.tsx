@@ -58,6 +58,7 @@ export const TagsPage: React.FC = () => {
 
   const invalidateTags = () => {
     queryClient.invalidateQueries({ queryKey: ['tags'] });
+    queryClient.invalidateQueries({ queryKey: ['activeTags'] });
   };
 
   const createTagMutation = useMutation({
