@@ -1,7 +1,6 @@
-"""
-Service for managing appointments business logic.
-"""
+"""Service for managing appointments business logic."""
 
+import logging
 from datetime import datetime, timedelta
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple
 
@@ -13,6 +12,7 @@ from src.application.dtos.appointment_dto import (
     AppointmentResponseDTO,
     AppointmentScope,
 )
+from src.application.services.client_service import ClientService
 from src.application.services.excel_parser_service import ExcelParserService
 from src.domain.entities.appointment import Appointment
 from src.domain.entities.tag import TagReference
@@ -25,6 +25,10 @@ from src.domain.repositories.tag_repository_interface import (
 from src.domain.repositories.logistics_package_repository_interface import (
     LogisticsPackageRepositoryInterface,
 )
+from src.domain.utils import is_valid_cpf, normalize_cpf
+
+
+logger = logging.getLogger(__name__)
 
 
 class AppointmentService:
@@ -44,6 +48,7 @@ class AppointmentService:
         ] = None,
         tag_repository: Optional[TagRepositoryInterface] = None,
         max_tags_per_appointment: int = 5,
+        client_service: Optional[ClientService] = None,
     ):
         """
         Initialize the service with dependencies.
@@ -57,6 +62,22 @@ class AppointmentService:
         self.logistics_package_repository = logistics_package_repository
         self.tag_repository = tag_repository
         self.max_tags_per_appointment = max(max_tags_per_appointment, 0)
+        self.client_service = client_service
+
+    async def _sync_client_from_appointment(
+        self, appointment: Appointment
+    ) -> None:
+        if not self.client_service:
+            return
+
+        try:
+            await self.client_service.upsert_from_appointment(appointment)
+        except Exception as exc:  # pragma: no cover - defensive log
+            logger.warning(
+                "Failed to synchronize client for appointment %s: %s",
+                appointment.id,
+                exc,
+            )
 
     async def _load_logistics_package(
         self, package_id: str
@@ -224,6 +245,11 @@ class AppointmentService:
                         )
                     )
 
+                    if self.client_service:
+                        await self.client_service.bulk_upsert_from_appointments(
+                            saved_appointments
+                        )
+
             # Build success message based on duplicates found
             if duplicates_found > 0:
                 message = f"{len(saved_appointments)} agendamentos importados, {duplicates_found} duplicados ignorados."
@@ -373,6 +399,14 @@ class AppointmentService:
                     "message": "Telefone é obrigatório para novo agendamento.",
                     "error_code": "validation",
                 }
+
+            cpf_value = normalize_cpf(appointment_data.cpf)
+            if not cpf_value or not is_valid_cpf(cpf_value):
+                return {
+                    "success": False,
+                    "message": "CPF do paciente é obrigatório e deve ser válido.",
+                    "error_code": "validation",
+                }
             cip_value = (
                 appointment_data.cip.strip()
                 if appointment_data.cip and appointment_data.cip.strip()
@@ -506,6 +540,7 @@ class AppointmentService:
                 numero_convenio=appointment_data.numero_convenio,
                 nome_convenio=appointment_data.nome_convenio,
                 carteira_convenio=appointment_data.carteira_convenio,
+                cpf=cpf_value,
                 cadastrado_por=creator_name,
                 agendado_por=agendado_por,
                 tags=tag_references,
@@ -522,6 +557,8 @@ class AppointmentService:
                 }
 
             created = await self.appointment_repository.create(appointment)
+
+            await self._sync_client_from_appointment(created)
 
             return {
                 "success": True,
@@ -939,6 +976,8 @@ class AppointmentService:
                     "message": "Erro ao atualizar agendamento",
                     "error_code": "update_failed",
                 }
+
+            await self._sync_client_from_appointment(updated)
 
             return {
                 "success": True,

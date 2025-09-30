@@ -2,6 +2,7 @@
 
 from fastapi import Depends
 
+from src.application.services.client_service import ClientService
 from src.application.services.dashboard_analytics_service import (
     DashboardAnalyticsService,
 )
@@ -12,12 +13,14 @@ from src.infrastructure.container import (
     container,
     get_appointment_repository,
     get_car_repository,
+    get_client_repository,
     get_collector_repository,
     get_driver_repository,
 )
 from src.infrastructure.repositories.appointment_repository import (
     AppointmentRepository,
 )
+from src.infrastructure.repositories.client_repository import ClientRepository
 from src.infrastructure.repositories.car_repository import CarRepository
 from src.infrastructure.repositories.collector_repository import (
     CollectorRepository,
@@ -48,4 +51,18 @@ async def get_dashboard_analytics_service(
         driver_repository=driver_repository,
         collector_repository=collector_repository,
         car_repository=car_repository,
+    )
+
+
+async def get_client_service(
+    client_repository: ClientRepository = Depends(get_client_repository),
+    appointment_repository: AppointmentRepository = Depends(
+        get_appointment_repository
+    ),
+) -> ClientService:
+    """Provide the client service with Mongo repositories."""
+
+    return ClientService(
+        client_repository=client_repository,
+        appointment_repository=appointment_repository,
     )

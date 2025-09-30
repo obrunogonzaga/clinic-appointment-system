@@ -122,6 +122,14 @@ class AppointmentRepositoryInterface(ABC):
         pass
 
     @abstractmethod
+    async def find_many_by_ids(self, appointment_ids: List[str]) -> List[Appointment]:
+        """Retrieve appointments by a list of identifiers."""
+
+    @abstractmethod
+    async def list_by_cpf(self, cpf: str) -> List[Appointment]:
+        """Retrieve appointments associated with the given CPF."""
+
+    @abstractmethod
     async def update(
         self, appointment_id: str, update_data: Dict[str, Any]
     ) -> Optional[Appointment]:

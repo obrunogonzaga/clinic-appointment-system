@@ -34,6 +34,7 @@ class AppointmentCreateDTO(BaseModel):
     cip: Optional[str] = Field(
         None, description="Código CIP (Classificação Internacional de Procedimentos)"
     )
+    cpf: str = Field(..., description="CPF do paciente (apenas dígitos ou formatado)")
     status: str = Field("Pendente", description="Status do Agendamento")
     telefone: Optional[str] = Field(None, description="Telefone do Paciente")
     carro: Optional[str] = Field(

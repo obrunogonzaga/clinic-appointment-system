@@ -32,10 +32,48 @@ const DEFAULT_UNIT = 'LM-RECREIO 2 PEDRA DE ITAUNA D';
 const DEFAULT_STATUS = 'Pendente';
 const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 
+const sanitizeCpf = (cpf: string): string => cpf.replace(/\D/g, '');
+
+const validateCPF = (cpf: string): boolean => {
+  const cleanCPF = sanitizeCpf(cpf);
+  if (cleanCPF.length !== 11) {
+    return false;
+  }
+
+  if (cleanCPF === cleanCPF[0].repeat(11)) {
+    return false;
+  }
+
+  const digits = cleanCPF.split('').map(Number);
+
+  let sum = 0;
+  for (let i = 0; i < 9; i += 1) {
+    sum += digits[i] * (10 - i);
+  }
+  let firstCheckDigit = sum % 11;
+  firstCheckDigit = firstCheckDigit < 2 ? 0 : 11 - firstCheckDigit;
+  if (digits[9] !== firstCheckDigit) {
+    return false;
+  }
+
+  sum = 0;
+  for (let i = 0; i < 10; i += 1) {
+    sum += digits[i] * (11 - i);
+  }
+  let secondCheckDigit = sum % 11;
+  secondCheckDigit = secondCheckDigit < 2 ? 0 : 11 - secondCheckDigit;
+  return digits[10] === secondCheckDigit;
+};
+
 const formSchema = z.object({
   nome_marca: z.string().trim().min(1, 'Informe a marca/clinica'),
   nome_unidade: z.string().trim().min(1, 'Informe a unidade'),
   nome_paciente: z.string().trim().min(1, 'Informe o nome do paciente'),
+  cpf: z
+    .string()
+    .trim()
+    .min(1, 'Informe o CPF do paciente')
+    .refine((value) => validateCPF(value), 'CPF inválido'),
   date: z
     .string()
     .trim()
@@ -139,6 +177,7 @@ export function AppointmentFormModal({
       nome_marca: DEFAULT_BRAND,
       nome_unidade: DEFAULT_UNIT,
       nome_paciente: '',
+      cpf: '',
       date: '',
       time: '',
       tipo_consulta: '',
@@ -228,11 +267,13 @@ export function AppointmentFormModal({
     }
 
     const phoneDigits = values.telefone.replace(/\D/g, '');
+    const cpfDigits = sanitizeCpf(values.cpf);
 
     const payload: AppointmentCreateRequest = {
       nome_marca: values.nome_marca.trim(),
       nome_unidade: values.nome_unidade.trim(),
       nome_paciente: values.nome_paciente.trim(),
+      cpf: cpfDigits,
       tipo_consulta: values.tipo_consulta.trim() || undefined,
       cip: values.cip.trim() || undefined,
       status: values.status || DEFAULT_STATUS,
@@ -315,6 +356,26 @@ export function AppointmentFormModal({
             />
             {errors.nome_paciente && (
               <p className="mt-1 text-sm text-red-600">{errors.nome_paciente.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">CPF do paciente *</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={14}
+              {...register('cpf')}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              placeholder="Somente números"
+              disabled={isSubmitting}
+              onInput={(event) => {
+                const { value } = event.currentTarget;
+                event.currentTarget.value = sanitizeCpf(value).slice(0, 11);
+              }}
+            />
+            {errors.cpf && (
+              <p className="mt-1 text-sm text-red-600">{errors.cpf.message}</p>
             )}
           </div>
 

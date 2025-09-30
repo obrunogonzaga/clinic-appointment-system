@@ -67,6 +67,7 @@ export interface AppointmentCreateRequest {
   nome_marca: string;
   nome_unidade: string;
   nome_paciente: string;
+  cpf: string;
   data_agendamento?: string;
   hora_agendamento?: string;
   tipo_consulta?: string;
