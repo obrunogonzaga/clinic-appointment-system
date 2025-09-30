@@ -58,6 +58,12 @@ import type {
     LogisticsPackageResponse,
     LogisticsPackageUpdateRequest,
 } from '../types/logistics-package';
+import type {
+    ClientCreateRequest,
+    ClientListResponse,
+    ClientResponse,
+    ClientUpdateRequest,
+} from '../types/client';
 
 const resolveApiBaseUrl = (): string => {
   if (typeof window !== 'undefined' && window.ENV?.API_URL) {
@@ -272,6 +278,59 @@ export const appointmentAPI = {
     );
 
     return response.data.data;
+  },
+};
+
+export const clientAPI = {
+  listClients: async ({
+    search,
+    page = 1,
+    page_size = 20,
+  }: {
+    search?: string;
+    page?: number;
+    page_size?: number;
+  }): Promise<ClientListResponse> => {
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('page_size', page_size.toString());
+    if (search) {
+      params.append('search', search);
+    }
+
+    const response = await api.get<ClientListResponse>(
+      `/clients?${params.toString()}`,
+      { withCredentials: true }
+    );
+
+    return response.data;
+  },
+
+  getClient: async (clientId: string): Promise<ClientResponse> => {
+    const response = await api.get<ClientResponse>(`/clients/${clientId}`, {
+      withCredentials: true,
+    });
+
+    return response.data;
+  },
+
+  createClient: async (payload: ClientCreateRequest): Promise<ClientResponse> => {
+    const response = await api.post<ClientResponse>('/clients', payload, {
+      withCredentials: true,
+    });
+
+    return response.data;
+  },
+
+  updateClient: async (
+    clientId: string,
+    payload: ClientUpdateRequest
+  ): Promise<ClientResponse> => {
+    const response = await api.put<ClientResponse>(`/clients/${clientId}`, payload, {
+      withCredentials: true,
+    });
+
+    return response.data;
   },
 };
 

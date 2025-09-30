@@ -2,8 +2,9 @@
 Service for managing appointments business logic.
 """
 
+import logging
 from datetime import datetime, timedelta
-from typing import Any, BinaryIO, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, BinaryIO, Dict, List, Optional, Tuple
 
 from pydantic import ValidationError
 
@@ -25,6 +26,13 @@ from src.domain.repositories.tag_repository_interface import (
 from src.domain.repositories.logistics_package_repository_interface import (
     LogisticsPackageRepositoryInterface,
 )
+from src.domain.utils.cpf import format_cpf, is_valid_cpf, normalize_cpf
+
+if TYPE_CHECKING:  # pragma: no cover - typing only
+    from src.application.services.client_service import ClientService
+
+
+logger = logging.getLogger(__name__)
 
 
 class AppointmentService:
@@ -44,6 +52,7 @@ class AppointmentService:
         ] = None,
         tag_repository: Optional[TagRepositoryInterface] = None,
         max_tags_per_appointment: int = 5,
+        client_service: Optional["ClientService"] = None,
     ):
         """
         Initialize the service with dependencies.
@@ -57,6 +66,7 @@ class AppointmentService:
         self.logistics_package_repository = logistics_package_repository
         self.tag_repository = tag_repository
         self.max_tags_per_appointment = max(max_tags_per_appointment, 0)
+        self.client_service = client_service
 
     async def _load_logistics_package(
         self, package_id: str
@@ -158,8 +168,7 @@ class AppointmentService:
                 errors.insert(
                     0,
                     (
-                        f"{len(blocked_by_past_dates)} agendamentos com data anterior a hoje "
-                        "foram encontrados na planilha."
+                        f"{len(blocked_by_past_dates)} agendamentos com data no passado foram encontrados na planilha."
                     ),
                 )
 
@@ -223,6 +232,18 @@ class AppointmentService:
                             new_appointments
                         )
                     )
+
+                    if self.client_service:
+                        for created_appointment in saved_appointments:
+                            try:
+                                await self.client_service.sync_from_appointment(
+                                    created_appointment
+                                )
+                            except Exception as exc:  # pragma: no cover - defensive
+                                logger.warning(
+                                    "Falha ao sincronizar cliente durante importação: %s",
+                                    exc,
+                                )
 
             # Build success message based on duplicates found
             if duplicates_found > 0:
@@ -486,6 +507,21 @@ class AppointmentService:
                 car_id_value = package.car_id
                 carro_value = package.car_display_name
 
+            cpf_digits = normalize_cpf(appointment_data.cpf)
+            if cpf_digits is None or not is_valid_cpf(cpf_digits):
+                return {
+                    "success": False,
+                    "message": "CPF inválido. Informe 11 dígitos válidos.",
+                    "error_code": "validation",
+                }
+
+            normalized_documents = {
+                "cpf": cpf_digits,
+                "cpf_formatted": format_cpf(cpf_digits),
+                "rg": None,
+                "rg_formatted": None,
+            }
+
             appointment = Appointment(
                 nome_marca=appointment_data.nome_marca,
                 nome_unidade=appointment_data.nome_unidade,
@@ -496,6 +532,8 @@ class AppointmentService:
                 cip=cip_value,
                 status=appointment_data.status,
                 telefone=phone,
+                cpf=cpf_digits,
+                documento_normalizado=normalized_documents,
                 carro=carro_value,
                 logistics_package_id=logistics_package_id,
                 logistics_package_name=logistics_package_name,
@@ -522,6 +560,15 @@ class AppointmentService:
                 }
 
             created = await self.appointment_repository.create(appointment)
+
+            if self.client_service:
+                try:
+                    await self.client_service.sync_from_appointment(created)
+                except Exception as exc:  # pragma: no cover - defensive branch
+                    logger.warning(
+                        "Falha ao sincronizar cliente após criar agendamento: %s",
+                        exc,
+                    )
 
             return {
                 "success": True,

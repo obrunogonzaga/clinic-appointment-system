@@ -73,6 +73,7 @@ export interface AppointmentCreateRequest {
   cip?: string;
   status?: string;
   telefone: string;
+  cpf: string;
   carro?: string;
   observacoes?: string;
   driver_id?: string;

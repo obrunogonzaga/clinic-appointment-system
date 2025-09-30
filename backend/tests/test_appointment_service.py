@@ -18,6 +18,8 @@ from src.domain.entities.appointment import Appointment
 from src.domain.entities.tag import Tag, TagReference
 from src.domain.entities.logistics_package import LogisticsPackage
 
+VALID_CPF = "52998224725"
+
 
 @pytest.mark.asyncio
 async def test_create_appointment_success() -> None:
@@ -36,6 +38,7 @@ async def test_create_appointment_success() -> None:
         hora_agendamento="09:00",
         status="Confirmado",
         telefone="11999988888",
+        cpf=VALID_CPF,
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -63,6 +66,7 @@ async def test_create_appointment_duplicate() -> None:
         hora_agendamento="09:00",
         status="Confirmado",
         telefone="11999988888",
+        cpf=VALID_CPF,
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -132,6 +136,7 @@ async def test_create_appointment_validation_error() -> None:
         hora_agendamento="09:00",
         status="Status-Invalido",
         telefone="11999988888",
+        cpf=VALID_CPF,
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -158,6 +163,7 @@ async def test_create_appointment_internal_error() -> None:
         hora_agendamento="09:00",
         status="Confirmado",
         telefone="11999988888",
+        cpf=VALID_CPF,
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -228,6 +234,34 @@ async def test_create_appointment_missing_phone() -> None:
         data_agendamento=datetime(2025, 1, 10, 9, 0),
         hora_agendamento="09:00",
         status="Confirmado",
+        cpf=VALID_CPF,
+    )
+
+    result = await service.create_appointment(dto, created_by="Ana Admin")
+
+    assert result["success"] is False
+    assert result["error_code"] == "validation"
+    repository.find_duplicates.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_create_appointment_invalid_cpf() -> None:
+    """Invalid CPF numbers should block appointment creation."""
+
+    repository = MagicMock()
+    repository.find_duplicates = AsyncMock()
+
+    service = AppointmentService(repository, excel_parser=MagicMock())
+
+    dto = AppointmentCreateDTO(
+        nome_marca="Marca",
+        nome_unidade="Unidade",
+        nome_paciente="Paciente",
+        data_agendamento=datetime(2025, 1, 10, 9, 0),
+        hora_agendamento="09:00",
+        status="Confirmado",
+        telefone="11999988888",
+        cpf="12345678901",
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -254,6 +288,7 @@ async def test_create_appointment_sets_agendado_por_when_status_agendado() -> No
         hora_agendamento="09:00",
         status="Agendado",
         telefone="11999988888",
+        cpf=VALID_CPF,
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -301,6 +336,7 @@ async def test_create_appointment_with_logistics_package() -> None:
         status="Confirmado",
         telefone="11999988888",
         logistics_package_id=str(package.id),
+        cpf=VALID_CPF,
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -341,6 +377,7 @@ async def test_create_appointment_invalid_logistics_package() -> None:
         status="Confirmado",
         telefone="11999988888",
         logistics_package_id="missing",
+        cpf=VALID_CPF,
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -380,6 +417,7 @@ async def test_create_appointment_with_tags_success() -> None:
         status="Confirmado",
         telefone="11999988888",
         tags=[tag_id],
+        cpf=VALID_CPF,
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -414,6 +452,7 @@ async def test_create_appointment_with_invalid_tag() -> None:
         status="Confirmado",
         telefone="11999988888",
         tags=[str(uuid4())],
+        cpf=VALID_CPF,
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -448,6 +487,7 @@ async def test_create_appointment_exceeds_tag_limit() -> None:
         status="Confirmado",
         telefone="11999988888",
         tags=[str(uuid4()), str(uuid4())],
+        cpf=VALID_CPF,
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -455,6 +495,39 @@ async def test_create_appointment_exceeds_tag_limit() -> None:
     assert result["success"] is False
     assert result["error_code"] == "limit_exceeded"
     tag_repo.find_by_ids.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_create_appointment_triggers_client_sync() -> None:
+    """Client service should be notified when available."""
+
+    repository = MagicMock()
+    repository.find_duplicates = AsyncMock(return_value=[])
+    repository.create = AsyncMock(side_effect=lambda appointment: appointment)
+
+    client_service = MagicMock()
+    client_service.sync_from_appointment = AsyncMock()
+
+    service = AppointmentService(
+        repository,
+        excel_parser=MagicMock(),
+        client_service=client_service,
+    )
+
+    dto = AppointmentCreateDTO(
+        nome_marca="Marca",
+        nome_unidade="Unidade",
+        nome_paciente="Paciente",
+        data_agendamento=datetime(2025, 1, 10, 9, 0),
+        hora_agendamento="09:00",
+        status="Confirmado",
+        telefone="11999988888",
+        cpf=VALID_CPF,
+    )
+
+    await service.create_appointment(dto, created_by="Ana Admin")
+
+    client_service.sync_from_appointment.assert_awaited_once()
 
 
 @pytest.mark.asyncio

@@ -11,6 +11,7 @@ import { APPOINTMENT_STATUS_OPTIONS } from '../utils/appointmentViewModel';
 import type { Tag } from '../types/tag';
 import type { LogisticsPackage } from '../types/logistics-package';
 import { TagSelector } from './tags/TagSelector';
+import { isValidCpf, normalizeCpf } from '../utils/cpf';
 
 interface AppointmentFormModalProps {
   isOpen: boolean;
@@ -75,6 +76,11 @@ const formSchema = z.object({
       const digits = value.replace(/\D/g, '');
       return digits.length === 10 || digits.length === 11;
     }, 'Telefone deve conter 10 ou 11 dígitos'),
+  cpf: z
+    .string()
+    .trim()
+    .min(1, 'Informe o CPF do paciente')
+    .refine((value) => isValidCpf(value), 'CPF inválido. Verifique os dígitos.'),
   carro: z.string().trim().default(''),
   logistics_package_id: z.string().trim().default(''),
   observacoes: z.string().trim().default(''),
@@ -145,6 +151,7 @@ export function AppointmentFormModal({
       cip: '',
       status: defaultStatus,
       telefone: '',
+      cpf: '',
       carro: '',
       logistics_package_id: '',
       observacoes: '',
@@ -228,6 +235,7 @@ export function AppointmentFormModal({
     }
 
     const phoneDigits = values.telefone.replace(/\D/g, '');
+    const cpfDigits = normalizeCpf(values.cpf);
 
     const payload: AppointmentCreateRequest = {
       nome_marca: values.nome_marca.trim(),
@@ -237,6 +245,7 @@ export function AppointmentFormModal({
       cip: values.cip.trim() || undefined,
       status: values.status || DEFAULT_STATUS,
       telefone: phoneDigits,
+      cpf: cpfDigits,
       carro: values.carro.trim() || undefined,
       observacoes: values.observacoes.trim() || undefined,
       driver_id: values.driver_id || undefined,
@@ -401,6 +410,19 @@ export function AppointmentFormModal({
             />
             {errors.telefone && (
               <p className="mt-1 text-sm text-red-600">{errors.telefone.message}</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">CPF *</label>
+            <input
+              type="text"
+              {...register('cpf')}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              placeholder="00000000000"
+              disabled={isSubmitting}
+            />
+            {errors.cpf && (
+              <p className="mt-1 text-sm text-red-600">{errors.cpf.message}</p>
             )}
           </div>
           {logisticsPackages.length > 0 && (

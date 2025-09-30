@@ -85,6 +85,7 @@ describe('Appointments smoke tests', () => {
 
     assert.ok(markup.includes('Adicionar Agendamento'));
     assert.ok(markup.includes('name="nome_paciente"'));
+    assert.ok(markup.includes('name="cpf"'));
     assert.ok(markup.includes('Confirmado'));
   });
 

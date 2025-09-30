@@ -4,7 +4,7 @@ MongoDB implementation of AppointmentRepository.
 
 import asyncio
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
@@ -635,6 +635,22 @@ class AppointmentRepository(AppointmentRepositoryInterface):
             {"date": item["_id"], "value": int(item["count"])}
             for item in trend_result
         ]
+
+        # Ensure the trend covers the full requested interval, including dates
+        # without appointments so the dashboard can render continuous graphs.
+        total_days = max((end_date - start_date).days, 0)
+        if total_days:
+            trend_map = {entry["date"]: entry["value"] for entry in trend_points}
+            trend_points = [
+                {
+                    "date": (start_date + timedelta(days=offset)).strftime("%Y-%m-%d"),
+                    "value": trend_map.get(
+                        (start_date + timedelta(days=offset)).strftime("%Y-%m-%d"),
+                        0,
+                    ),
+                }
+                for offset in range(total_days)
+            ]
 
         top_units = [
             {

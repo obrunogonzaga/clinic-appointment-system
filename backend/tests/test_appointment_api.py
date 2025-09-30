@@ -23,6 +23,9 @@ from src.presentation.dependencies.auth import (
 from src.presentation.dependencies.services import get_dashboard_analytics_service
 
 
+VALID_CPF = "52998224725"
+
+
 @pytest.fixture
 def active_user() -> User:
     """Authenticated user injected into route dependencies."""
@@ -76,7 +79,7 @@ def _build_response_dto() -> AppointmentResponseDTO:
         endereco_normalizado=None,
         documento_completo=None,
         documento_normalizado=None,
-        cpf=None,
+        cpf=VALID_CPF,
         rg=None,
         numero_convenio=None,
         nome_convenio=None,
@@ -96,6 +99,7 @@ def test_create_appointment_success(client: TestClient) -> None:
         "hora_agendamento": "09:00",
         "status": "Confirmado",
         "telefone": "11999988888",
+        "cpf": VALID_CPF,
     }
 
     service_mock = MagicMock()
@@ -143,6 +147,7 @@ def test_create_appointment_error_responses(
         "hora_agendamento": "09:00",
         "status": "Confirmado",
         "telefone": "11999988888",
+        "cpf": VALID_CPF,
     }
 
     service_mock = MagicMock()

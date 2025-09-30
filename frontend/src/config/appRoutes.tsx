@@ -9,6 +9,7 @@ import { DriversPage } from '../pages/DriversPage';
 import { LogisticsPackagesPage } from '../pages/LogisticsPackagesPage';
 import { TagsPage } from '../pages/TagsPage';
 import { UsersPage } from '../pages/UsersPage';
+import { ClientsPage } from '../pages/ClientsPage';
 
 export interface AppRoute {
   id: string;
@@ -39,6 +40,13 @@ export const APP_ROUTES: AppRoute[] = [
     Component: AppointmentsPage,
     allowedRoles: [ROLES.ADMIN, ROLES.COLABORADOR],
     breadcrumb: ['Operação', 'Agendamentos'],
+  },
+  {
+    id: 'clients',
+    path: '/cadastros/clientes',
+    Component: ClientsPage,
+    allowedRoles: [ROLES.ADMIN, ROLES.COLABORADOR],
+    breadcrumb: ['Cadastros', 'Clientes'],
   },
   {
     id: 'drivers',

@@ -36,6 +36,7 @@ class AppointmentCreateDTO(BaseModel):
     )
     status: str = Field("Pendente", description="Status do Agendamento")
     telefone: Optional[str] = Field(None, description="Telefone do Paciente")
+    cpf: str = Field(..., description="CPF do paciente (apenas dígitos)")
     carro: Optional[str] = Field(
         None, description="Informações do carro utilizado"
     )
