@@ -15,7 +15,7 @@ from src.application.services.address_normalization_service import (
 from src.application.services.document_normalization_service import (
     DocumentNormalizationService,
 )
-from src.domain.entities.appointment import Appointment
+from src.domain.entities.appointment import Appointment, AppointmentOrigin
 from src.infrastructure.config import get_settings
 
 # Import CarService for type annotation
@@ -115,7 +115,9 @@ class ExcelParserService:
         # AA-AA-AA-AA-AA (ex.: AD-SF-FQ-AC-AV ou AD-SF-FQ-AC-BALTHAZAR)
         # Aceita segmentos de 2 ou mais letras. Texto extra à direita
         # (ex.: "CENTER 3 CARRO 1 - UND84") será preservado.
-        self.SALA_PATTERN = re.compile(r"^[A-Z]{2,}(?:-[A-Z]{2,}){4}(?:\s+.*)?$")
+        self.SALA_PATTERN = re.compile(
+            r"^[A-Z]{2,}(?:-[A-Z]{2,}){4}(?:\s+.*)?$"
+        )
         self.SALA_EXTRACT_PATTERN = re.compile(
             r"^(?P<sala>[A-Z]{2,}(?:-[A-Z]{2,}){4})(?:\s+(?P<carro>.+))?$"
         )
@@ -419,6 +421,7 @@ class ExcelParserService:
                 numero_convenio=numero_convenio,
                 nome_convenio=nome_convenio,
                 carteira_convenio=carteira_convenio,
+                origin=AppointmentOrigin.DASA,
             )
 
             return appointment

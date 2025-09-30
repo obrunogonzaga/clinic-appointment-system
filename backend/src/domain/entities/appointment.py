@@ -3,12 +3,20 @@ Appointment entity representing a medical appointment.
 """
 
 from datetime import datetime
+from enum import Enum
 from typing import Dict, List, Optional
 
 from pydantic import Field, field_validator
 
 from src.domain.base import Entity
 from src.domain.entities.tag import TagReference
+
+
+class AppointmentOrigin(str, Enum):
+    """Origin/source of the appointment creation."""
+
+    DASA = "DASA"  # Imported from DASA Excel file
+    MANUAL = "Manual"  # Manually created by user
 
 
 class Appointment(Entity):
@@ -101,7 +109,12 @@ class Appointment(Entity):
         None, description="Usuário responsável pelo cadastro do agendamento"
     )
     agendado_por: Optional[str] = Field(
-        None, description="Usuário responsável por mover o status para Agendado"
+        None,
+        description="Usuário responsável por mover o status para Agendado",
+    )
+    origin: AppointmentOrigin = Field(
+        default=AppointmentOrigin.MANUAL,
+        description="Origem do agendamento (DASA import ou Manual)",
     )
     tags: List[TagReference] = Field(
         default_factory=list,

@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from src.application.dtos.tag_dto import TagSummaryDTO
+from src.domain.entities.appointment import AppointmentOrigin
 
 
 class AppointmentScope(str, Enum):
@@ -32,7 +33,8 @@ class AppointmentCreateDTO(BaseModel):
     )
     tipo_consulta: Optional[str] = Field(None, description="Tipo de Consulta")
     cip: Optional[str] = Field(
-        None, description="Código CIP (Classificação Internacional de Procedimentos)"
+        None,
+        description="Código CIP (Classificação Internacional de Procedimentos)",
     )
     status: str = Field("Pendente", description="Status do Agendamento")
     telefone: Optional[str] = Field(None, description="Telefone do Paciente")
@@ -57,6 +59,10 @@ class AppointmentCreateDTO(BaseModel):
     tags: List[str] = Field(
         default_factory=list,
         description="Lista de IDs de tags associadas ao agendamento",
+    )
+    origin: AppointmentOrigin = Field(
+        default=AppointmentOrigin.MANUAL,
+        description="Origem do agendamento (DASA ou Manual)",
     )
 
 
@@ -122,6 +128,9 @@ class AppointmentResponseDTO(BaseModel):
     hora_confirmacao: Optional[str] = None
     tags: List[TagSummaryDTO] = Field(
         default_factory=list, description="Tags vinculadas ao agendamento"
+    )
+    origin: str = Field(
+        default="Manual", description="Origem do agendamento (DASA ou Manual)"
     )
     created_at: datetime
     updated_at: Optional[datetime]
@@ -275,6 +284,7 @@ class AppointmentFullUpdateDTO(BaseModel):
     rg: Optional[str] = None
     # Tags vinculadas (IDs)
     tags: Optional[List[str]] = None
+    origin: Optional[AppointmentOrigin] = None
 
 
 class AppointmentDeleteResponseDTO(BaseModel):
