@@ -6,6 +6,9 @@ from .appointment_repository_interface import AppointmentRepositoryInterface
 from .car_repository_interface import CarRepositoryInterface
 from .collector_repository_interface import CollectorRepositoryInterface
 from .driver_repository_interface import DriverRepositoryInterface
+from .patient_document_repository_interface import (
+    PatientDocumentRepositoryInterface,
+)
 from .tag_repository_interface import TagRepositoryInterface
 
 __all__ = [
@@ -13,5 +16,6 @@ __all__ = [
     "CarRepositoryInterface",
     "CollectorRepositoryInterface",
     "DriverRepositoryInterface",
+    "PatientDocumentRepositoryInterface",
     "TagRepositoryInterface",
 ]

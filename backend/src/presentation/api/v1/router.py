@@ -18,6 +18,7 @@ from src.presentation.api.v1.endpoints import (
     drivers,
     logistics_packages,
     notifications,
+    patient_documents,
     reports,
     tags,
 )
@@ -42,6 +43,12 @@ api_v1_router.include_router(
 
 api_v1_router.include_router(
     appointments.router, prefix="/appointments", tags=["Appointments"]
+)
+
+api_v1_router.include_router(
+    patient_documents.router,
+    prefix="/appointments",
+    tags=["Patient Documents"],
 )
 
 api_v1_router.include_router(

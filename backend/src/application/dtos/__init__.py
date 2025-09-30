@@ -11,6 +11,13 @@ from .appointment_dto import (
     DashboardStatsDTO,
     ExcelUploadResponseDTO,
 )
+from .patient_document_dto import (
+    PatientDocumentConfirmRequestDTO,
+    PatientDocumentDownloadURLDTO,
+    PatientDocumentMetadataDTO,
+    PatientDocumentPresignRequestDTO,
+    PatientDocumentPresignResponseDTO,
+)
 from .tag_dto import (
     TagCreateDTO,
     TagListResponseDTO,
@@ -27,6 +34,11 @@ __all__ = [
     "AppointmentScope",
     "ExcelUploadResponseDTO",
     "DashboardStatsDTO",
+    "PatientDocumentConfirmRequestDTO",
+    "PatientDocumentDownloadURLDTO",
+    "PatientDocumentMetadataDTO",
+    "PatientDocumentPresignRequestDTO",
+    "PatientDocumentPresignResponseDTO",
     "TagCreateDTO",
     "TagUpdateDTO",
     "TagResponseDTO",
