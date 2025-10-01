@@ -110,7 +110,10 @@ class AppointmentService:
             return
 
         # Only enqueue if there's data to normalize
-        has_address = bool(appointment.endereco_completo)
+        # Skip address normalization if already provided
+        has_address = bool(
+            appointment.endereco_completo and not appointment.endereco_normalizado
+        )
         has_documents = bool(appointment.documento_completo)
 
         if not has_address and not has_documents:
@@ -648,6 +651,7 @@ class AppointmentService:
                 cadastrado_por=creator_name,
                 agendado_por=agendado_por,
                 tags=tag_references,
+                endereco_normalizado=appointment_data.endereco_normalizado,
             )
 
             duplicate_ids = await self.appointment_repository.find_duplicates(

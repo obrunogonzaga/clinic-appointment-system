@@ -34,6 +34,7 @@ export const NormalizationStatusBadge: React.FC<NormalizationStatusBadgeProps> =
       color: 'bg-yellow-50 text-yellow-700 border-yellow-200',
       iconColor: 'text-yellow-500',
       tooltip: 'Normalização aguardando processamento',
+      animate: false,
     },
     processing: {
       icon: ClockIcon,
@@ -49,6 +50,7 @@ export const NormalizationStatusBadge: React.FC<NormalizationStatusBadgeProps> =
       color: 'bg-green-50 text-green-700 border-green-200',
       iconColor: 'text-green-500',
       tooltip: 'Dados normalizados com sucesso',
+      animate: false,
     },
     failed: {
       icon: ExclamationTriangleIcon,
@@ -56,6 +58,7 @@ export const NormalizationStatusBadge: React.FC<NormalizationStatusBadgeProps> =
       color: 'bg-red-50 text-red-700 border-red-200',
       iconColor: 'text-red-500',
       tooltip: error || 'Erro ao normalizar dados',
+      animate: false,
     },
     skipped: {
       icon: MinusCircleIcon,
@@ -63,6 +66,7 @@ export const NormalizationStatusBadge: React.FC<NormalizationStatusBadgeProps> =
       color: 'bg-gray-50 text-gray-600 border-gray-200',
       iconColor: 'text-gray-400',
       tooltip: 'Sem dados para normalizar',
+      animate: false,
     },
   };
 

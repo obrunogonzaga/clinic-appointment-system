@@ -67,6 +67,10 @@ class AppointmentCreateDTO(BaseModel):
         default=AppointmentOrigin.MANUAL,
         description="Origem do agendamento (DASA ou Manual)",
     )
+    # Endereço normalizado
+    endereco_normalizado: Optional[Dict[str, Optional[str]]] = Field(
+        None, description="Endereço normalizado em campos estruturados"
+    )
 
 
 class AppointmentUpdateDTO(BaseModel):

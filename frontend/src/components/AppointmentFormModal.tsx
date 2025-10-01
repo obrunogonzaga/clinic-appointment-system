@@ -80,15 +80,15 @@ const formSchema = z.object({
     .optional()
     .refine((value) => {
       if (!value) return true;
-      
+
       // Parse the date string to get year, month, day
       const [year, month, day] = value.split('-').map(Number);
       const selected = new Date(year, month - 1, day);
       selected.setHours(0, 0, 0, 0);
-      
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       return selected >= today;
     }, 'Data deve ser hoje ou no futuro'),
   time: z
@@ -122,6 +122,14 @@ const formSchema = z.object({
   nome_convenio: z.string().trim().default(''),
   carteira_convenio: z.string().trim().default(''),
   tags: z.array(z.string()).default([]),
+  // Normalized address fields
+  endereco_rua: z.string().trim().default(''),
+  endereco_numero: z.string().trim().default(''),
+  endereco_complemento: z.string().trim().default(''),
+  endereco_bairro: z.string().trim().default(''),
+  endereco_cidade: z.string().trim().default(''),
+  endereco_estado: z.string().trim().default(''),
+  endereco_cep: z.string().trim().default(''),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -193,6 +201,13 @@ export function AppointmentFormModal({
       nome_convenio: '',
       carteira_convenio: '',
       tags: [],
+      endereco_rua: '',
+      endereco_numero: '',
+      endereco_complemento: '',
+      endereco_bairro: '',
+      endereco_cidade: '',
+      endereco_estado: '',
+      endereco_cep: '',
     }),
     [defaultStatus]
   );
@@ -269,6 +284,16 @@ export function AppointmentFormModal({
     const phoneDigits = values.telefone.replace(/\D/g, '');
     const cpfDigits = sanitizeCpf(values.cpf);
 
+    // Build normalized address object if any field is filled
+    const hasAddressData =
+      values.endereco_rua.trim() ||
+      values.endereco_numero.trim() ||
+      values.endereco_complemento.trim() ||
+      values.endereco_bairro.trim() ||
+      values.endereco_cidade.trim() ||
+      values.endereco_estado.trim() ||
+      values.endereco_cep.trim();
+
     const payload: AppointmentCreateRequest = {
       nome_marca: values.nome_marca.trim(),
       nome_unidade: values.nome_unidade.trim(),
@@ -295,6 +320,18 @@ export function AppointmentFormModal({
 
     if (trimmedTime) {
       payload.hora_agendamento = trimmedTime;
+    }
+
+    if (hasAddressData) {
+      payload.endereco_normalizado = {
+        rua: values.endereco_rua.trim() || null,
+        numero: values.endereco_numero.trim() || null,
+        complemento: values.endereco_complemento.trim() || null,
+        bairro: values.endereco_bairro.trim() || null,
+        cidade: values.endereco_cidade.trim() || null,
+        estado: values.endereco_estado.trim() || null,
+        cep: values.endereco_cep.trim() || null,
+      };
     }
 
     onSubmit(payload);
@@ -591,6 +628,89 @@ export function AppointmentFormModal({
             {errors.tags && (
               <p className="mt-1 text-sm text-red-600">{errors.tags.message}</p>
             )}
+          </div>
+        </div>
+
+        <div className="border-t border-gray-200 pt-6">
+          <h3 className="text-sm font-medium text-gray-900 mb-4">Endereço do Paciente (Opcional)</h3>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700">Rua</label>
+              <input
+                type="text"
+                {...register('endereco_rua')}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder="Ex.: Rua das Flores"
+                disabled={isSubmitting}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Número</label>
+              <input
+                type="text"
+                {...register('endereco_numero')}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder="Ex.: 123"
+                disabled={isSubmitting}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mt-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Complemento</label>
+              <input
+                type="text"
+                {...register('endereco_complemento')}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder="Ex.: Apto 201"
+                disabled={isSubmitting}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Bairro</label>
+              <input
+                type="text"
+                {...register('endereco_bairro')}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder="Ex.: Centro"
+                disabled={isSubmitting}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Cidade</label>
+              <input
+                type="text"
+                {...register('endereco_cidade')}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder="Ex.: Rio de Janeiro"
+                disabled={isSubmitting}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mt-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Estado</label>
+              <input
+                type="text"
+                {...register('endereco_estado')}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder="Ex.: RJ"
+                maxLength={2}
+                disabled={isSubmitting}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">CEP</label>
+              <input
+                type="text"
+                {...register('endereco_cep')}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder="Ex.: 22790-285"
+                disabled={isSubmitting}
+              />
+            </div>
           </div>
         </div>
 

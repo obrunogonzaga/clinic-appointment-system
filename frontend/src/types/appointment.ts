@@ -90,6 +90,15 @@ export interface AppointmentCreateRequest {
   carteira_convenio?: string;
   tags?: string[];
   origin?: 'DASA' | 'Manual';
+  endereco_normalizado?: {
+    rua?: string | null;
+    numero?: string | null;
+    complemento?: string | null;
+    bairro?: string | null;
+    cidade?: string | null;
+    estado?: string | null;
+    cep?: string | null;
+  } | null;
 }
 
 export interface AppointmentFilter {
