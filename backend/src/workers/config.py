@@ -2,6 +2,7 @@
 
 import logging
 from typing import Any, Callable
+from urllib.parse import urlparse
 
 from arq.connections import RedisSettings
 
@@ -15,21 +16,20 @@ logger = logging.getLogger(__name__)
 
 def get_redis_settings() -> RedisSettings:
     """Build RedisSettings from application config."""
-    # Parse redis_url to extract host and port
-    # Format: redis://host:port or redis://host:port/db
     redis_url = settings.redis_url or "redis://localhost:6379"
-    url_parts = redis_url.replace("redis://", "").split("/")
-    host_port = url_parts[0]
+    parsed = urlparse(redis_url)
 
-    if ":" in host_port:
-        host, port_str = host_port.split(":")
-        port = int(port_str)
-    else:
-        host = host_port
-        port = 6379
+    host = parsed.hostname or "localhost"
+    port = parsed.port or 6379
 
-    # Extract database number if present
-    database = int(url_parts[1]) if len(url_parts) > 1 else settings.redis_db
+    path = parsed.path.lstrip("/")
+    database = int(path) if path else settings.redis_db
+
+    password = (
+        parsed.password
+        if parsed.password is not None
+        else settings.redis_password or None
+    )
 
     logger.info(
         "Configuring ARQ worker with Redis at %s:%s (db=%s)",
@@ -42,7 +42,7 @@ def get_redis_settings() -> RedisSettings:
         host=host,
         port=port,
         database=database,
-        password=settings.redis_password or None,
+        password=password,
     )
 
 
