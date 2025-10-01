@@ -1,5 +1,6 @@
 import {
     CheckCircleIcon,
+    ClockIcon,
     PlusIcon,
     XCircleIcon,
 } from '@heroicons/react/24/outline';
@@ -61,14 +62,35 @@ export const AppointmentsPage: React.FC = () => {
   const [selectedAgendaDate, setSelectedAgendaDate] = useState<Date>(new Date());
 
   // Fetch appointments
-  const { 
-    data: appointmentsData, 
+  const {
+    data: appointmentsData,
     isLoading: isLoadingAppointments
   } = useQuery({
     queryKey: ['appointments', filters],
     queryFn: () => appointmentAPI.getAppointments(filters),
     refetchOnWindowFocus: false,
   });
+
+  // Check if there are appointments with pending/processing normalization
+  const hasPendingNormalization = useMemo(() => {
+    const appointments = appointmentsData?.appointments || [];
+    return appointments.some(
+      apt => apt.normalization_status === 'pending' || apt.normalization_status === 'processing'
+    );
+  }, [appointmentsData]);
+
+  // Auto-refresh when there are pending normalizations (every 10 seconds)
+  useEffect(() => {
+    if (!hasPendingNormalization) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ['appointments', filters] });
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(intervalId);
+  }, [hasPendingNormalization, queryClient, filters]);
 
   // Fetch filter options
   const { 
@@ -125,12 +147,19 @@ export const AppointmentsPage: React.FC = () => {
   const handleUploadSuccess = (result: ExcelUploadResponse) => {
     setUploadResult(result);
     setUploadError(null);
-    
+
+    // Show info toast about background normalization
+    if (result.imported_appointments > 0) {
+      showToastSuccess(
+        `${result.imported_appointments} agendamento(s) importado(s). Normalização em andamento em background.`
+      );
+    }
+
     // Refresh data after successful upload
     queryClient.invalidateQueries({ queryKey: ['appointments'] });
     queryClient.invalidateQueries({ queryKey: ['filterOptions'] });
     queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
-    
+
     // Auto-hide success message after 50 seconds
     setTimeout(() => {
       setUploadResult(null);
@@ -422,23 +451,37 @@ export const AppointmentsPage: React.FC = () => {
       {(uploadResult || uploadError) && (
         <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
           {uploadResult && (
-            <div className="flex flex-col gap-2 text-sm text-green-700 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2">
-                <CheckCircleIcon className="h-5 w-5 text-green-500" />
-                <span className="font-medium">{uploadResult.message}</span>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2 text-sm text-green-700 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                  <span className="font-medium">{uploadResult.message}</span>
+                </div>
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-green-600">
+                  <span>Total: {uploadResult.total_rows}</span>
+                  <span>Válidos: {uploadResult.valid_rows}</span>
+                  <span>Inválidos: {uploadResult.invalid_rows}</span>
+                  <span>Importados: {uploadResult.imported_appointments}</span>
+                  {uploadResult.duplicates_found > 0 && (
+                    <span>Duplicados: {uploadResult.duplicates_found}</span>
+                  )}
+                  {uploadResult.processing_time && (
+                    <span>Tempo: {uploadResult.processing_time.toFixed(1)}s</span>
+                  )}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-x-3 gap-y-1 text-green-600">
-                <span>Total: {uploadResult.total_rows}</span>
-                <span>Válidos: {uploadResult.valid_rows}</span>
-                <span>Inválidos: {uploadResult.invalid_rows}</span>
-                <span>Importados: {uploadResult.imported_appointments}</span>
-                {uploadResult.duplicates_found > 0 && (
-                  <span>Duplicados: {uploadResult.duplicates_found}</span>
-                )}
-                {uploadResult.processing_time && (
-                  <span>Tempo: {uploadResult.processing_time.toFixed(1)}s</span>
-                )}
-              </div>
+              {uploadResult.imported_appointments > 0 && (
+                <div className="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 p-3 text-sm text-blue-700">
+                  <ClockIcon className="h-5 w-5 flex-shrink-0 text-blue-500 mt-0.5" />
+                  <div>
+                    <p className="font-medium">Normalização em andamento</p>
+                    <p className="text-xs text-blue-600 mt-1">
+                      Os dados de endereço e documentos estão sendo normalizados em background.
+                      A página será atualizada automaticamente quando o processo concluir.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from src.application.dtos.tag_dto import TagSummaryDTO
+from src.domain.entities.appointment import AppointmentOrigin
 
 
 class AppointmentScope(str, Enum):
@@ -32,9 +33,12 @@ class AppointmentCreateDTO(BaseModel):
     )
     tipo_consulta: Optional[str] = Field(None, description="Tipo de Consulta")
     cip: Optional[str] = Field(
-        None, description="Código CIP (Classificação Internacional de Procedimentos)"
+        None,
+        description="Código CIP (Classificação Internacional de Procedimentos)",
     )
-    cpf: str = Field(..., description="CPF do paciente (apenas dígitos ou formatado)")
+    cpf: str = Field(
+        ..., description="CPF do paciente (apenas dígitos ou formatado)"
+    )
     status: str = Field("Pendente", description="Status do Agendamento")
     telefone: Optional[str] = Field(None, description="Telefone do Paciente")
     carro: Optional[str] = Field(
@@ -58,6 +62,10 @@ class AppointmentCreateDTO(BaseModel):
     tags: List[str] = Field(
         default_factory=list,
         description="Lista de IDs de tags associadas ao agendamento",
+    )
+    origin: AppointmentOrigin = Field(
+        default=AppointmentOrigin.MANUAL,
+        description="Origem do agendamento (DASA ou Manual)",
     )
 
 
@@ -88,6 +96,7 @@ class AppointmentResponseDTO(BaseModel):
     observacoes: Optional[str] = None
     driver_id: Optional[str] = None
     collector_id: Optional[str] = None
+    client_id: Optional[str] = None
     # Campos de endereço
     cep: Optional[str] = Field(None, description="CEP do endereço de coleta")
     endereco_coleta: Optional[str] = Field(
@@ -123,6 +132,20 @@ class AppointmentResponseDTO(BaseModel):
     hora_confirmacao: Optional[str] = None
     tags: List[TagSummaryDTO] = Field(
         default_factory=list, description="Tags vinculadas ao agendamento"
+    )
+    origin: str = Field(
+        default="Manual", description="Origem do agendamento (DASA ou Manual)"
+    )
+    # Campos de normalização em background
+    normalization_status: Optional[str] = Field(
+        None,
+        description="Status da normalização em background (pending, processing, completed, failed, skipped)",
+    )
+    normalization_job_id: Optional[str] = Field(
+        None, description="ID do job de normalização no ARQ"
+    )
+    normalization_error: Optional[str] = Field(
+        None, description="Erro da normalização (se houver)"
     )
     created_at: datetime
     updated_at: Optional[datetime]
@@ -276,6 +299,7 @@ class AppointmentFullUpdateDTO(BaseModel):
     rg: Optional[str] = None
     # Tags vinculadas (IDs)
     tags: Optional[List[str]] = None
+    origin: Optional[AppointmentOrigin] = None
 
 
 class AppointmentDeleteResponseDTO(BaseModel):

@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import ASCENDING
 
-from src.domain.entities.client import Client
+from src.domain.entities.client import Client, ConvenioInfo
 from src.domain.repositories.client_repository_interface import (
     ClientRepositoryInterface,
 )
@@ -88,6 +88,8 @@ class ClientRepository(ClientRepositoryInterface):
         client_id: str,
         appointment_id: str,
         last_appointment_at: Optional[datetime] = None,
+        last_address: Optional[str] = None,
+        last_address_normalized: Optional[Dict[str, Optional[str]]] = None,
     ) -> Optional[Client]:
         update_payload: Dict[str, Any] = {
             "$addToSet": {"appointment_ids": appointment_id},
@@ -97,7 +99,65 @@ class ClientRepository(ClientRepositoryInterface):
         if last_appointment_at is not None:
             update_payload["$set"]["last_appointment_at"] = last_appointment_at
 
+        if last_address is not None:
+            update_payload["$set"]["last_address"] = last_address
+
+        if last_address_normalized is not None:
+            update_payload["$set"][
+                "last_address_normalized"
+            ] = last_address_normalized
+
         await self.collection.update_one({"id": client_id}, update_payload)
+        return await self.find_by_id(client_id)
+
+    async def upsert_convenio(
+        self,
+        client_id: str,
+        convenio: ConvenioInfo,
+    ) -> Optional[Client]:
+        """Add or update a health insurance in the client's convenio history."""
+
+        client = await self.find_by_id(client_id)
+        if not client:
+            return None
+
+        convenios = client.convenios_historico or []
+        convenio_dict = convenio.model_dump()
+
+        # Check if this convenio already exists (by numero_convenio + nome_convenio)
+        existing_idx = None
+        for idx, existing in enumerate(convenios):
+            existing_dict = (
+                existing.model_dump()
+                if isinstance(existing, ConvenioInfo)
+                else existing
+            )
+            if existing_dict.get("numero_convenio") == convenio_dict.get(
+                "numero_convenio"
+            ) and existing_dict.get("nome_convenio") == convenio_dict.get(
+                "nome_convenio"
+            ):
+                existing_idx = idx
+                break
+
+        if existing_idx is not None:
+            # Update existing convenio
+            convenios[existing_idx] = convenio
+        else:
+            # Add new convenio
+            convenios.append(convenio)
+
+        # Update in database
+        await self.collection.update_one(
+            {"id": client_id},
+            {
+                "$set": {
+                    "convenios_historico": [c.model_dump() for c in convenios],
+                    "updated_at": datetime.utcnow(),
+                }
+            },
+        )
+
         return await self.find_by_id(client_id)
 
     async def create_indexes(self) -> None:

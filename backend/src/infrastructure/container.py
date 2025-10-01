@@ -22,6 +22,7 @@ from src.infrastructure.repositories.logistics_package_repository import (
 )
 from src.infrastructure.services.redis_service import RedisService
 from src.infrastructure.services.rate_limiter import RateLimiter
+from src.application.services.task_service import TaskService
 
 
 class Container:
@@ -52,6 +53,7 @@ class Container:
         ] = None
         self._redis_service: Optional[RedisService] = None
         self._rate_limiter: Optional[RateLimiter] = None
+        self._task_service: Optional[TaskService] = None
 
     @property
     def settings(self) -> Settings:
@@ -215,6 +217,17 @@ class Container:
         if self._rate_limiter is None:
             self._rate_limiter = RateLimiter(self.settings, self.redis_service)
         return self._rate_limiter
+
+    def task_service(self) -> TaskService:
+        """
+        Get task service instance for background jobs.
+
+        Returns:
+            TaskService: Task service instance
+        """
+        if self._task_service is None:
+            self._task_service = TaskService()
+        return self._task_service
 
     async def startup(self) -> None:
         """

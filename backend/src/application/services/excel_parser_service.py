@@ -15,7 +15,7 @@ from src.application.services.address_normalization_service import (
 from src.application.services.document_normalization_service import (
     DocumentNormalizationService,
 )
-from src.domain.entities.appointment import Appointment
+from src.domain.entities.appointment import Appointment, AppointmentOrigin
 from src.infrastructure.config import get_settings
 
 # Import CarService for type annotation
@@ -112,11 +112,14 @@ class ExcelParserService:
         self.car_service = car_service
         self.document_service = document_service
         # Importar somente quando "Nome da Sala" iniciar com o padrão
-        # AA-AA-AA-AA-AA (ex.: AD-SF-FQ-AC-AV). Texto extra à direita
+        # AA-AA-AA-AA-AA (ex.: AD-SF-FQ-AC-AV ou AD-SF-FQ-AC-BALTHAZAR)
+        # Aceita segmentos de 2 ou mais letras. Texto extra à direita
         # (ex.: "CENTER 3 CARRO 1 - UND84") será preservado.
-        self.SALA_PATTERN = re.compile(r"^[A-Z]{2}(?:-[A-Z]{2}){4}(?:\s+.*)?$")
+        self.SALA_PATTERN = re.compile(
+            r"^[A-Z]{2,}(?:-[A-Z]{2,}){4}(?:\s+.*)?$"
+        )
         self.SALA_EXTRACT_PATTERN = re.compile(
-            r"^(?P<sala>[A-Z]{2}(?:-[A-Z]{2}){4})(?:\s+(?P<carro>.+))?$"
+            r"^(?P<sala>[A-Z]{2,}(?:-[A-Z]{2,}){4})(?:\s+(?P<carro>.+))?$"
         )
 
     async def parse_excel_file(
@@ -256,22 +259,9 @@ class ExcelParserService:
             except Exception as e:
                 errors.append(f"Linha {index + 1}: {str(e)}")
 
-        # Normalizar endereços se o serviço estiver disponível E habilitado
-        settings = get_settings()
-        if (
-            self.address_service
-            and appointments
-            and settings.address_normalization_enabled
-        ):
-            appointments = await self._normalize_addresses_batch(appointments)
-
-        # Normalizar documentos se o serviço estiver disponível E habilitado
-        if (
-            self.document_service
-            and appointments
-            and settings.address_normalization_enabled  # Reuse the same setting
-        ):
-            appointments = await self._normalize_documents_batch(appointments)
+        # NOTE: Normalization is now handled in background via ARQ workers
+        # The appointments are returned immediately and normalization happens async
+        # Status is tracked via normalization_status field in Appointment entity
 
         return ExcelParseResult(
             success=len(errors) == 0,
@@ -321,14 +311,23 @@ class ExcelParserService:
                 observacoes = self._clean_string(row.get("Observações"))
 
             # Carro vem da extração do campo "Nome da Sala"
+            # Formato: AA-BB-CC-DD-NOME_CARRO RESTO - UNIDADE
+            # Extrair apenas: NOME_CARRO RESTO
             carro = None
             sala_val = self._clean_string(row.get("Nome da Sala"))
             if sala_val:
-                m = self.SALA_EXTRACT_PATTERN.match(sala_val)
-                if m:
-                    carro_info = m.group("carro")
-                    if carro_info:
-                        carro = carro_info  # Apenas a informação do carro, sem misturar
+                # Remover os primeiros 4 segmentos (AA-BB-CC-DD-)
+                # e extrair apenas o 5º segmento + informação do carro
+                parts = sala_val.split("-", 4)  # Split em até 4 hífens
+                if len(parts) == 5:
+                    # parts[4] contém: "NOME_CARRO RESTO - UNIDADE"
+                    remaining = parts[4].strip()
+                    # Agora extrair apenas até o " - UNIDADE"
+                    if " - " in remaining:
+                        carro_part = remaining.split(" - ")[0].strip()
+                        carro = carro_part if carro_part else None
+                    else:
+                        carro = remaining
             tipo_consulta = self._clean_string(row.get("Nomes dos Exames"))
             cep = self._clean_string(row.get("CEP"))
             endereco_coleta = self._clean_string(row.get("Endereço Coleta"))
@@ -409,6 +408,7 @@ class ExcelParserService:
                 numero_convenio=numero_convenio,
                 nome_convenio=nome_convenio,
                 carteira_convenio=carteira_convenio,
+                origin=AppointmentOrigin.DASA,
             )
 
             return appointment

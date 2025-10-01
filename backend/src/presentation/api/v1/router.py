@@ -17,6 +17,7 @@ from src.presentation.api.v1.endpoints import (
     clients,
     collectors,
     drivers,
+    jobs,
     logistics_packages,
     notifications,
     reports,
@@ -74,6 +75,8 @@ api_v1_router.include_router(
 )
 
 api_v1_router.include_router(tags.router, prefix="/tags", tags=["Tags"])
+
+api_v1_router.include_router(jobs.router, tags=["Background Jobs"])
 
 
 @api_v1_router.get("/")

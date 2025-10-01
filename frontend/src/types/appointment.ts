@@ -56,6 +56,11 @@ export interface Appointment {
   cadastrado_por?: string;
   agendado_por?: string;
   tags?: AppointmentTag[];
+  origin?: 'DASA' | 'Manual';
+  // Background normalization tracking
+  normalization_status?: 'pending' | 'processing' | 'completed' | 'failed' | 'skipped';
+  normalization_job_id?: string;
+  normalization_error?: string;
 }
 
 export interface AppointmentViewModel extends Appointment {
@@ -84,6 +89,7 @@ export interface AppointmentCreateRequest {
   nome_convenio?: string;
   carteira_convenio?: string;
   tags?: string[];
+  origin?: 'DASA' | 'Manual';
 }
 
 export interface AppointmentFilter {

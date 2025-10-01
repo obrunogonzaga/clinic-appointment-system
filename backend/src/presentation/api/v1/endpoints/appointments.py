@@ -105,6 +105,12 @@ async def get_appointment_service(
     except ValueError:
         # OpenRouter not configured, continue without normalization services
         excel_parser = ExcelParserService(car_service=car_service)
+
+    # Get task service from container
+    from src.infrastructure.container import Container
+    container = Container()
+    task_service = container.task_service()
+
     return AppointmentService(
         appointment_repository,
         excel_parser,
@@ -112,6 +118,7 @@ async def get_appointment_service(
         tag_repository=tag_repository,
         max_tags_per_appointment=settings.max_tags_per_appointment,
         client_service=client_service,
+        task_service=task_service,
     )
 
 

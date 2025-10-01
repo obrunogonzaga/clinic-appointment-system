@@ -3,12 +3,30 @@ Appointment entity representing a medical appointment.
 """
 
 from datetime import datetime
+from enum import Enum
 from typing import Dict, List, Optional
 
 from pydantic import Field, field_validator
 
 from src.domain.base import Entity
 from src.domain.entities.tag import TagReference
+
+
+class AppointmentOrigin(str, Enum):
+    """Origin/source of the appointment creation."""
+
+    DASA = "DASA"  # Imported from DASA Excel file
+    MANUAL = "Manual"  # Manually created by user
+
+
+class NormalizationStatus(str, Enum):
+    """Status of background normalization process."""
+
+    PENDING = "pending"  # Not yet normalized
+    PROCESSING = "processing"  # Currently being normalized
+    COMPLETED = "completed"  # Successfully normalized
+    FAILED = "failed"  # Normalization failed
+    SKIPPED = "skipped"  # Normalization disabled or not needed
 
 
 class Appointment(Entity):
@@ -65,6 +83,9 @@ class Appointment(Entity):
     car_id: Optional[str] = Field(
         None, description="ID do carro utilizado na coleta"
     )
+    client_id: Optional[str] = Field(
+        None, description="ID do cliente associado ao agendamento"
+    )
     # Campos adicionais de endereço/convenio
     # (podem não existir em todas as planilhas)
     cep: Optional[str] = Field(None, description="CEP do endereço de coleta")
@@ -101,7 +122,12 @@ class Appointment(Entity):
         None, description="Usuário responsável pelo cadastro do agendamento"
     )
     agendado_por: Optional[str] = Field(
-        None, description="Usuário responsável por mover o status para Agendado"
+        None,
+        description="Usuário responsável por mover o status para Agendado",
+    )
+    origin: AppointmentOrigin = Field(
+        default=AppointmentOrigin.MANUAL,
+        description="Origem do agendamento (DASA import ou Manual)",
     )
     tags: List[TagReference] = Field(
         default_factory=list,
@@ -116,6 +142,18 @@ class Appointment(Entity):
     )
     hora_confirmacao: Optional[str] = Field(
         None, description="Hora da confirmação (HH:MM)"
+    )
+
+    # Background normalization tracking
+    normalization_status: NormalizationStatus = Field(
+        default=NormalizationStatus.PENDING,
+        description="Status da normalização em background",
+    )
+    normalization_job_id: Optional[str] = Field(
+        None, description="ID do job de normalização no ARQ"
+    )
+    normalization_error: Optional[str] = Field(
+        None, description="Erro da normalização (se houver)"
     )
 
     # Metadata fields (handled by Entity base class)
@@ -241,6 +279,7 @@ class Appointment(Entity):
                 "carro": "Honda Civic Prata",
                 "observacoes": "Paciente com diabetes",
                 "driver_id": "507f1f77bcf86cd799439012",
+                "client_id": "ae0d94e5-2fb6-4e2e-9b35-812a4f821234",
                 "endereco_completo": "rua maurício da costa faria,52,recreio dos bandeirantes,rio de janeiro,RJ,22790-285",
                 "endereco_normalizado": {
                     "rua": "Rua Maurício da Costa Faria",

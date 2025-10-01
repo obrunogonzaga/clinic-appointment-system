@@ -1,7 +1,7 @@
 """DTOs for client management."""
 
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -9,17 +9,37 @@ from pydantic import BaseModel, Field
 from src.application.dtos.appointment_dto import AppointmentResponseDTO
 
 
+class ConvenioInfoDTO(BaseModel):
+    """DTO for health insurance information."""
+
+    numero_convenio: Optional[str] = None
+    nome_convenio: Optional[str] = None
+    carteira_convenio: Optional[str] = None
+    primeira_utilizacao: Optional[datetime] = None
+    ultima_utilizacao: Optional[datetime] = None
+
+
 class ClientCreateDTO(BaseModel):
     """DTO for manual client creation."""
 
     nome_completo: str = Field(..., description="Nome completo do cliente")
-    cpf: str = Field(..., description="CPF do cliente (apenas dígitos ou formatado)")
-    telefone: Optional[str] = Field(None, description="Telefone principal do cliente")
+    cpf: str = Field(
+        ..., description="CPF do cliente (apenas dígitos ou formatado)"
+    )
+    telefone: Optional[str] = Field(
+        None, description="Telefone principal do cliente"
+    )
     email: Optional[str] = Field(None, description="Email do cliente")
-    observacoes: Optional[str] = Field(None, description="Observações adicionais")
-    numero_convenio: Optional[str] = Field(None, description="Número do convênio")
+    observacoes: Optional[str] = Field(
+        None, description="Observações adicionais"
+    )
+    numero_convenio: Optional[str] = Field(
+        None, description="Número do convênio"
+    )
     nome_convenio: Optional[str] = Field(None, description="Nome do convênio")
-    carteira_convenio: Optional[str] = Field(None, description="Número da carteira do convênio")
+    carteira_convenio: Optional[str] = Field(
+        None, description="Número da carteira do convênio"
+    )
 
 
 class ClientUpdateDTO(BaseModel):
@@ -55,12 +75,23 @@ class ClientResponseDTO(BaseModel):
     telefone: Optional[str] = None
     email: Optional[str] = None
     observacoes: Optional[str] = None
+
+    # Campos DEPRECATED - mantidos por compatibilidade
     numero_convenio: Optional[str] = None
     nome_convenio: Optional[str] = None
     carteira_convenio: Optional[str] = None
+
+    # Novo modelo de convênios
+    convenios_historico: List[ConvenioInfoDTO] = Field(default_factory=list)
+
     appointment_ids: List[str] = []
     appointment_count: int = 0
     last_appointment_at: Optional[datetime] = None
+
+    # Endereço do último agendamento
+    last_address: Optional[str] = None
+    last_address_normalized: Optional[Dict[str, Optional[str]]] = None
+
     created_at: datetime
     updated_at: Optional[datetime] = None
 

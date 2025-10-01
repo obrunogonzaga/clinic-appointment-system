@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from src.domain.entities.client import Client
+from src.domain.entities.client import Client, ConvenioInfo
 
 
 class ClientRepositoryInterface(ABC):
@@ -15,7 +15,9 @@ class ClientRepositoryInterface(ABC):
         """Create a new client record."""
 
     @abstractmethod
-    async def update(self, client_id: str, update_data: Dict[str, Any]) -> Optional[Client]:
+    async def update(
+        self, client_id: str, update_data: Dict[str, Any]
+    ) -> Optional[Client]:
         """Update a client by identifier."""
 
     @abstractmethod
@@ -45,8 +47,18 @@ class ClientRepositoryInterface(ABC):
         client_id: str,
         appointment_id: str,
         last_appointment_at: Optional[datetime] = None,
+        last_address: Optional[str] = None,
+        last_address_normalized: Optional[Dict[str, Optional[str]]] = None,
     ) -> Optional[Client]:
         """Link an appointment to a client and update last appointment metadata."""
+
+    @abstractmethod
+    async def upsert_convenio(
+        self,
+        client_id: str,
+        convenio: ConvenioInfo,
+    ) -> Optional[Client]:
+        """Add or update a health insurance in the client's convenio history."""
 
     @abstractmethod
     async def create_indexes(self) -> None:

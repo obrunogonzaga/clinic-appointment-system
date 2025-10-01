@@ -17,6 +17,7 @@ import type { LogisticsPackage } from '../types/logistics-package';
 import { formatDate } from '../utils/dateUtils';
 import { getStatusBadgeClass } from '../utils/statusColors';
 import { TagBadge } from './tags/TagBadge';
+import { NormalizationStatusBadge } from './NormalizationStatusBadge';
 
 interface AppointmentCardProps {
   appointment: AppointmentViewModel;
@@ -147,16 +148,35 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
     >
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
-        <div className="flex items-center min-w-0 flex-1">
-          <UserIcon className="w-4 h-4 text-gray-400 mr-2 flex-shrink-0" />
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <UserIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
           <h3 className={`
             font-medium text-gray-900 truncate
             ${compact ? 'text-sm' : 'text-base'}
           `}>
             {appointment.nome_paciente}
           </h3>
+          {appointment.origin && (
+            <span
+              className={`
+                inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0
+                ${appointment.origin === 'DASA'
+                  ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                  : 'bg-blue-100 text-blue-800 border border-blue-200'}
+              `}
+              title={`Origem: ${appointment.origin}`}
+            >
+              {appointment.origin === 'DASA' ? '📊 DASA' : '✍️ Manual'}
+            </span>
+          )}
+          <NormalizationStatusBadge
+            status={appointment.normalization_status}
+            error={appointment.normalization_error}
+            showLabel={!compact}
+            size="sm"
+          />
         </div>
-        
+
         <select
           value={appointment.status}
           onChange={(e) => onStatusChange?.(appointment.id, e.target.value)}

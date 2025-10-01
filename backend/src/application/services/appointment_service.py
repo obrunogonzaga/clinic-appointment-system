@@ -14,7 +14,8 @@ from src.application.dtos.appointment_dto import (
 )
 from src.application.services.client_service import ClientService
 from src.application.services.excel_parser_service import ExcelParserService
-from src.domain.entities.appointment import Appointment
+from src.application.services.task_service import TaskService
+from src.domain.entities.appointment import Appointment, NormalizationStatus
 from src.domain.entities.tag import TagReference
 from src.domain.repositories.appointment_repository_interface import (
     AppointmentRepositoryInterface,
@@ -49,6 +50,7 @@ class AppointmentService:
         tag_repository: Optional[TagRepositoryInterface] = None,
         max_tags_per_appointment: int = 5,
         client_service: Optional[ClientService] = None,
+        task_service: Optional[TaskService] = None,
     ):
         """
         Initialize the service with dependencies.
@@ -56,6 +58,7 @@ class AppointmentService:
         Args:
             appointment_repository: Repository for appointment persistence
             excel_parser: Service for parsing Excel files
+            task_service: Service for enqueueing background tasks
         """
         self.appointment_repository = appointment_repository
         self.excel_parser = excel_parser
@@ -63,25 +66,96 @@ class AppointmentService:
         self.tag_repository = tag_repository
         self.max_tags_per_appointment = max(max_tags_per_appointment, 0)
         self.client_service = client_service
+        self.task_service = task_service
 
     async def _sync_client_from_appointment(
         self, appointment: Appointment
-    ) -> None:
+    ) -> Optional[str]:
+        """
+        Sync client from appointment data.
+
+        Returns:
+            Optional[str]: Client ID if successfully synced, None otherwise
+        """
         if not self.client_service:
-            return
+            return None
 
         try:
-            await self.client_service.upsert_from_appointment(appointment)
+            client_id = await self.client_service.upsert_from_appointment(
+                appointment
+            )
+            return client_id
         except Exception as exc:  # pragma: no cover - defensive log
             logger.warning(
                 "Failed to synchronize client for appointment %s: %s",
                 appointment.id,
                 exc,
             )
+            return None
 
-    async def _load_logistics_package(
-        self, package_id: str
-    ) -> Dict[str, Any]:
+    async def _enqueue_normalization(
+        self, appointment: Appointment
+    ) -> None:
+        """
+        Enqueue background normalization job for an appointment.
+
+        Args:
+            appointment: Appointment to normalize
+        """
+        if not self.task_service:
+            logger.debug(
+                "Task service not available, skipping normalization for %s",
+                appointment.id,
+            )
+            return
+
+        # Only enqueue if there's data to normalize
+        has_address = bool(appointment.endereco_completo)
+        has_documents = bool(appointment.documento_completo)
+
+        if not has_address and not has_documents:
+            # Mark as skipped since there's nothing to normalize
+            await self.appointment_repository.update(
+                str(appointment.id),
+                {
+                    "normalization_status": NormalizationStatus.SKIPPED.value,
+                },
+            )
+            return
+
+        try:
+            # Enqueue the normalization job
+            job_id = await self.task_service.enqueue_normalization(
+                str(appointment.id)
+            )
+
+            if job_id:
+                # Update appointment with job ID
+                await self.appointment_repository.update(
+                    str(appointment.id),
+                    {
+                        "normalization_job_id": job_id,
+                        "normalization_status": NormalizationStatus.PENDING.value,
+                    },
+                )
+                logger.info(
+                    "Enqueued normalization job %s for appointment %s",
+                    job_id,
+                    appointment.id,
+                )
+            else:
+                logger.warning(
+                    "Failed to enqueue normalization for appointment %s",
+                    appointment.id,
+                )
+        except Exception as exc:
+            logger.error(
+                "Error enqueueing normalization for appointment %s: %s",
+                appointment.id,
+                exc,
+            )
+
+    async def _load_logistics_package(self, package_id: str) -> Dict[str, Any]:
         if not package_id:
             return {"error": {"message": "ID do pacote não informado."}}
 
@@ -93,7 +167,9 @@ class AppointmentService:
                 }
             }
 
-        package = await self.logistics_package_repository.find_by_id(package_id)
+        package = await self.logistics_package_repository.find_by_id(
+            package_id
+        )
         if not package:
             return {
                 "error": {
@@ -250,6 +326,10 @@ class AppointmentService:
                             saved_appointments
                         )
 
+                    # Enqueue normalization jobs for all imported appointments
+                    for appointment in saved_appointments:
+                        await self._enqueue_normalization(appointment)
+
             # Build success message based on duplicates found
             if duplicates_found > 0:
                 message = f"{len(saved_appointments)} agendamentos importados, {duplicates_found} duplicados ignorados."
@@ -315,32 +395,38 @@ class AppointmentService:
             # Parse date if provided
             parsed_dates = self._parse_filter_date(data)
             scope_bounds = self._resolve_scope_bounds(scope)
-            
+
             # Check if this is unscheduled scope
             if scope == AppointmentScope.UNSCHEDULED:
                 # For unscheduled, we need to filter by null dates
-                appointments = await self.appointment_repository.find_by_filters(
-                    nome_unidade=nome_unidade,
-                    nome_marca=nome_marca,
-                    data_inicio="unscheduled",  # Special marker
-                    data_fim="unscheduled",      # Special marker
-                    status=status,
-                    driver_id=driver_id,
-                    skip=skip,
-                    limit=page_size,
+                appointments = (
+                    await self.appointment_repository.find_by_filters(
+                        nome_unidade=nome_unidade,
+                        nome_marca=nome_marca,
+                        data_inicio="unscheduled",  # Special marker
+                        data_fim="unscheduled",  # Special marker
+                        status=status,
+                        driver_id=driver_id,
+                        skip=skip,
+                        limit=page_size,
+                    )
                 )
             else:
-                date_bounds = self._merge_scope_with_dates(parsed_dates, scope_bounds)
+                date_bounds = self._merge_scope_with_dates(
+                    parsed_dates, scope_bounds
+                )
                 # Get appointments
-                appointments = await self.appointment_repository.find_by_filters(
-                    nome_unidade=nome_unidade,
-                    nome_marca=nome_marca,
-                    data_inicio=date_bounds[0],
-                    data_fim=date_bounds[1],
-                    status=status,
-                    driver_id=driver_id,
-                    skip=skip,
-                    limit=page_size,
+                appointments = (
+                    await self.appointment_repository.find_by_filters(
+                        nome_unidade=nome_unidade,
+                        nome_marca=nome_marca,
+                        data_inicio=date_bounds[0],
+                        data_fim=date_bounds[1],
+                        status=status,
+                        driver_id=driver_id,
+                        skip=skip,
+                        limit=page_size,
+                    )
                 )
 
             # Get total count for pagination
@@ -479,7 +565,8 @@ class AppointmentService:
             )
             driver_id_value = (
                 appointment_data.driver_id.strip()
-                if appointment_data.driver_id and appointment_data.driver_id.strip()
+                if appointment_data.driver_id
+                and appointment_data.driver_id.strip()
                 else None
             )
             collector_id_value = (
@@ -520,6 +607,22 @@ class AppointmentService:
                 car_id_value = package.car_id
                 carro_value = package.car_display_name
 
+            # Find client by CPF to link
+            client_id_value = None
+            if self.client_service:
+                try:
+                    client = await self.client_service.client_repository.find_by_cpf(
+                        cpf_value
+                    )
+                    if client:
+                        client_id_value = str(client.id)
+                except Exception as exc:  # pragma: no cover
+                    logger.warning(
+                        "Failed to lookup client for CPF %s: %s",
+                        cpf_value,
+                        exc,
+                    )
+
             appointment = Appointment(
                 nome_marca=appointment_data.nome_marca,
                 nome_unidade=appointment_data.nome_unidade,
@@ -537,6 +640,7 @@ class AppointmentService:
                 driver_id=driver_id_value,
                 collector_id=collector_id_value,
                 car_id=car_id_value,
+                client_id=client_id_value,
                 numero_convenio=appointment_data.numero_convenio,
                 nome_convenio=appointment_data.nome_convenio,
                 carteira_convenio=appointment_data.carteira_convenio,
@@ -558,14 +662,25 @@ class AppointmentService:
 
             created = await self.appointment_repository.create(appointment)
 
-            await self._sync_client_from_appointment(created)
+            # Sync client and update appointment with client_id if needed
+            client_id = await self._sync_client_from_appointment(created)
+            if client_id and not created.client_id:
+                # Update appointment with client_id
+                await self.appointment_repository.update(
+                    str(created.id), {"client_id": client_id}
+                )
+                # Update in-memory object for response
+                created_dict = created.model_dump()
+                created_dict["client_id"] = client_id
+                created = Appointment(**created_dict)
+
+            # Enqueue normalization job if task service is available
+            await self._enqueue_normalization(created)
 
             return {
                 "success": True,
                 "message": "Agendamento criado com sucesso",
-                "appointment": AppointmentResponseDTO(
-                    **created.model_dump()
-                ),
+                "appointment": AppointmentResponseDTO(**created.model_dump()),
             }
 
         except ValueError as exc:
@@ -671,7 +786,9 @@ class AppointmentService:
             if start and end and end <= start:
                 raise ValueError("end_date must be greater than start_date")
 
-            stats = await self.appointment_repository.get_appointment_stats(start, end)
+            stats = await self.appointment_repository.get_appointment_stats(
+                start, end
+            )
 
             return {"success": True, "stats": stats}
 
@@ -700,7 +817,9 @@ class AppointmentService:
         try:
             parsed = datetime.strptime(cleaned, "%Y-%m-%d")
         except ValueError as exc:
-            raise ValueError("Formato de data inválido. Use YYYY-MM-DD.") from exc
+            raise ValueError(
+                "Formato de data inválido. Use YYYY-MM-DD."
+            ) from exc
 
         return parsed.replace(hour=0, minute=0, second=0, microsecond=0)
 
@@ -882,7 +1001,8 @@ class AppointmentService:
 
                     if (
                         self.max_tags_per_appointment
-                        and len(provided_tag_ids) > self.max_tags_per_appointment
+                        and len(provided_tag_ids)
+                        > self.max_tags_per_appointment
                     ):
                         return {
                             "success": False,
@@ -896,7 +1016,9 @@ class AppointmentService:
                             provided_tag_ids
                         )
                         active_tags_map = {
-                            str(tag.id): tag for tag in stored_tags if tag.is_active
+                            str(tag.id): tag
+                            for tag in stored_tags
+                            if tag.is_active
                         }
                         missing_or_inactive = [
                             tag_id
@@ -956,7 +1078,11 @@ class AppointmentService:
                 if new_value != old_value:
                     changes[field] = new_value
 
-            if "status" in changes and changes["status"] == "Agendado" and updated_by:
+            if (
+                "status" in changes
+                and changes["status"] == "Agendado"
+                and updated_by
+            ):
                 changes["agendado_por"] = updated_by.strip()
 
             if not changes:
@@ -982,9 +1108,7 @@ class AppointmentService:
             return {
                 "success": True,
                 "message": "Agendamento atualizado com sucesso",
-                "appointment": AppointmentResponseDTO(
-                    **updated.model_dump()
-                ),
+                "appointment": AppointmentResponseDTO(**updated.model_dump()),
             }
 
         except Exception as exc:  # pragma: no cover - defensive
@@ -1216,11 +1340,15 @@ class AppointmentService:
         """Combine explicit date filters with scope boundaries."""
 
         lower_candidates = [parsed_dates[0], scope_bounds[0]]
-        lower_values = [value for value in lower_candidates if value is not None]
+        lower_values = [
+            value for value in lower_candidates if value is not None
+        ]
         merged_lower = max(lower_values) if lower_values else None
 
         upper_candidates = [parsed_dates[1], scope_bounds[1]]
-        upper_values = [value for value in upper_candidates if value is not None]
+        upper_values = [
+            value for value in upper_candidates if value is not None
+        ]
         merged_upper = min(upper_values) if upper_values else None
 
         return merged_lower, merged_upper

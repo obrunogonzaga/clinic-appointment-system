@@ -15,7 +15,7 @@ from src.application.dtos.client_dto import (
     ClientUpdateDTO,
 )
 from src.domain.entities.appointment import Appointment
-from src.domain.entities.client import Client
+from src.domain.entities.client import Client, ConvenioInfo
 from src.domain.repositories.appointment_repository_interface import (
     AppointmentRepositoryInterface,
 )
@@ -64,9 +64,13 @@ class ClientService:
             telefone=self._sanitize_phone(data.telefone),
             email=self._sanitize_optional_string(data.email),
             observacoes=self._sanitize_optional_string(data.observacoes),
-            numero_convenio=self._sanitize_optional_string(data.numero_convenio),
+            numero_convenio=self._sanitize_optional_string(
+                data.numero_convenio
+            ),
             nome_convenio=self._sanitize_optional_string(data.nome_convenio),
-            carteira_convenio=self._sanitize_optional_string(data.carteira_convenio),
+            carteira_convenio=self._sanitize_optional_string(
+                data.carteira_convenio
+            ),
         )
 
         created = await self.client_repository.create(client)
@@ -76,7 +80,9 @@ class ClientService:
             "client": self._to_response(created),
         }
 
-    async def update_client(self, client_id: str, data: ClientUpdateDTO) -> Dict:
+    async def update_client(
+        self, client_id: str, data: ClientUpdateDTO
+    ) -> Dict:
         """Update client information."""
 
         existing = await self.client_repository.find_by_id(client_id)
@@ -102,7 +108,13 @@ class ClientService:
         if "telefone" in payload:
             updates["telefone"] = self._sanitize_phone(payload["telefone"])
 
-        for key in ("email", "observacoes", "numero_convenio", "nome_convenio", "carteira_convenio"):
+        for key in (
+            "email",
+            "observacoes",
+            "numero_convenio",
+            "nome_convenio",
+            "carteira_convenio",
+        ):
             if key in payload:
                 updates[key] = self._sanitize_optional_string(payload[key])
 
@@ -119,7 +131,9 @@ class ClientService:
             "client": self._to_response(updated),
         }
 
-    async def list_clients(self, filters: ClientFilterDTO) -> ClientListResponseDTO:
+    async def list_clients(
+        self, filters: ClientFilterDTO
+    ) -> ClientListResponseDTO:
         """Return paginated list of clients respecting filters."""
 
         skip = (filters.page - 1) * filters.page_size
@@ -151,7 +165,9 @@ class ClientService:
                     },
                 )
 
-        clients = await self.client_repository.list(query, skip=skip, limit=filters.page_size)
+        clients = await self.client_repository.list(
+            query, skip=skip, limit=filters.page_size
+        )
         total = await self.client_repository.count(query)
 
         total_pages = (total + filters.page_size - 1) // filters.page_size
@@ -159,7 +175,10 @@ class ClientService:
         summaries = [self._to_response(client) for client in clients]
         return ClientListResponseDTO(
             success=True,
-            clients=[ClientSummaryDTO(**summary.model_dump()) for summary in summaries],
+            clients=[
+                ClientSummaryDTO(**summary.model_dump())
+                for summary in summaries
+            ],
             pagination={
                 "page": filters.page,
                 "page_size": filters.page_size,
@@ -180,12 +199,19 @@ class ClientService:
                 "message": "Cliente não encontrado",
             }
 
-        appointments_by_id = await self.appointment_repository.find_many_by_ids(
-            client.appointment_ids
+        appointments_by_id = (
+            await self.appointment_repository.find_many_by_ids(
+                client.appointment_ids
+            )
         )
-        appointments_by_cpf = await self.appointment_repository.list_by_cpf(client.cpf)
+        appointments_by_cpf = await self.appointment_repository.list_by_cpf(
+            client.cpf
+        )
 
-        history_map = {str(appointment.id): appointment for appointment in appointments_by_cpf}
+        history_map = {
+            str(appointment.id): appointment
+            for appointment in appointments_by_cpf
+        }
         for appointment in appointments_by_id:
             history_map[str(appointment.id)] = appointment
 
@@ -207,18 +233,35 @@ class ClientService:
             history=history,
         ).model_dump()
 
-    async def upsert_from_appointment(self, appointment: Appointment) -> None:
-        """Ensure a client exists/updated based on appointment data."""
+    async def upsert_from_appointment(
+        self, appointment: Appointment
+    ) -> Optional[str]:
+        """
+        Ensure a client exists/updated based on appointment data with smart merging.
+
+        Returns:
+            Optional[str]: Client ID if successfully created/updated, None otherwise
+        """
 
         normalized_cpf = normalize_cpf(appointment.cpf)
         if not normalized_cpf or not is_valid_cpf(normalized_cpf):
-            return
+            return None
 
         existing = await self.client_repository.find_by_cpf(normalized_cpf)
         appointment_id = str(appointment.id)
-        appointment_date = appointment.data_agendamento or appointment.created_at
+        appointment_date = (
+            appointment.data_agendamento or appointment.created_at
+        )
+
+        # Handle convenio information
+        convenio = self._extract_convenio_from_appointment(
+            appointment, appointment_date
+        )
 
         if not existing:
+            # Create new client
+            convenios_list = [convenio] if convenio else []
+
             client = Client(
                 nome_completo=appointment.nome_paciente,
                 cpf=normalized_cpf,
@@ -232,54 +275,132 @@ class ClientService:
                 carteira_convenio=self._sanitize_optional_string(
                     appointment.carteira_convenio
                 ),
-                observacoes=self._sanitize_optional_string(appointment.observacoes),
+                convenios_historico=convenios_list,
+                observacoes=self._sanitize_optional_string(
+                    appointment.observacoes
+                ),
                 appointment_ids=[appointment_id],
                 last_appointment_at=appointment_date,
+                last_address=appointment.endereco_completo,
+                last_address_normalized=appointment.endereco_normalizado,
             )
 
-            await self.client_repository.create(client)
-            return
+            created = await self.client_repository.create(client)
+            return str(created.id)
 
+        # Update existing client with smart merge
         updates: Dict[str, Optional[str]] = {}
 
-        name = self._sanitize_required_string(appointment.nome_paciente)
-        if name and name != existing.nome_completo:
-            updates["nome_completo"] = name
+        # Only update name and phone if appointment is more recent
+        is_more_recent = not existing.last_appointment_at or (
+            appointment_date
+            and appointment_date >= existing.last_appointment_at
+        )
 
-        phone = self._sanitize_phone(appointment.telefone)
-        if phone and phone != existing.telefone:
-            updates["telefone"] = phone
+        if is_more_recent:
+            name = self._sanitize_required_string(appointment.nome_paciente)
+            if name and name != existing.nome_completo:
+                updates["nome_completo"] = name
 
-        for key in ("numero_convenio", "nome_convenio", "carteira_convenio", "observacoes"):
-            value = getattr(appointment, key, None)
-            sanitized = self._sanitize_optional_string(value)
-            if sanitized and sanitized != getattr(existing, key):
-                updates[key] = sanitized
+            phone = self._sanitize_phone(appointment.telefone)
+            if phone and phone != existing.telefone:
+                updates["telefone"] = phone
+
+        # Update observacoes if present (append or replace)
+        obs = self._sanitize_optional_string(appointment.observacoes)
+        if obs and obs != existing.observacoes:
+            updates["observacoes"] = obs
 
         if updates:
             await self.client_repository.update(str(existing.id), updates)
 
-        last_reference: Optional[datetime] = appointment_date
-        if existing.last_appointment_at and last_reference:
-            if existing.last_appointment_at >= last_reference:
-                last_reference = None
+        # Add or update convenio in history
+        if convenio:
+            await self.client_repository.upsert_convenio(
+                str(existing.id), convenio
+            )
+
+        # Update last appointment metadata
+        last_reference: Optional[datetime] = None
+        last_address: Optional[str] = None
+        last_address_normalized = None
+
+        if is_more_recent:
+            last_reference = appointment_date
+            last_address = appointment.endereco_completo
+            last_address_normalized = appointment.endereco_normalizado
 
         await self.client_repository.add_appointment(
-            str(existing.id), appointment_id, last_reference
+            str(existing.id),
+            appointment_id,
+            last_reference,
+            last_address,
+            last_address_normalized,
+        )
+
+        return str(existing.id)
+
+    def _extract_convenio_from_appointment(
+        self, appointment: Appointment, appointment_date: Optional[datetime]
+    ) -> Optional[ConvenioInfo]:
+        """Extract convenio information from appointment."""
+
+        numero = self._sanitize_optional_string(appointment.numero_convenio)
+        nome = self._sanitize_optional_string(appointment.nome_convenio)
+        carteira = self._sanitize_optional_string(
+            appointment.carteira_convenio
+        )
+
+        # If no convenio data, treat as "Particular"
+        if not numero and not nome and not carteira:
+            nome = "Particular"
+
+        # Only create ConvenioInfo if there's at least a name
+        if not nome:
+            return None
+
+        return ConvenioInfo(
+            numero_convenio=numero,
+            nome_convenio=nome,
+            carteira_convenio=carteira,
+            primeira_utilizacao=appointment_date,
+            ultima_utilizacao=appointment_date,
         )
 
     async def bulk_upsert_from_appointments(
         self, appointments: List[Appointment]
     ) -> None:
+        """Bulk upsert clients from appointments."""
+        success_count = 0
+        skip_count = 0
+        error_count = 0
+
         for appointment in appointments:
             try:
-                await self.upsert_from_appointment(appointment)
+                result = await self.upsert_from_appointment(appointment)
+                if result:
+                    success_count += 1
+                else:
+                    skip_count += 1
+                    logger.debug(
+                        "Skipped client sync for appointment %s (invalid/missing CPF)",
+                        appointment.id,
+                    )
             except Exception as exc:  # pragma: no cover - defensive logging
+                error_count += 1
                 logger.warning(
                     "Failed to sync client from appointment %s: %s",
                     appointment.id,
                     exc,
+                    exc_info=True,
                 )
+
+        logger.info(
+            "Bulk client sync complete: %d created/updated, %d skipped, %d errors",
+            success_count,
+            skip_count,
+            error_count,
+        )
 
     def _to_response(self, client: Client) -> ClientResponseDTO:
         payload = client.model_dump()
