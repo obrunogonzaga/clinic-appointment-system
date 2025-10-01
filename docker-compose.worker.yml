@@ -20,10 +20,10 @@ services:
       ADDRESS_NORMALIZATION_ENABLED: ${ADDRESS_NORMALIZATION_ENABLED:-true}
       DOCUMENT_NORMALIZATION_ENABLED: ${DOCUMENT_NORMALIZATION_ENABLED:-true}
     networks:
-      - clinic-network
+      - shared-network
     command: python workers.py
 
 networks:
-  clinic-network:
+  shared-network:
     external: true
-    name: clinic-network
+    name: ${COOLIFY_SHARED_NETWORK}
