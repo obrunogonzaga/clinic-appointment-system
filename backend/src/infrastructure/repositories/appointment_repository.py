@@ -269,6 +269,27 @@ class AppointmentRepository(AppointmentRepositoryInterface):
             appointments.append(Appointment(**doc))
         return appointments
 
+    async def count_by_cpf_batch(self, cpfs: List[str]) -> Dict[str, int]:
+        normalized_cpfs = [normalize_cpf(cpf) for cpf in cpfs]
+        filtered_cpfs = list({cpf for cpf in normalized_cpfs if cpf})
+        if not filtered_cpfs:
+            return {}
+
+        pipeline = [
+            {"$match": {"cpf": {"$in": filtered_cpfs}}},
+            {"$group": {"_id": "$cpf", "count": {"$sum": 1}}},
+        ]
+
+        counts: Dict[str, int] = {}
+        cursor = self.collection.aggregate(pipeline)
+        async for doc in cursor:
+            cpf = doc.get("_id")
+            count = doc.get("count", 0)
+            if cpf:
+                counts[str(cpf)] = int(count)
+
+        return counts
+
     async def update(
         self, appointment_id: str, update_data: Dict[str, any]
     ) -> Optional[Appointment]:

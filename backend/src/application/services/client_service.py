@@ -172,7 +172,23 @@ class ClientService:
 
         total_pages = (total + filters.page_size - 1) // filters.page_size
 
-        summaries = [self._to_response(client) for client in clients]
+        cpf_list = [client.cpf for client in clients if client.cpf]
+        counts_map = (
+            await self.appointment_repository.count_by_cpf_batch(cpf_list)
+            if cpf_list
+            else {}
+        )
+
+        summaries = [
+            self._to_response(
+                client,
+                appointment_count_override=max(
+                    len(client.appointment_ids),
+                    counts_map.get(client.cpf, 0),
+                ),
+            )
+            for client in clients
+        ]
         return ClientListResponseDTO(
             success=True,
             clients=[
@@ -227,9 +243,17 @@ class ClientService:
             )
         ]
 
+        appointment_count = max(
+            len(client.appointment_ids),
+            len(history),
+        )
+
         return ClientDetailResponseDTO(
             success=True,
-            client=self._to_response(client),
+            client=self._to_response(
+                client,
+                appointment_count_override=appointment_count,
+            ),
             history=history,
         ).model_dump()
 
@@ -410,9 +434,18 @@ class ClientService:
             error_count,
         )
 
-    def _to_response(self, client: Client) -> ClientResponseDTO:
+    def _to_response(
+        self,
+        client: Client,
+        appointment_count_override: Optional[int] = None,
+    ) -> ClientResponseDTO:
         payload = client.model_dump()
-        payload["appointment_count"] = len(client.appointment_ids)
+        count = (
+            appointment_count_override
+            if appointment_count_override is not None
+            else len(client.appointment_ids)
+        )
+        payload["appointment_count"] = count
         return ClientResponseDTO(**payload)
 
     @staticmethod

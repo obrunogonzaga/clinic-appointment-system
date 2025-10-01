@@ -130,6 +130,10 @@ class AppointmentRepositoryInterface(ABC):
         """Retrieve appointments associated with the given CPF."""
 
     @abstractmethod
+    async def count_by_cpf_batch(self, cpfs: List[str]) -> Dict[str, int]:
+        """Return appointment totals grouped by CPF for the provided list."""
+
+    @abstractmethod
     async def update(
         self, appointment_id: str, update_data: Dict[str, Any]
     ) -> Optional[Appointment]:
