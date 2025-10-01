@@ -1,0 +1,29 @@
+services:
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      MONGODB_URL: ${MONGODB_URL}
+      DATABASE_NAME: ${DATABASE_NAME}
+      REDIS_URL: ${REDIS_URL}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DEBUG: ${DEBUG:-false}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openai/gpt-4o-mini}
+      ADDRESS_NORMALIZATION_ENABLED: ${ADDRESS_NORMALIZATION_ENABLED:-true}
+      DOCUMENT_NORMALIZATION_ENABLED: ${DOCUMENT_NORMALIZATION_ENABLED:-true}
+    networks:
+      - clinic-network
+    command: python workers.py
+
+networks:
+  clinic-network:
+    external: true
+    name: clinic-network
