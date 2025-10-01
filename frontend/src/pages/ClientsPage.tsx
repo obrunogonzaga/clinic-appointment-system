@@ -170,6 +170,35 @@ export const ClientsPage: React.FC = () => {
   const isLoading = clientsQuery.isLoading;
   const clientsData = clientsQuery.data;
   const clients = clientsData?.clients ?? [];
+  const resolveConvenioLabels = (client: Client): string[] => {
+    if (client.convenios_historico && client.convenios_historico.length > 0) {
+      const labels = client.convenios_historico
+        .map((item) => {
+          if (!item) {
+            return null;
+          }
+          const base = item.nome_convenio ?? item.numero_convenio;
+          if (!base) {
+            return null;
+          }
+          if (item.numero_convenio && item.nome_convenio) {
+            return `${item.nome_convenio} (${item.numero_convenio})`;
+          }
+          return base;
+        })
+        .filter((value): value is string => Boolean(value));
+
+      if (labels.length > 0) {
+        return Array.from(new Set(labels));
+      }
+    }
+
+    if (client.nome_convenio) {
+      return [client.nome_convenio];
+    }
+
+    return [];
+  };
   const pagination = clientsData?.pagination;
 
   const totalPages = pagination?.total_pages ?? 0;
@@ -370,38 +399,56 @@ export const ClientsPage: React.FC = () => {
                     </td>
                   </tr>
                 )}
-                {clients.map((client: Client) => (
-                  <tr key={client.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-4 text-sm font-medium text-gray-900">{client.nome_completo}</td>
-                    <td className="px-4 py-4 text-sm text-gray-600">{maskCpf(client.cpf)}</td>
-                    <td className="px-4 py-4 text-sm text-gray-600">{client.telefone ? client.telefone : '-'}</td>
-                    <td className="px-4 py-4 text-sm text-gray-600">{client.nome_convenio || '-'}</td>
-                    <td className="px-4 py-4 text-sm text-gray-600">
-                      {client.last_appointment_at
-                        ? formatDateTimeLabel(client.last_appointment_at)
-                        : '-'}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-gray-600">{client.appointment_count}</td>
-                    <td className="px-4 py-4 text-right text-sm">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenHistory(client.id)}
-                          className="rounded-md border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100"
-                        >
-                          Histórico
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenForm(client)}
-                          className="rounded-md border border-blue-500 px-3 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
-                        >
-                          Editar
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {clients.map((client: Client) => {
+                  const convenios = resolveConvenioLabels(client);
+                  return (
+                    <tr key={client.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-4 text-sm font-medium text-gray-900">{client.nome_completo}</td>
+                      <td className="px-4 py-4 text-sm text-gray-600">{maskCpf(client.cpf)}</td>
+                      <td className="px-4 py-4 text-sm text-gray-600">{client.telefone ? client.telefone : '-'}</td>
+                      <td className="px-4 py-4 text-sm text-gray-600">
+                        {convenios.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {convenios.map((label) => (
+                              <span
+                                key={label}
+                                className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700"
+                              >
+                                {label}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-600">
+                        {client.last_appointment_at
+                          ? formatDateTimeLabel(client.last_appointment_at)
+                          : '-'}
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-600">{client.appointment_count}</td>
+                      <td className="px-4 py-4 text-right text-sm">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenHistory(client.id)}
+                            className="rounded-md border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100"
+                          >
+                            Histórico
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenForm(client)}
+                            className="rounded-md border border-blue-500 px-3 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
+                          >
+                            Editar
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

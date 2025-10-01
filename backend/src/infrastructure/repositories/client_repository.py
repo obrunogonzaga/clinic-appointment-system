@@ -1,7 +1,7 @@
 """MongoDB implementation of ClientRepository."""
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import ASCENDING
@@ -25,6 +25,24 @@ class ClientRepository(ClientRepositoryInterface):
         data["id"] = str(data["id"])
         await self.collection.insert_one(data)
         return client
+
+    async def get_or_create(self, client: Client) -> Tuple[Client, bool]:
+        data = client.model_dump()
+        data["id"] = str(data["id"])
+
+        result = await self.collection.update_one(
+            {"cpf": data["cpf"]},
+            {"$setOnInsert": data},
+            upsert=True,
+        )
+
+        doc = await self.collection.find_one({"cpf": data["cpf"]})
+        if not doc:
+            raise ValueError("Failed to retrieve client after upsert operation")
+
+        doc.pop("_id", None)
+        created = result.upserted_id is not None
+        return Client(**doc), created
 
     async def update(
         self, client_id: str, update_data: Dict[str, Any]

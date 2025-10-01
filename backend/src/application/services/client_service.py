@@ -253,6 +253,18 @@ class ClientService:
             appointment.data_agendamento or appointment.created_at
         )
 
+        telefone = self._sanitize_phone(appointment.telefone)
+        observacoes = self._sanitize_optional_string(appointment.observacoes)
+        numero_convenio = self._sanitize_optional_string(
+            appointment.numero_convenio
+        )
+        nome_convenio = self._sanitize_optional_string(
+            appointment.nome_convenio
+        )
+        carteira_convenio = self._sanitize_optional_string(
+            appointment.carteira_convenio
+        )
+
         # Handle convenio information
         convenio = self._extract_convenio_from_appointment(
             appointment, appointment_date
@@ -265,28 +277,26 @@ class ClientService:
             client = Client(
                 nome_completo=appointment.nome_paciente,
                 cpf=normalized_cpf,
-                telefone=self._sanitize_phone(appointment.telefone),
-                numero_convenio=self._sanitize_optional_string(
-                    appointment.numero_convenio
-                ),
-                nome_convenio=self._sanitize_optional_string(
-                    appointment.nome_convenio
-                ),
-                carteira_convenio=self._sanitize_optional_string(
-                    appointment.carteira_convenio
-                ),
+                telefone=telefone,
+                numero_convenio=numero_convenio,
+                nome_convenio=nome_convenio,
+                carteira_convenio=carteira_convenio,
                 convenios_historico=convenios_list,
-                observacoes=self._sanitize_optional_string(
-                    appointment.observacoes
-                ),
+                observacoes=observacoes,
                 appointment_ids=[appointment_id],
                 last_appointment_at=appointment_date,
                 last_address=appointment.endereco_completo,
                 last_address_normalized=appointment.endereco_normalizado,
             )
 
-            created = await self.client_repository.create(client)
-            return str(created.id)
+            existing, created = await self.client_repository.get_or_create(
+                client
+            )
+            if created:
+                return str(existing.id)
+
+        if existing is None:
+            return None
 
         # Update existing client with smart merge
         updates: Dict[str, Optional[str]] = {}
@@ -302,14 +312,12 @@ class ClientService:
             if name and name != existing.nome_completo:
                 updates["nome_completo"] = name
 
-            phone = self._sanitize_phone(appointment.telefone)
-            if phone and phone != existing.telefone:
-                updates["telefone"] = phone
+            if telefone and telefone != existing.telefone:
+                updates["telefone"] = telefone
 
         # Update observacoes if present (append or replace)
-        obs = self._sanitize_optional_string(appointment.observacoes)
-        if obs and obs != existing.observacoes:
-            updates["observacoes"] = obs
+        if observacoes and observacoes != existing.observacoes:
+            updates["observacoes"] = observacoes
 
         if updates:
             await self.client_repository.update(str(existing.id), updates)

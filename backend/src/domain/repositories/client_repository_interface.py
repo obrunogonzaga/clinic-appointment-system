@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from src.domain.entities.client import Client, ConvenioInfo
 
@@ -13,6 +13,10 @@ class ClientRepositoryInterface(ABC):
     @abstractmethod
     async def create(self, client: Client) -> Client:
         """Create a new client record."""
+
+    @abstractmethod
+    async def get_or_create(self, client: Client) -> Tuple[Client, bool]:
+        """Ensure a client exists, returning the instance and creation flag."""
 
     @abstractmethod
     async def update(

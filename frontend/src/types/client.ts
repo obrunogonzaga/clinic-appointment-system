@@ -1,6 +1,14 @@
 import type { Appointment } from './appointment';
 import type { PaginationInfo } from './appointment';
 
+export interface ConvenioInfo {
+  numero_convenio?: string | null;
+  nome_convenio?: string | null;
+  carteira_convenio?: string | null;
+  primeira_utilizacao?: string | null;
+  ultima_utilizacao?: string | null;
+}
+
 export interface Client {
   id: string;
   nome_completo: string;
@@ -11,9 +19,12 @@ export interface Client {
   numero_convenio?: string | null;
   nome_convenio?: string | null;
   carteira_convenio?: string | null;
+  convenios_historico: ConvenioInfo[];
   appointment_ids: string[];
   appointment_count: number;
   last_appointment_at?: string | null;
+  last_address?: string | null;
+  last_address_normalized?: Record<string, string | null> | null;
   created_at: string;
   updated_at?: string | null;
 }
