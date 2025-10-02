@@ -32,6 +32,7 @@ from src.application.services.address_normalization_service import (
     AddressNormalizationService,
 )
 from src.application.services.appointment_service import AppointmentService
+from src.application.services.client_service import ClientService
 from src.application.services.car_service import CarService
 from src.application.services.dashboard_analytics_service import (
     DashboardAnalyticsService,
@@ -61,7 +62,10 @@ from src.presentation.api.responses import (
     ListResponse,
 )
 from src.infrastructure.repositories.tag_repository import TagRepository
-from src.presentation.dependencies.services import get_dashboard_analytics_service
+from src.presentation.dependencies.services import (
+    get_client_service,
+    get_dashboard_analytics_service,
+)
 
 router = APIRouter()
 
@@ -75,6 +79,7 @@ async def get_appointment_service(
     logistics_package_repository=Depends(get_logistics_package_repository),
     tag_repository: TagRepository = Depends(get_tag_repository),
     settings: Settings = Depends(get_settings),
+    client_service: ClientService = Depends(get_client_service),
 ) -> AppointmentService:
     """Get appointment service instance."""
     # Create car service
@@ -100,12 +105,20 @@ async def get_appointment_service(
     except ValueError:
         # OpenRouter not configured, continue without normalization services
         excel_parser = ExcelParserService(car_service=car_service)
+
+    # Get task service from container
+    from src.infrastructure.container import Container
+    container = Container()
+    task_service = container.task_service()
+
     return AppointmentService(
         appointment_repository,
         excel_parser,
         logistics_package_repository=logistics_package_repository,
         tag_repository=tag_repository,
         max_tags_per_appointment=settings.max_tags_per_appointment,
+        client_service=client_service,
+        task_service=task_service,
     )
 
 

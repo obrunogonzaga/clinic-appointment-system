@@ -36,6 +36,9 @@ class AppointmentCreateDTO(BaseModel):
         None,
         description="Código CIP (Classificação Internacional de Procedimentos)",
     )
+    cpf: str = Field(
+        ..., description="CPF do paciente (apenas dígitos ou formatado)"
+    )
     status: str = Field("Pendente", description="Status do Agendamento")
     telefone: Optional[str] = Field(None, description="Telefone do Paciente")
     carro: Optional[str] = Field(
@@ -63,6 +66,10 @@ class AppointmentCreateDTO(BaseModel):
     origin: AppointmentOrigin = Field(
         default=AppointmentOrigin.MANUAL,
         description="Origem do agendamento (DASA ou Manual)",
+    )
+    # Endereço normalizado
+    endereco_normalizado: Optional[Dict[str, Optional[str]]] = Field(
+        None, description="Endereço normalizado em campos estruturados"
     )
 
 
@@ -93,6 +100,7 @@ class AppointmentResponseDTO(BaseModel):
     observacoes: Optional[str] = None
     driver_id: Optional[str] = None
     collector_id: Optional[str] = None
+    client_id: Optional[str] = None
     # Campos de endereço
     cep: Optional[str] = Field(None, description="CEP do endereço de coleta")
     endereco_coleta: Optional[str] = Field(
@@ -131,6 +139,17 @@ class AppointmentResponseDTO(BaseModel):
     )
     origin: str = Field(
         default="Manual", description="Origem do agendamento (DASA ou Manual)"
+    )
+    # Campos de normalização em background
+    normalization_status: Optional[str] = Field(
+        None,
+        description="Status da normalização em background (pending, processing, completed, failed, skipped)",
+    )
+    normalization_job_id: Optional[str] = Field(
+        None, description="ID do job de normalização no ARQ"
+    )
+    normalization_error: Optional[str] = Field(
+        None, description="Erro da normalização (se houver)"
     )
     created_at: datetime
     updated_at: Optional[datetime]

@@ -58,6 +58,14 @@ import type {
     LogisticsPackageResponse,
     LogisticsPackageUpdateRequest,
 } from '../types/logistics-package';
+import type {
+    ClientCreateRequest,
+    ClientDetailResponse,
+    ClientFilter,
+    ClientListResponse,
+    ClientResponse,
+    ClientUpdateRequest,
+} from '../types/client';
 
 const resolveApiBaseUrl = (): string => {
   if (typeof window !== 'undefined' && window.ENV?.API_URL) {
@@ -272,6 +280,40 @@ export const appointmentAPI = {
     );
 
     return response.data.data;
+  },
+};
+
+export const clientAPI = {
+  listClients: async (filters: ClientFilter): Promise<ClientListResponse> => {
+    const params = new URLSearchParams();
+
+    if (filters.search) params.append('search', filters.search);
+    if (filters.cpf) params.append('cpf', filters.cpf);
+    if (filters.page) params.append('page', filters.page.toString());
+    if (filters.page_size) params.append('page_size', filters.page_size.toString());
+
+    const query = params.toString();
+    const url = query ? `/clients?${query}` : '/clients';
+    const response = await api.get<ClientListResponse>(url, { withCredentials: true });
+    return response.data;
+  },
+
+  createClient: async (payload: ClientCreateRequest): Promise<ClientResponse> => {
+    const response = await api.post<ClientResponse>('/clients', payload, { withCredentials: true });
+    return response.data;
+  },
+
+  updateClient: async (
+    id: string,
+    payload: ClientUpdateRequest
+  ): Promise<ClientResponse> => {
+    const response = await api.put<ClientResponse>(`/clients/${id}`, payload, { withCredentials: true });
+    return response.data;
+  },
+
+  getClientDetail: async (id: string): Promise<ClientDetailResponse> => {
+    const response = await api.get<ClientDetailResponse>(`/clients/${id}`, { withCredentials: true });
+    return response.data;
   },
 };
 

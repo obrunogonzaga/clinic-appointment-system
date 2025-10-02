@@ -14,8 +14,10 @@ from src.presentation.api.v1.endpoints import (
     appointments,
     auth,
     cars,
+    clients,
     collectors,
     drivers,
+    jobs,
     logistics_packages,
     notifications,
     reports,
@@ -52,6 +54,10 @@ api_v1_router.include_router(
     collectors.router, prefix="/collectors", tags=["Collectors"]
 )
 
+api_v1_router.include_router(
+    clients.router, prefix="/clients", tags=["Clients"]
+)
+
 api_v1_router.include_router(cars.router, prefix="/cars", tags=["Cars"])
 
 api_v1_router.include_router(
@@ -70,6 +76,8 @@ api_v1_router.include_router(
 
 api_v1_router.include_router(tags.router, prefix="/tags", tags=["Tags"])
 
+api_v1_router.include_router(jobs.router, tags=["Background Jobs"])
+
 
 @api_v1_router.get("/")
 async def api_v1_root() -> dict[str, Any]:
@@ -85,6 +93,7 @@ async def api_v1_root() -> dict[str, Any]:
             "appointments": f"{settings.api_v1_prefix}/appointments",
             "drivers": f"{settings.api_v1_prefix}/drivers",
             "collectors": f"{settings.api_v1_prefix}/collectors",
+            "clients": f"{settings.api_v1_prefix}/clients",
             "cars": f"{settings.api_v1_prefix}/cars",
             "logistics_packages": f"{settings.api_v1_prefix}/logistics-packages",
             "reports": f"{settings.api_v1_prefix}/reports",

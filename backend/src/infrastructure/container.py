@@ -9,6 +9,7 @@ from src.infrastructure.repositories.appointment_repository import (
     AppointmentRepository,
 )
 from src.infrastructure.repositories.car_repository import CarRepository
+from src.infrastructure.repositories.client_repository import ClientRepository
 from src.infrastructure.repositories.collector_repository import (
     CollectorRepository,
 )
@@ -21,6 +22,7 @@ from src.infrastructure.repositories.logistics_package_repository import (
 )
 from src.infrastructure.services.redis_service import RedisService
 from src.infrastructure.services.rate_limiter import RateLimiter
+from src.application.services.task_service import TaskService
 
 
 class Container:
@@ -42,6 +44,7 @@ class Container:
         self._car_repository: Optional[CarRepository] = None
         self._driver_repository: Optional[DriverRepository] = None
         self._collector_repository: Optional[CollectorRepository] = None
+        self._client_repository: Optional[ClientRepository] = None
         self._user_repository: Optional[UserRepository] = None
         self._notification_repository: Optional[NotificationRepository] = None
         self._tag_repository: Optional[TagRepository] = None
@@ -50,6 +53,7 @@ class Container:
         ] = None
         self._redis_service: Optional[RedisService] = None
         self._rate_limiter: Optional[RateLimiter] = None
+        self._task_service: Optional[TaskService] = None
 
     @property
     def settings(self) -> Settings:
@@ -142,6 +146,14 @@ class Container:
         return self._collector_repository
 
     @property
+    def client_repository(self) -> ClientRepository:
+        """Get client repository instance."""
+
+        if self._client_repository is None:
+            self._client_repository = ClientRepository(self.database)
+        return self._client_repository
+
+    @property
     def logistics_package_repository(self) -> LogisticsPackageRepository:
         """Get logistics package repository instance."""
 
@@ -206,6 +218,17 @@ class Container:
             self._rate_limiter = RateLimiter(self.settings, self.redis_service)
         return self._rate_limiter
 
+    def task_service(self) -> TaskService:
+        """
+        Get task service instance for background jobs.
+
+        Returns:
+            TaskService: Task service instance
+        """
+        if self._task_service is None:
+            self._task_service = TaskService()
+        return self._task_service
+
     async def startup(self) -> None:
         """
         Initialize resources on application startup.
@@ -227,6 +250,7 @@ class Container:
             await self.car_repository.create_indexes()
             await self.driver_repository.create_indexes()
             await self.collector_repository.create_indexes()
+            await self.client_repository.create_indexes()
             await self.user_repository.ensure_indexes()
             await self.notification_repository.create_indexes()
             await self.tag_repository.ensure_indexes()
@@ -316,6 +340,12 @@ async def get_collector_repository() -> CollectorRepository:
         CollectorRepository: Repository instance
     """
     return container.collector_repository
+
+
+async def get_client_repository() -> ClientRepository:
+    """Dependency for getting client repository instance."""
+
+    return container.client_repository
 
 
 async def get_user_repository() -> UserRepository:

@@ -40,6 +40,31 @@ services:
     networks:
       - clinic-network
 
+  # Redis - Cache and Queue
+  redis:
+    image: redis:7-alpine
+    container_name: clinic-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+    volumes:
+      - redis_data:/data
+    networks:
+      - clinic-network
+    command: >
+      sh -c "if [ -n \"$$REDIS_PASSWORD\" ]; then
+        redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\"
+      else
+        redis-server --appendonly yes
+      fi"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   # Backend API - FastAPI
   backend:
     build:
@@ -58,6 +83,8 @@ services:
       - SECRET_KEY=${BACKEND_SECRET_KEY:-your-secret-key-here}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-jwt-secret-key-here-change-in-production}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
+      - REDIS_URL=redis://redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - ENVIRONMENT=development
       - DEBUG=True
     volumes:
@@ -66,9 +93,46 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - clinic-network
     command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Background Worker - ARQ
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: clinic-worker
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      - MONGODB_URL=mongodb://${MONGO_INITDB_ROOT_USERNAME:-admin}:${MONGO_INITDB_ROOT_PASSWORD:-changeme}@mongodb:27017/
+      - DATABASE_NAME=${MONGO_INITDB_DATABASE:-clinic_db}
+      - SECRET_KEY=${BACKEND_SECRET_KEY:-your-secret-key-here}
+      - REDIS_URL=redis://redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - ENVIRONMENT=development
+      - DEBUG=True
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-openai/gpt-4o-mini}
+      - ADDRESS_NORMALIZATION_ENABLED=${ADDRESS_NORMALIZATION_ENABLED:-true}
+      - DOCUMENT_NORMALIZATION_ENABLED=${DOCUMENT_NORMALIZATION_ENABLED:-true}
+    volumes:
+      - ./backend:/app
+      - backend_venv:/app/venv
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - clinic-network
+    command: python workers.py
 
   # Frontend - React
   frontend:
@@ -96,6 +160,8 @@ services:
 volumes:
   mongodb_data:
     name: clinic-mongodb-data
+  redis_data:
+    name: clinic-redis-data
   backend_venv:
     name: clinic-backend-venv
   frontend_node_modules:

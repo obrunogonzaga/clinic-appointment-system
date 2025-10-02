@@ -36,6 +36,7 @@ async def test_create_appointment_success() -> None:
         hora_agendamento="09:00",
         status="Confirmado",
         telefone="11999988888",
+        cpf="52998224725",
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -63,6 +64,7 @@ async def test_create_appointment_duplicate() -> None:
         hora_agendamento="09:00",
         status="Confirmado",
         telefone="11999988888",
+        cpf="52998224725",
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -132,6 +134,7 @@ async def test_create_appointment_validation_error() -> None:
         hora_agendamento="09:00",
         status="Status-Invalido",
         telefone="11999988888",
+        cpf="52998224725",
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -158,6 +161,7 @@ async def test_create_appointment_internal_error() -> None:
         hora_agendamento="09:00",
         status="Confirmado",
         telefone="11999988888",
+        cpf="52998224725",
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -181,6 +185,7 @@ async def test_import_excel_blocks_past_dates() -> None:
         hora_agendamento="09:00",
         status="Confirmado",
         telefone="11999988888",
+        cpf="52998224725",
     )
 
     parse_result = SimpleNamespace(
@@ -209,7 +214,8 @@ async def test_import_excel_blocks_past_dates() -> None:
     assert result["success"] is False
     assert result["past_appointments_blocked"] == 1
     assert result["imported_appointments"] == 0
-    assert any("passado" in message.lower() for message in result["errors"])
+    assert "passado" in result["message"].lower()
+    assert any("anterior a hoje" in message.lower() for message in result["errors"])
     repository.create_many.assert_not_awaited()
 
 
@@ -228,6 +234,7 @@ async def test_create_appointment_missing_phone() -> None:
         data_agendamento=datetime(2025, 1, 10, 9, 0),
         hora_agendamento="09:00",
         status="Confirmado",
+        cpf="52998224725",
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -254,6 +261,7 @@ async def test_create_appointment_sets_agendado_por_when_status_agendado() -> No
         hora_agendamento="09:00",
         status="Agendado",
         telefone="11999988888",
+        cpf="52998224725",
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -301,6 +309,7 @@ async def test_create_appointment_with_logistics_package() -> None:
         status="Confirmado",
         telefone="11999988888",
         logistics_package_id=str(package.id),
+        cpf="52998224725",
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -341,6 +350,7 @@ async def test_create_appointment_invalid_logistics_package() -> None:
         status="Confirmado",
         telefone="11999988888",
         logistics_package_id="missing",
+        cpf="52998224725",
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -380,6 +390,7 @@ async def test_create_appointment_with_tags_success() -> None:
         status="Confirmado",
         telefone="11999988888",
         tags=[tag_id],
+        cpf="52998224725",
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -414,6 +425,7 @@ async def test_create_appointment_with_invalid_tag() -> None:
         status="Confirmado",
         telefone="11999988888",
         tags=[str(uuid4())],
+        cpf="52998224725",
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -448,6 +460,7 @@ async def test_create_appointment_exceeds_tag_limit() -> None:
         status="Confirmado",
         telefone="11999988888",
         tags=[str(uuid4()), str(uuid4())],
+        cpf="52998224725",
     )
 
     result = await service.create_appointment(dto, created_by="Ana Admin")
@@ -469,6 +482,7 @@ async def test_get_appointment_success() -> None:
         hora_agendamento="09:00",
         status="Confirmado",
         telefone="11999988888",
+        cpf="52998224725",
     )
 
     repository = MagicMock()
@@ -510,6 +524,7 @@ async def test_update_appointment_success() -> None:
         hora_agendamento="09:00",
         status="Confirmado",
         telefone="11999988888",
+        cpf="52998224725",
     )
 
     tag_id = uuid4()
@@ -567,6 +582,7 @@ async def test_update_appointment_assigns_logistics_package() -> None:
         hora_agendamento="09:00",
         status="Confirmado",
         telefone="11999988888",
+        cpf="52998224725",
     )
 
     repository = MagicMock()
@@ -626,6 +642,7 @@ async def test_update_appointment_logistics_package_not_found() -> None:
         hora_agendamento="09:00",
         status="Confirmado",
         telefone="11999988888",
+        cpf="52998224725",
     )
 
     repository = MagicMock()

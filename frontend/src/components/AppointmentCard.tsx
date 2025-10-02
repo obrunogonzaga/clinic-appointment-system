@@ -17,6 +17,7 @@ import type { LogisticsPackage } from '../types/logistics-package';
 import { formatDate } from '../utils/dateUtils';
 import { getStatusBadgeClass } from '../utils/statusColors';
 import { TagBadge } from './tags/TagBadge';
+import { NormalizationStatusBadge } from './NormalizationStatusBadge';
 
 interface AppointmentCardProps {
   appointment: AppointmentViewModel;
@@ -168,6 +169,12 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
               {appointment.origin === 'DASA' ? '📊 DASA' : '✍️ Manual'}
             </span>
           )}
+          <NormalizationStatusBadge
+            status={appointment.normalization_status}
+            error={appointment.normalization_error}
+            showLabel={!compact}
+            size="sm"
+          />
         </div>
 
         <select

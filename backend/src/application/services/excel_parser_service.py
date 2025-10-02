@@ -259,22 +259,9 @@ class ExcelParserService:
             except Exception as e:
                 errors.append(f"Linha {index + 1}: {str(e)}")
 
-        # Normalizar endereços se o serviço estiver disponível E habilitado
-        settings = get_settings()
-        if (
-            self.address_service
-            and appointments
-            and settings.address_normalization_enabled
-        ):
-            appointments = await self._normalize_addresses_batch(appointments)
-
-        # Normalizar documentos se o serviço estiver disponível E habilitado
-        if (
-            self.document_service
-            and appointments
-            and settings.address_normalization_enabled  # Reuse the same setting
-        ):
-            appointments = await self._normalize_documents_batch(appointments)
+        # NOTE: Normalization is now handled in background via ARQ workers
+        # The appointments are returned immediately and normalization happens async
+        # Status is tracked via normalization_status field in Appointment entity
 
         return ExcelParseResult(
             success=len(errors) == 0,
@@ -324,23 +311,20 @@ class ExcelParserService:
                 observacoes = self._clean_string(row.get("Observações"))
 
             # Carro vem da extração do campo "Nome da Sala"
-            # Formato: AA-BB-CC-DD-NOME_CARRO RESTO - UNIDADE
-            # Extrair apenas: NOME_CARRO RESTO
+            # Formato: AA-BB-CC-DD-EE-NOME_CARRO RESTO - UNIDADE
+            # Manter string completa: NOME_CARRO RESTO - UNIDADE
+            # A unidade é extraída posteriormente pelo Car.extract_car_info_from_string()
             carro = None
             sala_val = self._clean_string(row.get("Nome da Sala"))
             if sala_val:
                 # Remover os primeiros 4 segmentos (AA-BB-CC-DD-)
-                # e extrair apenas o 5º segmento + informação do carro
+                # e extrair o 5º segmento + informação do carro COM a unidade
                 parts = sala_val.split("-", 4)  # Split em até 4 hífens
                 if len(parts) == 5:
                     # parts[4] contém: "NOME_CARRO RESTO - UNIDADE"
+                    # Manter a string completa incluindo " - UNIDADE"
                     remaining = parts[4].strip()
-                    # Agora extrair apenas até o " - UNIDADE"
-                    if " - " in remaining:
-                        carro_part = remaining.split(" - ")[0].strip()
-                        carro = carro_part if carro_part else None
-                    else:
-                        carro = remaining
+                    carro = remaining if remaining else None
             tipo_consulta = self._clean_string(row.get("Nomes dos Exames"))
             cep = self._clean_string(row.get("CEP"))
             endereco_coleta = self._clean_string(row.get("Endereço Coleta"))
