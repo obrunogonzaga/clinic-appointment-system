@@ -1,5 +1,7 @@
 # Configuração do Worker ARQ no Coolify
 
+> **Nota:** Se você estiver usando o deploy unificado recomendado, comece por [COOLIFY_DOCKER_COMPOSE.md](./COOLIFY_DOCKER_COMPOSE.md). Este arquivo continua válido para troubleshooting e cenários onde o worker é gerenciado em recurso separado.
+
 Este guia descreve como configurar e fazer deploy do worker ARQ para processamento de background jobs no Coolify.
 
 ## Visão Geral
