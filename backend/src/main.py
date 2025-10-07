@@ -68,6 +68,7 @@ trusted_hosts = [
     "localhost",
     "127.0.0.1",
     "*.widia.io",
+    "*.sslip.io",  # allow temporary Coolify domains during staging/tests
     "api-staging.widia.io",
     "clinica-staging.widia.io",
 ]
