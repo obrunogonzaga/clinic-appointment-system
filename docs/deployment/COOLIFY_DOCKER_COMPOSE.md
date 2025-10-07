@@ -50,7 +50,7 @@ docker-compose.coolify.yml
    - Backend: HTTP `GET /health` na porta 8000.
    - Worker: comando `ps aux | grep "python workers.py" | grep -v grep` (opcional, para alertas).
 6. Exponha os serviços que precisam de acesso externo:
-   - Backend: informe no Coolify o **Internal Port** `8000` (o compose usa `expose` para evitar bind da porta 8000 no host).
+   - Backend: informe no Coolify o **Internal Port** `8000`. No `.env.coolify`, mantenha `BACKEND_URL=http://backend:8000` para o proxy interno do Nginx.
    - Frontend: configure o **Internal Port** `80`.
    - MinIO: exponha 9000/9001 somente se precisar do console público.
 7. Clique em **Deploy** e acompanhe os logs. O primeiro deploy baixa imagens, builda backend/frontend e inicializa as migrations (MongoDB não requer migração manual).
