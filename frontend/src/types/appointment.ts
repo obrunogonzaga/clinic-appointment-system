@@ -56,6 +56,11 @@ export interface Appointment {
   cadastrado_por?: string;
   agendado_por?: string;
   tags?: AppointmentTag[];
+  origin?: 'DASA' | 'Manual';
+  // Background normalization tracking
+  normalization_status?: 'pending' | 'processing' | 'completed' | 'failed' | 'skipped';
+  normalization_job_id?: string;
+  normalization_error?: string;
 }
 
 export interface AppointmentViewModel extends Appointment {
@@ -67,6 +72,7 @@ export interface AppointmentCreateRequest {
   nome_marca: string;
   nome_unidade: string;
   nome_paciente: string;
+  cpf: string;
   data_agendamento?: string;
   hora_agendamento?: string;
   tipo_consulta?: string;
@@ -83,6 +89,16 @@ export interface AppointmentCreateRequest {
   nome_convenio?: string;
   carteira_convenio?: string;
   tags?: string[];
+  origin?: 'DASA' | 'Manual';
+  endereco_normalizado?: {
+    rua?: string | null;
+    numero?: string | null;
+    complemento?: string | null;
+    bairro?: string | null;
+    cidade?: string | null;
+    estado?: string | null;
+    cep?: string | null;
+  } | null;
 }
 
 export interface AppointmentFilter {

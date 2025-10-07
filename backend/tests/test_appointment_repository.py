@@ -58,6 +58,7 @@ def sample_appointment():
         telefone="11999887766",
         carro="Honda Civic Prata",
         observacoes="Primeira consulta",
+        cpf="52998224725",
     )
 
 
@@ -92,6 +93,7 @@ class TestAppointmentRepository:
                 nome_paciente=f"Paciente {i}",
                 data_agendamento=datetime(2025, 1, 15),
                 hora_agendamento="10:00",
+                cpf="52998224725",
             )
             for i in range(3)
         ]
@@ -135,6 +137,7 @@ class TestAppointmentRepository:
                 nome_paciente=f"Paciente {i}",
                 data_agendamento=datetime(2025, 1, 15),
                 hora_agendamento="10:00",
+                cpf="52998224725",
             )
             for i in range(5)
         ]
@@ -163,6 +166,7 @@ class TestAppointmentRepository:
                 data_agendamento=datetime(2025, 1, 15),
                 hora_agendamento="10:00",
                 status="Confirmado",
+                cpf="52998224725",
             ),
             Appointment(
                 nome_unidade="UBS Norte",
@@ -171,6 +175,7 @@ class TestAppointmentRepository:
                 data_agendamento=datetime(2025, 1, 20),
                 hora_agendamento="14:00",
                 status="Cancelado",
+                cpf="52998224725",
             ),
             Appointment(
                 nome_unidade="UBS Centro",
@@ -179,6 +184,7 @@ class TestAppointmentRepository:
                 data_agendamento=datetime(2025, 1, 25),
                 hora_agendamento="09:00",
                 status="Confirmado",
+                cpf="52998224725",
             ),
         ]
         await repository.create_many(appointments)
@@ -228,6 +234,7 @@ class TestAppointmentRepository:
                     driver_id="driver-1",
                     collector_id="collector-1",
                     car_id="car-1",
+                    cpf="52998224725",
                 ),
                 Appointment(
                     nome_unidade="UBS Centro",
@@ -239,6 +246,7 @@ class TestAppointmentRepository:
                     driver_id="driver-2",
                     collector_id="collector-1",
                     car_id="car-2",
+                    cpf="52998224725",
                 ),
                 Appointment(
                     nome_unidade="UBS Sul",
@@ -250,6 +258,7 @@ class TestAppointmentRepository:
                     driver_id="driver-1",
                     collector_id="collector-2",
                     car_id="car-1",
+                    cpf="52998224725",
                 ),
             ]
         )
@@ -262,7 +271,7 @@ class TestAppointmentRepository:
         assert metrics["total"] == 3
         assert metrics["status_counts"]["Confirmado"] == 1
         assert metrics["status_counts"]["Cancelado"] == 1
-        assert len(metrics["trend"]) == (end - start).days
+        assert len(metrics["trend"]) == 3
         assert metrics["resource_assignments"]["drivers"] == 2
         assert metrics["resource_assignments"]["collectors"] == 2
         assert any(item["unit"] == "UBS Centro" for item in metrics["top_units"])

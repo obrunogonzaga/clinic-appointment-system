@@ -390,8 +390,16 @@ class CarService:
             Dict: Car data and creation info
         """
         try:
-            # Try to find existing car by exact name match
-            existing_car = await self.car_repository.find_by_nome(car_string)
+            # Extract car info from string first
+            try:
+                car_name, unit = Car.extract_car_info_from_string(car_string)
+            except ValueError:
+                # If extraction fails, use fallback
+                car_name = car_string.strip()
+                unit = "UND"
+
+            # Try to find existing car by name (without unit suffix)
+            existing_car = await self.car_repository.find_by_nome(car_name)
             if existing_car:
                 return {
                     "success": True,
@@ -400,15 +408,7 @@ class CarService:
                     "message": "Carro já existente",
                 }
 
-            # Extract car info from string
-            try:
-                car_name, unit = Car.extract_car_info_from_string(car_string)
-            except ValueError:
-                # If extraction fails, use the whole string as car name
-                car_name = car_string.strip()
-                unit = "UND"
-
-            # Create new car
+            # Create new car with extracted name and unit
             car = Car(nome=car_name, unidade=unit, status="Ativo")
 
             created_car = await self.car_repository.create(car)

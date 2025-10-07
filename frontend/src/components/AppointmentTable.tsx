@@ -14,6 +14,7 @@ import type { ActiveCollector } from '../types/collector.ts';
 import type { ActiveDriver } from '../types/driver.ts';
 import type { LogisticsPackage } from '../types/logistics-package';
 import { TagBadge } from './tags/TagBadge';
+import { NormalizationStatusBadge } from './NormalizationStatusBadge';
 
 interface AppointmentTableProps {
   appointments: AppointmentViewModel[];
@@ -206,6 +207,21 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
                 <TagBadge key={tag.id} name={tag.name} color={tag.color} size="sm" />
               ))}
             </div>
+          );
+        },
+      },
+      {
+        id: 'normalization',
+        header: 'Normalização',
+        enableSorting: false,
+        cell: ({ row }) => {
+          return (
+            <NormalizationStatusBadge
+              status={row.original.normalization_status}
+              error={row.original.normalization_error}
+              showLabel={true}
+              size="sm"
+            />
           );
         },
       },

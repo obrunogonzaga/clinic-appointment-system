@@ -15,6 +15,7 @@ from src.domain.entities.appointment import Appointment
 from src.domain.repositories.appointment_repository_interface import (
     AppointmentRepositoryInterface,
 )
+from src.domain.utils import normalize_cpf
 
 
 _PENDING_STATUS_VALUES: Tuple[str, ...] = (
@@ -235,6 +236,60 @@ class AppointmentRepository(AppointmentRepositoryInterface):
 
         return await self.collection.count_documents(query)
 
+    async def find_many_by_ids(
+        self, appointment_ids: List[str]
+    ) -> List[Appointment]:
+        if not appointment_ids:
+            return []
+
+        cursor = self.collection.find({"id": {"$in": appointment_ids}})
+        documents: Dict[str, Appointment] = {}
+        async for doc in cursor:
+            doc.pop("_id", None)
+            documents[doc["id"]] = Appointment(**doc)
+
+        ordered: List[Appointment] = []
+        for appointment_id in appointment_ids:
+            appointment = documents.get(appointment_id)
+            if appointment:
+                ordered.append(appointment)
+        return ordered
+
+    async def list_by_cpf(self, cpf: str) -> List[Appointment]:
+        normalized = normalize_cpf(cpf)
+        if not normalized:
+            return []
+
+        cursor = self.collection.find({"cpf": normalized}).sort(
+            "data_agendamento", DESCENDING
+        )
+        appointments: List[Appointment] = []
+        async for doc in cursor:
+            doc.pop("_id", None)
+            appointments.append(Appointment(**doc))
+        return appointments
+
+    async def count_by_cpf_batch(self, cpfs: List[str]) -> Dict[str, int]:
+        normalized_cpfs = [normalize_cpf(cpf) for cpf in cpfs]
+        filtered_cpfs = list({cpf for cpf in normalized_cpfs if cpf})
+        if not filtered_cpfs:
+            return {}
+
+        pipeline = [
+            {"$match": {"cpf": {"$in": filtered_cpfs}}},
+            {"$group": {"_id": "$cpf", "count": {"$sum": 1}}},
+        ]
+
+        counts: Dict[str, int] = {}
+        cursor = self.collection.aggregate(pipeline)
+        async for doc in cursor:
+            cpf = doc.get("_id")
+            count = doc.get("count", 0)
+            if cpf:
+                counts[str(cpf)] = int(count)
+
+        return counts
+
     async def update(
         self, appointment_id: str, update_data: Dict[str, any]
     ) -> Optional[Appointment]:
@@ -418,6 +473,7 @@ class AppointmentRepository(AppointmentRepositoryInterface):
                 ([("data_agendamento", ASCENDING)], "idx_data_agendamento"),
                 ([("status", ASCENDING)], "idx_status"),
                 ([("created_at", DESCENDING)], "idx_created_at"),
+                ([("cpf", ASCENDING)], "idx_cpf"),
                 # Compound indexes for common filter combinations
                 (
                     [("nome_unidade", ASCENDING), ("nome_marca", ASCENDING)],
