@@ -1,5 +1,5 @@
 # Multi-stage build for React frontend
-FROM node:20-alpine AS builder
+FROM node:25-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -40,7 +40,7 @@ EXPOSE 80
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
 # Development stage
-FROM node:20-alpine AS development
+FROM node:25-alpine AS development
 
 # Set working directory
 WORKDIR /app
