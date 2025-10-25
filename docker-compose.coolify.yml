@@ -59,7 +59,7 @@ services:
       dockerfile: Dockerfile
       target: production
     restart: unless-stopped
-    expose:
+    ports:
       - "8000"
     depends_on:
       mongodb:
@@ -101,7 +101,7 @@ services:
       dockerfile: Dockerfile
       target: production
     restart: unless-stopped
-    expose:
+    ports:
       - "80"
     depends_on:
       backend:
