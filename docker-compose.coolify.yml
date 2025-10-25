@@ -46,7 +46,6 @@ services:
       - minio_data:/data
     networks:
       - clinic-coolify-network
-      - coolify-proxy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/ready"]
       interval: 30s
@@ -71,7 +70,6 @@ services:
         condition: service_started
     networks:
       - clinic-coolify-network
-      - coolify-proxy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -94,7 +92,6 @@ services:
         condition: service_started
     networks:
       - clinic-coolify-network
-      - coolify-proxy
     command: python workers.py
 
   frontend:
@@ -111,7 +108,6 @@ services:
         condition: service_healthy
     networks:
       - clinic-coolify-network
-      - coolify-proxy
 
 volumes:
   mongodb_data:
@@ -124,5 +120,4 @@ volumes:
 networks:
   clinic-coolify-network:
     name: clinic-coolify-network
-  coolify-proxy:
-    external: true
+    driver: bridge
