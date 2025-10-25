@@ -103,6 +103,9 @@ services:
     restart: unless-stopped
     ports:
       - "80"
+    environment:
+      # Override BACKEND_URL to use internal service name for nginx proxy
+      BACKEND_URL: http://backend:8000
     depends_on:
       backend:
         condition: service_healthy
