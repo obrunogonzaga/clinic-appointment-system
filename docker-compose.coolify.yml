@@ -9,8 +9,6 @@ services:
     restart: unless-stopped
     volumes:
       - mongodb_data:/data/db
-    networks:
-      - clinic-coolify-network
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
       interval: 30s
@@ -29,8 +27,6 @@ services:
       fi"
     volumes:
       - redis_data:/data
-    networks:
-      - clinic-coolify-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
@@ -44,8 +40,6 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
-    networks:
-      - clinic-coolify-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/ready"]
       interval: 30s
@@ -68,8 +62,6 @@ services:
         condition: service_healthy
       minio:
         condition: service_started
-    networks:
-      - clinic-coolify-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -90,8 +82,6 @@ services:
         condition: service_healthy
       minio:
         condition: service_started
-    networks:
-      - clinic-coolify-network
     command: python workers.py
 
   frontend:
@@ -109,8 +99,6 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-    networks:
-      - clinic-coolify-network
 
 volumes:
   mongodb_data:
@@ -119,8 +107,3 @@ volumes:
     name: clinic-redis-data
   minio_data:
     name: clinic-minio-data
-
-networks:
-  clinic-coolify-network:
-    name: clinic-coolify-network
-    driver: bridge
