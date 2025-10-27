@@ -123,6 +123,55 @@ class Settings(BaseSettings):
         description="Extensões permitidas para upload",
     )
 
+    # Cloudflare R2 / patient documents
+    r2_account_id: Optional[str] = Field(
+        default=None,
+        description="Identificador da conta Cloudflare R2",
+        validation_alias="R2_ACCOUNT_ID",
+    )
+    r2_access_key_id: Optional[str] = Field(
+        default=None,
+        description="Access key do bucket de documentos",
+        validation_alias="R2_ACCESS_KEY_ID",
+    )
+    r2_secret_access_key: Optional[str] = Field(
+        default=None,
+        description="Secret key do bucket de documentos",
+        validation_alias="R2_SECRET_ACCESS_KEY",
+    )
+    r2_bucket_patient_docs: str = Field(
+        default="",
+        description="Bucket onde os documentos de pacientes são armazenados",
+        validation_alias="R2_BUCKET_PATIENT_DOCS",
+    )
+    r2_presign_ttl_seconds: int = Field(
+        default=600,
+        description="Tempo de expiração das URLs pré-assinadas em segundos",
+        validation_alias="R2_PRESIGN_TTL_SECONDS",
+    )
+    patient_doc_max_upload_mb: int = Field(
+        default=10,
+        description="Tamanho máximo (MB) permitido para upload de documentos",
+        validation_alias="MAX_UPLOAD_MB",
+        ge=1,
+    )
+    allowed_mime_list: List[str] = Field(
+        default_factory=lambda: [
+            "application/pdf",
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/heic",
+        ],
+        description="Lista de MIME types permitidos para documentos",
+        validation_alias="ALLOWED_MIME_LIST",
+    )
+    s3_endpoint: Optional[str] = Field(
+        default=None,
+        description="Endpoint S3 compatível (MinIO local ou R2)",
+        validation_alias="S3_ENDPOINT",
+    )
+
     # Pagination settings
     default_page_size: int = Field(
         default=20,
@@ -352,6 +401,24 @@ class Settings(BaseSettings):
         if v not in allowed:
             raise ValueError(f"Log level must be one of: {allowed}")
         return v
+
+    @field_validator("allowed_mime_list", mode="before")
+    @classmethod
+    def _parse_allowed_mime_list(
+        cls, value: Any
+    ) -> List[str] | Any:  # type: ignore[override]
+        """Allow comma separated values for MIME list env var."""
+
+        if isinstance(value, str):
+            items = [item.strip() for item in value.split(",") if item.strip()]
+            return items
+        return value
+
+    @property
+    def patient_doc_max_upload_bytes(self) -> int:
+        """Return maximum upload size for patient documents in bytes."""
+
+        return int(self.patient_doc_max_upload_mb) * 1024 * 1024
 
     @property
     def is_development(self) -> bool:

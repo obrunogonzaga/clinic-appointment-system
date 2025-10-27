@@ -13,6 +13,8 @@ import type { ActiveDriver } from '../types/driver';
 import type { Tag } from '../types/tag';
 import type { AppointmentUpdateRequest } from '../types/appointment';
 import type { LogisticsPackage } from '../types/logistics-package';
+import { useAuth } from '../hooks/useAuth';
+import { PatientDocumentsSection } from './documents/PatientDocumentsSection';
 
 interface AppointmentDetailsModalProps {
   appointmentId: string | null;
@@ -174,8 +176,48 @@ export function AppointmentDetailsModal({
     mutateAsync: updateAppointment,
     isPending: isUpdating,
   } = useUpdateAppointment();
+  const { user: currentUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('appointment');
+
+  const tenantId = useMemo(() => {
+    if (!currentUser) {
+      return undefined;
+    }
+    let metadataDepartment: string | null | undefined;
+    if ('metadata' in currentUser && currentUser.metadata) {
+      metadataDepartment = (
+        currentUser.metadata as { department?: string | null }
+      ).department;
+    }
+    return metadataDepartment ?? currentUser.department ?? undefined;
+  }, [currentUser]);
+
+  const canManageDocuments = useMemo(() => {
+    if (!currentUser) {
+      return false;
+    }
+    const isAdmin = Boolean(currentUser.is_admin);
+    if (isAdmin) {
+      return true;
+    }
+    if (currentUser.role) {
+      return currentUser.role === 'admin' || currentUser.role === 'colaborador';
+    }
+    return !isAdmin;
+  }, [currentUser]);
+
+  const patientDocumentIdentifier = useMemo(() => {
+    if (!appointment) {
+      return '';
+    }
+    const cpfFromAppointment =
+      appointment.documento_normalizado?.cpf ?? appointment.cpf;
+    if (cpfFromAppointment && cpfFromAppointment.trim().length > 0) {
+      return cpfFromAppointment.trim();
+    }
+    return appointment.id;
+  }, [appointment]);
 
   const {
     control,
@@ -650,6 +692,11 @@ export function AppointmentDetailsModal({
         ],
       },
       {
+        key: 'patient-files',
+        title: 'Documentos anexados',
+        items: [],
+      },
+      {
         key: 'team',
         title: 'Equipe designada',
       items: [
@@ -842,6 +889,29 @@ export function AppointmentDetailsModal({
 
     const current =
       detailGroups.find((group) => group.key === activeTab) ?? detailGroups[0];
+
+    if (current.key === 'patient-files') {
+      if (!appointmentId || !patientDocumentIdentifier) {
+        return (
+          <section className="mt-4">
+            <p className="text-sm text-gray-500">
+              Documentos indisponíveis no momento.
+            </p>
+          </section>
+        );
+      }
+
+      return (
+        <section className="mt-4">
+          <PatientDocumentsSection
+            appointmentId={appointmentId}
+            patientId={patientDocumentIdentifier}
+            tenantId={tenantId}
+            canManage={canManageDocuments}
+          />
+        </section>
+      );
+    }
 
     return (
       <section className="mt-4">
@@ -1131,6 +1201,27 @@ export function AppointmentDetailsModal({
                 />
               </div>
             </div>
+          </section>
+        );
+
+      case 'patient-files':
+        if (!appointmentId || !patientDocumentIdentifier) {
+          return (
+            <section className="mt-4">
+              <p className="text-sm text-gray-500">
+                Documentos indisponíveis no momento.
+              </p>
+            </section>
+          );
+        }
+        return (
+          <section className="mt-4">
+            <PatientDocumentsSection
+              appointmentId={appointmentId}
+              patientId={patientDocumentIdentifier}
+              tenantId={tenantId}
+              canManage={canManageDocuments}
+            />
           </section>
         );
 
