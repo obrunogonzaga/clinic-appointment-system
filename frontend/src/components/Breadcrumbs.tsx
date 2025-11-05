@@ -16,21 +16,32 @@ export const Breadcrumbs: React.FC = () => {
     return null;
   }
 
+  // Mobile: show only current page, Desktop: show full breadcrumb
+  const displayCrumbs = crumbs;
+
   return (
-    <nav className="flex items-center text-sm text-gray-500 dark:text-slate-400" aria-label="Breadcrumb">
-      <ol className="flex items-center gap-2">
-        {crumbs.map((label, index) => (
+    <nav className="flex items-center text-xs md:text-sm text-gray-500 dark:text-slate-400" aria-label="Breadcrumb">
+      {/* Mobile: Only show current page */}
+      <div className="block md:hidden">
+        <span className="font-semibold text-gray-700 dark:text-slate-200 uppercase tracking-wide">
+          {crumbs[crumbs.length - 1]}
+        </span>
+      </div>
+
+      {/* Desktop: Show full breadcrumb */}
+      <ol className="hidden md:flex items-center gap-2">
+        {displayCrumbs.map((label, index) => (
           <li key={label} className="flex items-center gap-2">
             <span
               className={`uppercase tracking-wide ${
-                index === crumbs.length - 1
+                index === displayCrumbs.length - 1
                   ? 'font-semibold text-gray-700 dark:text-slate-200'
                   : 'text-gray-500 dark:text-slate-400'
               }`}
             >
               {label}
             </span>
-            {index < crumbs.length - 1 ? (
+            {index < displayCrumbs.length - 1 ? (
               <ChevronRightIcon className="h-4 w-4" aria-hidden="true" />
             ) : null}
           </li>

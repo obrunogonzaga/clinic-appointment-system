@@ -22,11 +22,13 @@ import sergioFrancoMark from '../assets/sergio-franco-mark.svg';
 interface NavigationProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  onMobileMenuClose?: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
   isCollapsed,
   onToggleCollapse,
+  onMobileMenuClose,
 }) => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -89,6 +91,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       <NavLink
         key={item.id}
         to={item.to}
+        onClick={() => onMobileMenuClose?.()}
         className={({ isActive: linkActive }) => {
           const active = linkActive || fallbackActive;
           return [
@@ -132,7 +135,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
   return (
     <nav
-      className={`bg-white dark:bg-slate-950 shadow-sm border-r border-gray-200/80 dark:border-slate-800 min-h-screen flex flex-col transition-all duration-300 ${
+      className={`bg-white dark:bg-slate-950 shadow-lg lg:shadow-sm border-r border-gray-200/80 dark:border-slate-800 min-h-[calc(100vh-3.5rem)] lg:min-h-screen flex flex-col transition-all duration-300 ${
         isCollapsed ? 'w-16' : 'w-72'
       }`}
       aria-label="Menu principal"
