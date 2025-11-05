@@ -130,15 +130,15 @@ export function Modal({
   }
 
   const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
+    sm: 'w-full mx-2 sm:max-w-md sm:mx-auto',
+    md: 'w-full mx-2 sm:max-w-lg sm:mx-auto',
+    lg: 'w-full mx-2 sm:max-w-2xl sm:mx-auto',
+    xl: 'w-full mx-2 sm:max-w-4xl sm:mx-auto',
   };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+      <div className="flex items-center justify-center min-h-screen p-0 sm:p-4 text-center sm:block">
         {/* Background overlay */}
         <div
           className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
@@ -148,7 +148,7 @@ export function Modal({
         {/* Modal panel */}
         <div
           ref={panelRef}
-          className={`inline-block w-full ${sizeClasses[size]} p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg focus:outline-none`}
+          className={`inline-block ${sizeClasses[size]} h-full sm:h-auto max-h-full sm:max-h-[calc(100vh-2rem)] p-4 sm:p-6 my-0 sm:my-8 overflow-y-auto text-left align-middle transition-all transform bg-white dark:bg-slate-900 shadow-xl rounded-none sm:rounded-lg focus:outline-none`}
           onClick={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
@@ -156,20 +156,21 @@ export function Modal({
           tabIndex={-1}
         >
           {/* Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-            <h3 id={titleId} className="text-lg font-medium text-gray-900">{title}</h3>
+          <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-gray-200 dark:border-slate-700">
+            <h3 id={titleId} className="text-base sm:text-lg font-medium text-gray-900 dark:text-slate-100">{title}</h3>
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md"
+                className="text-gray-400 dark:text-slate-500 hover:text-gray-500 dark:hover:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 rounded-md p-1"
+                aria-label="Fechar modal"
               >
-                <XMarkIcon className="w-6 h-6" />
+                <XMarkIcon className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             )}
           </div>
 
           {/* Content */}
-          <div className="mt-4">{children}</div>
+          <div className="mt-3 sm:mt-4">{children}</div>
         </div>
       </div>
     </div>
