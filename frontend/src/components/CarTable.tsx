@@ -74,29 +74,29 @@ export const CarTable: React.FC<CarTableProps> = ({
   return (
     <div>
       {/* Table */}
-      <div className="overflow-hidden">
+      <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Nome
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Unidade
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Placa
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                 Modelo
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                 Criado em
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 md:px-6 md:py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Ações
               </th>
             </tr>
@@ -104,7 +104,7 @@ export const CarTable: React.FC<CarTableProps> = ({
           <tbody className="bg-white divide-y divide-gray-200">
             {cars.map((car) => (
               <tr key={car.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900">
                     {car.nome}
                   </div>
@@ -114,10 +114,10 @@ export const CarTable: React.FC<CarTableProps> = ({
                     </div>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">{car.unidade}</div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
                     {car.placa || '-'}
                   </div>
@@ -125,20 +125,20 @@ export const CarTable: React.FC<CarTableProps> = ({
                     <div className="text-sm text-gray-500">{car.cor}</div>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap hidden md:table-cell">
                   <div className="text-sm text-gray-900">{car.modelo || '-'}</div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap">
                   <span className={getStatusBadgeClass(car.status)}>
                     {car.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap hidden md:table-cell">
                   <div className="text-sm text-gray-900">
                     {formatDate(car.created_at)}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex items-center justify-end space-x-2">
                     <button
                       onClick={() => onEdit(car)}
