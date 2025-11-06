@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { FunnelIcon, XMarkIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import type { AppointmentFilter } from '../types/appointment';
 import { SearchInput } from './ui/SearchInput';
 import type { DateShortcut } from '../utils/appointmentViewModel';
@@ -37,6 +37,7 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
   isLoading = false,
 }) => {
   const [localSearch, setLocalSearch] = useState(searchTerm);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     setLocalSearch(searchTerm);
@@ -69,6 +70,15 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
     searchTerm ||
     dateShortcut
   );
+
+  const activeFilterCount = [
+    filters.nome_unidade,
+    filters.nome_marca,
+    filters.data,
+    filters.status,
+    searchTerm,
+    dateShortcut
+  ].filter(Boolean).length;
 
   const handleDateShortcut = (shortcut: DateShortcut) => {
     if (dateShortcut === shortcut) {
@@ -111,8 +121,27 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
     : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-200';
 
   return (
-    <div className="rounded-2xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-950/70 p-6 shadow-sm transition-colors">
-      <div className="flex flex-wrap items-center gap-3">
+    <div className="rounded-2xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-950/70 p-4 sm:p-6 shadow-sm transition-colors">
+      {/* Mobile toggle button */}
+      <button
+        type="button"
+        onClick={() => setShowFilters(!showFilters)}
+        className="lg:hidden w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-slate-800/50 rounded-lg text-sm font-medium text-gray-700 dark:text-slate-200 mb-4"
+      >
+        <span className="flex items-center gap-2">
+          <FunnelIcon className="h-5 w-5" />
+          Filtros
+          {activeFilterCount > 0 && (
+            <span className="bg-indigo-600 text-white text-xs px-2 py-0.5 rounded-full">
+              {activeFilterCount}
+            </span>
+          )}
+        </span>
+        <ChevronDownIcon className={`h-5 w-5 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+      </button>
+
+      {/* Desktop badge and buttons */}
+      <div className="hidden lg:flex flex-wrap items-center gap-3 mb-4">
         <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${filterBadgeClass}`}>
           <FunnelIcon className="h-4 w-4" />
           Filtros
@@ -136,7 +165,8 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12">
+      <div className={`${showFilters ? 'block' : 'hidden lg:block'}`}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <div className="lg:col-span-2">
           <label htmlFor="filter-unit" className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-300">
             Unidade
@@ -234,7 +264,30 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+        {/* Mobile buttons */}
+        <div className="lg:hidden flex flex-col gap-2 mt-4">
+          <button
+            type="button"
+            onClick={handleApply}
+            className="w-full inline-flex items-center justify-center rounded-full bg-gray-900 dark:bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 dark:hover:bg-indigo-500"
+          >
+            Aplicar
+          </button>
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="w-full inline-flex items-center justify-center rounded-full border border-gray-200 dark:border-slate-700 px-4 py-2 text-sm font-medium text-gray-600 dark:text-slate-300 transition hover:border-gray-300 hover:text-gray-800 dark:hover:border-slate-600 dark:hover:text-slate-100"
+          >
+            <XMarkIcon className="mr-1 h-4 w-4" />
+            Limpar
+          </button>
+        </div>
+      </div>
+
+      {/* Atalhos de data */}
+      <div className={`mt-4 ${showFilters ? 'block' : 'hidden lg:block'}`}>
+        <div className="overflow-x-auto">
+          <div className="flex flex-wrap items-center gap-2 pb-2">
         <span className="text-sm font-semibold text-gray-600 dark:text-slate-300">Atalhos:</span>
         {dateShortcutOptions.map(({ label, value }) => {
           const isActive = dateShortcut === value;
@@ -254,6 +307,8 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
             </button>
           );
         })}
+          </div>
+        </div>
       </div>
     </div>
   );
