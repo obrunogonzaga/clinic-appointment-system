@@ -209,6 +209,9 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
             </div>
           );
         },
+        meta: {
+          className: 'hidden md:table-cell'
+        }
       },
       {
         id: 'normalization',
@@ -224,6 +227,9 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
             />
           );
         },
+        meta: {
+          className: 'hidden md:table-cell'
+        }
       },
       {
         id: 'team',
@@ -288,6 +294,9 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
             </div>
           );
         },
+        meta: {
+          className: 'hidden lg:table-cell'
+        }
       },
       {
         id: 'actions',
@@ -368,7 +377,9 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
-                  className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"
+                  className={`px-3 py-2 md:px-4 md:py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 ${
+                    header.column.columnDef.meta?.className || ''
+                  }`}
                 >
                   {header.isPlaceholder ? null : (
                     <div
@@ -428,7 +439,9 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({
               {row.getVisibleCells().map((cell) => (
                 <td
                   key={cell.id}
-                  className="px-4 py-4 align-top text-sm text-gray-700"
+                  className={`px-3 py-2 md:px-4 md:py-4 align-top text-sm text-gray-700 ${
+                    cell.column.columnDef.meta?.className || ''
+                  }`}
                 >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>

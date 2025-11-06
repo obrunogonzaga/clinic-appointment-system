@@ -6,6 +6,7 @@ export interface Column<T> {
   label: string;
   sortable?: boolean;
   width?: string;
+  className?: string;
   render?: (value: T[keyof T], item: T) => React.ReactNode;
 }
 
@@ -77,9 +78,9 @@ export function Table<T extends { id?: string | number }>({
                 <th
                   key={String(column.key)}
                   style={{ width: column.width }}
-                  className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                  className={`px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
                     column.sortable ? 'cursor-pointer hover:bg-gray-100' : ''
-                  }`}
+                  } ${column.className || ''}`}
                   onClick={() => handleSort(String(column.key), column.sortable)}
                 >
                   <div className="flex items-center space-x-1">
@@ -104,7 +105,7 @@ export function Table<T extends { id?: string | number }>({
                 {columns.map((column) => (
                   <td
                     key={String(column.key)}
-                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                    className={`px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-sm text-gray-900 ${column.className || ''}`}
                   >
                     {column.render
                       ? column.render(getValue(item, String(column.key)) as T[keyof T], item)

@@ -97,6 +97,7 @@ export function UserTable({
       label: 'Criado em',
       sortable: true,
       width: '15%',
+      className: 'hidden md:table-cell',
       render: (value) => {
         try {
           const date = new Date(value as string);

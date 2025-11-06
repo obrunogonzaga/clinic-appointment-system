@@ -79,6 +79,9 @@ export const CollectorTable: React.FC<CollectorTableProps> = ({
             {row.original.email || '-'}
           </div>
         ),
+        meta: {
+          className: 'hidden md:table-cell'
+        }
       },
       {
         accessorKey: 'registro_profissional',
@@ -88,6 +91,9 @@ export const CollectorTable: React.FC<CollectorTableProps> = ({
             {row.original.registro_profissional || '-'}
           </div>
         ),
+        meta: {
+          className: 'hidden md:table-cell'
+        }
       },
       {
         accessorKey: 'especializacao',
@@ -97,6 +103,9 @@ export const CollectorTable: React.FC<CollectorTableProps> = ({
             {row.original.especializacao || '-'}
           </div>
         ),
+        meta: {
+          className: 'hidden md:table-cell'
+        }
       },
       {
         accessorKey: 'status',
@@ -209,7 +218,9 @@ export const CollectorTable: React.FC<CollectorTableProps> = ({
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    className={`px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 ${
+                      header.column.columnDef.meta?.className || ''
+                    }`}
                     onClick={header.column.getToggleSortingHandler()}
                   >
                     <div className="flex items-center space-x-1">
@@ -230,7 +241,12 @@ export const CollectorTable: React.FC<CollectorTableProps> = ({
             {table.getRowModel().rows.map((row) => (
               <tr key={row.id} className="hover:bg-gray-50 transition-colors">
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
+                  <td
+                    key={cell.id}
+                    className={`px-3 py-2 md:px-6 md:py-4 whitespace-nowrap ${
+                      cell.column.columnDef.meta?.className || ''
+                    }`}
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}

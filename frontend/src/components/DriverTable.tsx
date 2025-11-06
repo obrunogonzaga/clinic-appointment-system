@@ -79,6 +79,9 @@ export const DriverTable: React.FC<DriverTableProps> = ({
             {row.original.email || '-'}
           </div>
         ),
+        meta: {
+          className: 'hidden md:table-cell'
+        }
       },
       {
         accessorKey: 'status',
@@ -117,6 +120,9 @@ export const DriverTable: React.FC<DriverTableProps> = ({
             </div>
           );
         },
+        meta: {
+          className: 'hidden md:table-cell'
+        }
       },
       {
         id: 'actions',
@@ -188,7 +194,9 @@ export const DriverTable: React.FC<DriverTableProps> = ({
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  className={`px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                    header.column.columnDef.meta?.className || ''
+                  }`}
                 >
                   {header.isPlaceholder ? null : (
                     <div
@@ -225,7 +233,9 @@ export const DriverTable: React.FC<DriverTableProps> = ({
               {row.getVisibleCells().map((cell) => (
                 <td
                   key={cell.id}
-                  className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                  className={`px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-sm text-gray-900 ${
+                    cell.column.columnDef.meta?.className || ''
+                  }`}
                 >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
