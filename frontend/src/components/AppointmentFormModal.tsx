@@ -347,10 +347,10 @@ export function AppointmentFormModal({
       <form className="space-y-6" onSubmit={handleSubmit(onSubmitForm)}>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Marca / Clínica *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Marca / Clínica *</label>
             <select
               {...register('nome_marca')}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               disabled={isSubmitting}
             >
               {brandOptions.map((brand) => (
@@ -360,15 +360,15 @@ export function AppointmentFormModal({
               ))}
             </select>
             {errors.nome_marca && (
-              <p className="mt-1 text-sm text-red-600">{errors.nome_marca.message}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.nome_marca.message}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Unidade *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Unidade *</label>
             <select
               {...register('nome_unidade')}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               disabled={isSubmitting}
             >
               {unitOptions.map((unit) => (
@@ -378,32 +378,32 @@ export function AppointmentFormModal({
               ))}
             </select>
             {errors.nome_unidade && (
-              <p className="mt-1 text-sm text-red-600">{errors.nome_unidade.message}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.nome_unidade.message}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Nome do paciente *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Nome do paciente *</label>
             <input
               type="text"
               {...register('nome_paciente')}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               placeholder="Maria da Silva"
               disabled={isSubmitting}
             />
             {errors.nome_paciente && (
-              <p className="mt-1 text-sm text-red-600">{errors.nome_paciente.message}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.nome_paciente.message}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">CPF do paciente *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">CPF do paciente *</label>
             <input
               type="text"
               inputMode="numeric"
               maxLength={14}
               {...register('cpf')}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               placeholder="Somente números"
               disabled={isSubmitting}
               onInput={(event) => {
@@ -412,67 +412,67 @@ export function AppointmentFormModal({
               }}
             />
             {errors.cpf && (
-              <p className="mt-1 text-sm text-red-600">{errors.cpf.message}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.cpf.message}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Tipo de consulta</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Tipo de consulta</label>
             <input
               type="text"
               {...register('tipo_consulta')}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               placeholder="Ex.: Coleta domiciliar"
               disabled={isSubmitting}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">CIP</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">CIP</label>
             <input
               type="text"
               {...register('cip')}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               placeholder="Ex.: 123456"
               disabled={isSubmitting}
             />
             {errors.cip && (
-              <p className="mt-1 text-sm text-red-600">{errors.cip.message}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.cip.message}</p>
             )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Data</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Data</label>
             <input
               type="date"
               {...register('date')}
               min={getMinDate()}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               disabled={isSubmitting}
             />
             {errors.date && (
-              <p className="mt-1 text-sm text-red-600">{errors.date.message}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.date.message}</p>
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Hora</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Hora</label>
             <input
               type="time"
               {...register('time')}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               disabled={isSubmitting}
             />
             {errors.time && (
-              <p className="mt-1 text-sm text-red-600">{errors.time.message}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.time.message}</p>
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Status *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Status *</label>
             <select
               {...register('status')}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               disabled={isSubmitting}
             >
               {statusChoices.map((status) => (
@@ -482,31 +482,31 @@ export function AppointmentFormModal({
               ))}
             </select>
             {errors.status && (
-              <p className="mt-1 text-sm text-red-600">{errors.status.message}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.status.message}</p>
             )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Telefone *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Telefone *</label>
             <input
               type="tel"
               {...register('telefone')}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               placeholder="1199998888"
               disabled={isSubmitting}
             />
             {errors.telefone && (
-              <p className="mt-1 text-sm text-red-600">{errors.telefone.message}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.telefone.message}</p>
             )}
           </div>
           {logisticsPackages.length > 0 && (
             <div className="md:col-span-3">
-              <label className="block text-sm font-medium text-gray-700">Pacote logístico</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Pacote logístico</label>
               <select
                 {...register('logistics_package_id')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 disabled={isSubmitting}
               >
                 <option value="">Sem pacote pré-definido</option>
@@ -522,10 +522,10 @@ export function AppointmentFormModal({
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Motorista</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Motorista</label>
             <select
               {...register('driver_id')}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               disabled={isSubmitting}
             >
               <option value="">Sem motorista</option>
@@ -537,10 +537,10 @@ export function AppointmentFormModal({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Coletora</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Coletora</label>
             <select
               {...register('collector_id')}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               disabled={isSubmitting}
             >
               <option value="">Sem coletora</option>
@@ -555,30 +555,30 @@ export function AppointmentFormModal({
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Carro</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Carro</label>
             <input
               type="text"
               {...register('carro')}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               placeholder="Placa ou identificação"
               disabled={isSubmitting}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Nome do convênio</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Nome do convênio</label>
             <input
               type="text"
               {...register('nome_convenio')}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               disabled={isSubmitting}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Número do convênio</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Número do convênio</label>
             <input
               type="text"
               {...register('numero_convenio')}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               disabled={isSubmitting}
             />
           </div>
@@ -586,20 +586,20 @@ export function AppointmentFormModal({
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-gray-700">Carteira do convênio</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Carteira do convênio</label>
             <input
               type="text"
               {...register('carteira_convenio')}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               disabled={isSubmitting}
             />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700">Observações</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Observações</label>
             <textarea
               rows={3}
               {...register('observacoes')}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               placeholder="Informações adicionais relevantes"
               disabled={isSubmitting}
             />
@@ -626,7 +626,7 @@ export function AppointmentFormModal({
               )}
             />
             {errors.tags && (
-              <p className="mt-1 text-sm text-red-600">{errors.tags.message}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.tags.message}</p>
             )}
           </div>
         </div>
@@ -635,21 +635,21 @@ export function AppointmentFormModal({
           <h3 className="text-sm font-medium text-gray-900 mb-4">Endereço do Paciente (Opcional)</h3>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Rua</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Rua</label>
               <input
                 type="text"
                 {...register('endereco_rua')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 placeholder="Ex.: Rua das Flores"
                 disabled={isSubmitting}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Número</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Número</label>
               <input
                 type="text"
                 {...register('endereco_numero')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 placeholder="Ex.: 123"
                 disabled={isSubmitting}
               />
@@ -658,31 +658,31 @@ export function AppointmentFormModal({
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mt-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Complemento</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Complemento</label>
               <input
                 type="text"
                 {...register('endereco_complemento')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 placeholder="Ex.: Apto 201"
                 disabled={isSubmitting}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Bairro</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Bairro</label>
               <input
                 type="text"
                 {...register('endereco_bairro')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 placeholder="Ex.: Centro"
                 disabled={isSubmitting}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Cidade</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Cidade</label>
               <input
                 type="text"
                 {...register('endereco_cidade')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 placeholder="Ex.: Rio de Janeiro"
                 disabled={isSubmitting}
               />
@@ -691,22 +691,22 @@ export function AppointmentFormModal({
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mt-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Estado</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Estado</label>
               <input
                 type="text"
                 {...register('endereco_estado')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 placeholder="Ex.: RJ"
                 maxLength={2}
                 disabled={isSubmitting}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">CEP</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">CEP</label>
               <input
                 type="text"
                 {...register('endereco_cep')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 placeholder="Ex.: 22790-285"
                 disabled={isSubmitting}
               />
@@ -714,18 +714,18 @@ export function AppointmentFormModal({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+        <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
           <button
             type="button"
             onClick={handleClose}
-            className="inline-flex justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="w-full sm:w-auto inline-flex justify-center rounded-md border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-900 focus:ring-blue-500"
             disabled={isSubmitting}
           >
             Cancelar
           </button>
           <button
             type="submit"
-            className="inline-flex justify-center rounded-md border border-transparent px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60"
+            className="w-full sm:w-auto inline-flex justify-center rounded-md border border-transparent px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-900 focus:ring-blue-500 disabled:opacity-60"
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Salvando...' : 'Salvar agendamento'}
