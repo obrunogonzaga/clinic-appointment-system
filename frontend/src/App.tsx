@@ -16,6 +16,7 @@ import { Setup } from './pages/Setup';
 import { VerifyEmail } from './pages/VerifyEmail';
 import { ROLES } from './constants/roles';
 import { resolveUserRole } from './utils/session';
+import { ChatwootWidget } from './components/ChatwootWidget';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,6 +44,11 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ThemeProvider>
+          {import.meta.env.VITE_CHATWOOT_TOKEN && (
+            <ChatwootWidget
+              websiteToken={import.meta.env.VITE_CHATWOOT_TOKEN}
+            />
+          )}
           <HashRouter>
             <Routes>
               <Route path="/login" element={<Login />} />

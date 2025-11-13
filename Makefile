@@ -189,3 +189,50 @@ quick-start: ## Quick start for development (Docker)
 	@echo "   Frontend: http://localhost:3000"
 	@echo "   Backend:  http://localhost:8000"
 	@echo "   API Docs: http://localhost:8000/docs"
+
+# Chatwoot Commands
+.PHONY: chatwoot-up
+chatwoot-up: ## Start Chatwoot services
+	docker-compose up -d postgres chatwoot chatwoot-sidekiq
+
+.PHONY: chatwoot-down
+chatwoot-down: ## Stop Chatwoot services
+	docker-compose stop chatwoot chatwoot-sidekiq postgres
+
+.PHONY: chatwoot-logs
+chatwoot-logs: ## View Chatwoot logs
+	docker-compose logs -f chatwoot
+
+.PHONY: chatwoot-shell
+chatwoot-shell: ## Open Rails console in Chatwoot
+	docker-compose exec chatwoot bundle exec rails console
+
+.PHONY: chatwoot-admin
+chatwoot-admin: ## Create Chatwoot admin user (email: admin@example.com, password: Pass123!)
+	docker-compose exec chatwoot bundle exec rails runner "User.create!(email: 'admin@example.com', password: 'Pass123!', name: 'Admin', role: 'administrator')"
+
+.PHONY: chatwoot-secret
+chatwoot-secret: ## Generate new SECRET_KEY_BASE for Chatwoot
+	docker-compose exec chatwoot bundle exec rake secret
+
+.PHONY: chatwoot-reset
+chatwoot-reset: ## Reset Chatwoot database (WARNING: deletes all data)
+	@echo "⚠️  WARNING: This will delete all Chatwoot data!"
+	@read -p "Are you sure? [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		docker-compose exec chatwoot bundle exec rails db:reset; \
+		echo "✅ Database reset complete"; \
+	else \
+		echo "❌ Cancelled"; \
+	fi
+
+.PHONY: chatwoot-status
+chatwoot-status: ## Check Chatwoot service status
+	@echo "Chatwoot services:"
+	@docker-compose ps chatwoot chatwoot-sidekiq postgres
+
+.PHONY: chatwoot-backup
+chatwoot-backup: ## Backup Chatwoot PostgreSQL database
+	docker-compose exec postgres pg_dump -U chatwoot chatwoot_production > backup/chatwoot_$(shell date +%Y%m%d_%H%M%S).sql
+	@echo "✅ Backup saved to backup/chatwoot_$(shell date +%Y%m%d_%H%M%S).sql"

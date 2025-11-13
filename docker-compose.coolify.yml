@@ -66,6 +66,53 @@ services:
       mc mb --ignore-existing local/$${MINIO_BUCKET_NAME};
       echo 'Bucket $${MINIO_BUCKET_NAME} criado com sucesso!';"
 
+  postgres:
+    <<: *default-env
+    image: pgvector/pgvector:pg15
+    restart: unless-stopped
+    ports:
+      - "5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${CHATWOOT_DB_USER:-chatwoot}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  chatwoot:
+    <<: *default-env
+    image: chatwoot/chatwoot:latest
+    restart: unless-stopped
+    ports:
+      - "3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - chatwoot_data:/app/storage
+    command: bundle exec rails server -b 0.0.0.0 -p 3000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  chatwoot-sidekiq:
+    <<: *default-env
+    image: chatwoot/chatwoot:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - chatwoot_data:/app/storage
+    command: bundle exec sidekiq -C config/sidekiq.yml
+
   backend:
     <<: *default-env
     build:
@@ -127,3 +174,7 @@ volumes:
     name: clinic-redis-data
   minio_data:
     name: clinic-minio-data
+  postgres_data:
+    name: clinic-chatwoot-postgres-data
+  chatwoot_data:
+    name: clinic-chatwoot-data

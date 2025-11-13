@@ -202,6 +202,88 @@ services:
       - clinic-network
     command: npm run dev -- --host 0.0.0.0
 
+  # PostgreSQL - Chatwoot Database (with pgvector extension)
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: clinic-chatwoot-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${CHATWOOT_DB_NAME:-chatwoot_production}
+      POSTGRES_USER: ${CHATWOOT_DB_USER:-chatwoot}
+      POSTGRES_PASSWORD: ${CHATWOOT_DB_PASSWORD:-chatwootpass}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - clinic-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatwoot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Chatwoot - Customer Support Platform
+  chatwoot:
+    image: chatwoot/chatwoot:latest
+    container_name: clinic-chatwoot
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - RAILS_ENV=production
+      - INSTALLATION_ENV=docker
+      - SECRET_KEY_BASE=${CHATWOOT_SECRET_KEY_BASE:-replace-with-long-random-string}
+      - FRONTEND_URL=${CHATWOOT_FRONTEND_URL:-http://localhost:3001}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DATABASE=${CHATWOOT_DB_NAME:-chatwoot_production}
+      - POSTGRES_USERNAME=${CHATWOOT_DB_USER:-chatwoot}
+      - POSTGRES_PASSWORD=${CHATWOOT_DB_PASSWORD:-chatwootpass}
+      - REDIS_URL=redis://redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - ACTIVE_STORAGE_SERVICE=local
+      - RAILS_LOG_TO_STDOUT=true
+      - USE_INBOX_AVATAR_FOR_BOT=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - chatwoot_data:/app/storage
+    networks:
+      - clinic-network
+    command: bundle exec rails server -b 0.0.0.0 -p 3000
+
+  # Chatwoot Sidekiq - Background Jobs
+  chatwoot-sidekiq:
+    image: chatwoot/chatwoot:latest
+    container_name: clinic-chatwoot-sidekiq
+    restart: unless-stopped
+    environment:
+      - RAILS_ENV=production
+      - INSTALLATION_ENV=docker
+      - SECRET_KEY_BASE=${CHATWOOT_SECRET_KEY_BASE:-replace-with-long-random-string}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DATABASE=${CHATWOOT_DB_NAME:-chatwoot_production}
+      - POSTGRES_USERNAME=${CHATWOOT_DB_USER:-chatwoot}
+      - POSTGRES_PASSWORD=${CHATWOOT_DB_PASSWORD:-chatwootpass}
+      - REDIS_URL=redis://redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - ACTIVE_STORAGE_SERVICE=local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - chatwoot_data:/app/storage
+    networks:
+      - clinic-network
+    command: bundle exec sidekiq -C config/sidekiq.yml
+
 volumes:
   mongodb_data:
     name: clinic-mongodb-data
@@ -213,6 +295,10 @@ volumes:
     name: clinic-frontend-node-modules
   minio_data:
     name: clinic-minio-data
+  postgres_data:
+    name: clinic-chatwoot-postgres-data
+  chatwoot_data:
+    name: clinic-chatwoot-data
 
 networks:
   clinic-network:
