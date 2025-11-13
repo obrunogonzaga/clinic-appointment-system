@@ -1,34 +1,5 @@
 import { useEffect } from 'react';
-
-interface ChatwootWindow extends Window {
-  chatwootSDK?: {
-    run: (config: ChatwootConfig) => void;
-  };
-  $chatwoot?: {
-    toggle: (state: 'open' | 'close') => void;
-    setUser: (id: string, user: ChatwootUser) => void;
-    setLabel: (label: string) => void;
-    setCustomAttributes: (attributes: Record<string, unknown>) => void;
-    reset: () => void;
-  };
-}
-
-interface ChatwootConfig {
-  websiteToken: string;
-  baseUrl: string;
-  position?: 'left' | 'right';
-  locale?: string;
-  type?: 'standard' | 'expanded_bubble';
-  launcherTitle?: string;
-  showPopoutButton?: boolean;
-}
-
-interface ChatwootUser {
-  email?: string;
-  name?: string;
-  phone_number?: string;
-  avatar_url?: string;
-}
+import type { ChatwootSDKConfig, ChatwootUser } from '../types/chatwoot';
 
 interface ChatwootWidgetProps {
   websiteToken: string;
@@ -62,9 +33,7 @@ export function ChatwootWidget({
     script.async = true;
 
     script.onload = () => {
-      const chatWindow = window as ChatwootWindow;
-
-      chatWindow.chatwootSDK?.run({
+      window.chatwootSDK?.run({
         websiteToken,
         baseUrl,
         position,
@@ -72,17 +41,17 @@ export function ChatwootWidget({
         type: 'standard',
         launcherTitle: 'Chat com Suporte',
         showPopoutButton: true
-      });
+      } as ChatwootSDKConfig);
 
       // Identificar usuário se fornecido
-      if (user && chatWindow.$chatwoot) {
+      if (user && window.$chatwoot) {
         const { id, ...userData } = user;
-        chatWindow.$chatwoot.setUser(id, userData);
+        window.$chatwoot.setUser(id, userData);
       }
 
       // Adicionar atributos customizados
-      if (customAttributes && chatWindow.$chatwoot) {
-        chatWindow.$chatwoot.setCustomAttributes(customAttributes);
+      if (customAttributes && window.$chatwoot) {
+        window.$chatwoot.setCustomAttributes(customAttributes);
       }
     };
 
@@ -98,8 +67,7 @@ export function ChatwootWidget({
         document.body.removeChild(script);
       }
 
-      const chatWindow = window as ChatwootWindow;
-      chatWindow.$chatwoot?.reset();
+      window.$chatwoot?.reset();
     };
   }, [websiteToken, baseUrl, position, locale, user, customAttributes, enabled]);
 
@@ -109,23 +77,23 @@ export function ChatwootWidget({
 // Hook para controlar widget programaticamente
 export function useChatwoot() {
   const open = () => {
-    (window as ChatwootWindow).$chatwoot?.toggle('open');
+    window.$chatwoot?.toggle('open');
   };
 
   const close = () => {
-    (window as ChatwootWindow).$chatwoot?.toggle('close');
+    window.$chatwoot?.toggle('close');
   };
 
   const setUser = (id: string, user: ChatwootUser) => {
-    (window as ChatwootWindow).$chatwoot?.setUser(id, user);
+    window.$chatwoot?.setUser(id, user);
   };
 
   const setCustomAttributes = (attributes: Record<string, unknown>) => {
-    (window as ChatwootWindow).$chatwoot?.setCustomAttributes(attributes);
+    window.$chatwoot?.setCustomAttributes(attributes);
   };
 
   const setLabel = (label: string) => {
-    (window as ChatwootWindow).$chatwoot?.setLabel(label);
+    window.$chatwoot?.setLabel(label);
   };
 
   return {
