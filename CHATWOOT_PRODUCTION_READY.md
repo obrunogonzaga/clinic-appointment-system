@@ -30,15 +30,36 @@ docker run --rm chatwoot/chatwoot:latest bundle exec rake secret
 
 ### 2. Configurar variáveis no Coolify
 
-Copiar de `.env.coolify.example` e substituir valores:
+⚠️ **IMPORTANTE**: Configure estas variáveis no painel do Coolify:
 
 ```bash
-# Obrigatórios
+# PostgreSQL (obrigatórios)
+POSTGRES_DB=chatwoot_production
+POSTGRES_USER=chatwoot
 POSTGRES_PASSWORD=senha-forte-aqui
-CHATWOOT_DB_PASSWORD=mesma-senha-acima
-CHATWOOT_SECRET_KEY_BASE=secret-gerada-no-passo-1
-CHATWOOT_FRONTEND_URL=https://chat.seudominio.com
+
+# Chatwoot Database (obrigatórios - mesmas credenciais PostgreSQL)
+CHATWOOT_DB_NAME=chatwoot_production
+CHATWOOT_DB_USER=chatwoot
+CHATWOOT_DB_PASSWORD=senha-forte-aqui  # MESMA senha do POSTGRES_PASSWORD
+
+# Chatwoot App (obrigatórios)
+CHATWOOT_SECRET_KEY_BASE=secret-gerada-no-passo-1  # ⚠️ Mínimo 127 caracteres
+CHATWOOT_FRONTEND_URL=https://chat.seudominio.com  # ⚠️ Seu domínio com HTTPS
+
+# Rails Environment (obrigatórios)
+RAILS_ENV=production
+INSTALLATION_ENV=docker
+ACTIVE_STORAGE_SERVICE=local
+RAILS_LOG_TO_STDOUT=true
+
+# Redis (opcional - deixe vazio se não usar senha)
+REDIS_PASSWORD=
+REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0  # Se REDIS_PASSWORD vazio: redis://redis:6379/0
 ```
+
+**Nota sobre Redis**: Se você não configurar `REDIS_PASSWORD`, use `REDIS_URL=redis://redis:6379/0` (sem senha).
+Se configurar senha, use `REDIS_URL=redis://:sua-senha@redis:6379/0`.
 
 ### 3. Configurar DNS
 

@@ -93,6 +93,18 @@ services:
         condition: service_healthy
     volumes:
       - chatwoot_data:/app/storage
+    environment:
+      # Map Chatwoot-prefixed vars to Rails expected names
+      SECRET_KEY_BASE: ${CHATWOOT_SECRET_KEY_BASE}
+      FRONTEND_URL: ${CHATWOOT_FRONTEND_URL}
+      # PostgreSQL connection
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DATABASE: ${CHATWOOT_DB_NAME:-chatwoot_production}
+      POSTGRES_USERNAME: ${CHATWOOT_DB_USER:-chatwoot}
+      POSTGRES_PASSWORD: ${CHATWOOT_DB_PASSWORD}
+      # Redis connection (use REDIS_URL from env which includes password if set)
+      REDIS_URL: ${REDIS_URL}
     command: bundle exec rails server -b 0.0.0.0 -p 3000
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api"]
@@ -111,6 +123,18 @@ services:
         condition: service_healthy
     volumes:
       - chatwoot_data:/app/storage
+    environment:
+      # Map Chatwoot-prefixed vars to Rails expected names
+      SECRET_KEY_BASE: ${CHATWOOT_SECRET_KEY_BASE}
+      FRONTEND_URL: ${CHATWOOT_FRONTEND_URL}
+      # PostgreSQL connection
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DATABASE: ${CHATWOOT_DB_NAME:-chatwoot_production}
+      POSTGRES_USERNAME: ${CHATWOOT_DB_USER:-chatwoot}
+      POSTGRES_PASSWORD: ${CHATWOOT_DB_PASSWORD}
+      # Redis connection (use REDIS_URL from env which includes password if set)
+      REDIS_URL: ${REDIS_URL}
     command: bundle exec sidekiq -C config/sidekiq.yml
 
   backend:
