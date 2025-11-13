@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import type { ChatwootSDKConfig, ChatwootUser } from '../types/chatwoot';
 
 interface ChatwootWidgetProps {
   websiteToken: string;
