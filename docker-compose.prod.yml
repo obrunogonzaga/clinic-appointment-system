@@ -1,13 +1,9 @@
-version: '3.8'
-
 services:
   # MongoDB Database
   mongodb:
     image: mongo:6.0
     container_name: clinic-mongodb-prod
     restart: always
-    ports:
-      - "127.0.0.1:27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
@@ -16,7 +12,7 @@ services:
       - mongodb_data_prod:/data/db
       - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     networks:
-      - clinic-network-prod
+      - clinic-internal
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
       interval: 30s
@@ -40,11 +36,12 @@ services:
       - SECRET_KEY=${BACKEND_SECRET_KEY}
       - ENVIRONMENT=production
       - DEBUG=False
+      - CORS_ORIGINS=["https://clinic.widia.io"]
     depends_on:
       mongodb:
         condition: service_healthy
     networks:
-      - clinic-network-prod
+      - clinic-internal
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -55,24 +52,30 @@ services:
   # Frontend with Nginx
   frontend:
     build:
-      context: .
-      dockerfile: ./frontend/Dockerfile
+      context: ./frontend
+      dockerfile: Dockerfile
       target: production
     container_name: clinic-frontend-prod
     restart: always
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
-      - nginx_logs:/var/log/nginx
+    environment:
+      - BACKEND_URL=http://backend:8000
     depends_on:
       backend:
         condition: service_healthy
     networks:
-      - clinic-network-prod
+      - clinic-internal
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      # Router para HTTPS
+      - "traefik.http.routers.clinic.rule=Host(`clinic.widia.io`)"
+      - "traefik.http.routers.clinic.entrypoints=websecure"
+      - "traefik.http.routers.clinic.tls.certresolver=letsencrypt"
+      # Service
+      - "traefik.http.services.clinic.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/health"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -80,10 +83,10 @@ services:
 volumes:
   mongodb_data_prod:
     name: clinic-mongodb-data-prod
-  nginx_logs:
-    name: clinic-nginx-logs
 
 networks:
-  clinic-network-prod:
-    name: clinic-network-prod
+  clinic-internal:
+    name: clinic-internal
     driver: bridge
+  proxy:
+    external: true
