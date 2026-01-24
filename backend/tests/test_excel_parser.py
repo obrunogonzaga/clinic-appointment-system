@@ -190,8 +190,8 @@ class TestExcelParserService:
 
         appointment = result.appointments[0]
         assert (
-            appointment.carro == "CENTER 3 CARRO 1 - UND84"
-        )  # Extraído do Nome da Sala
+            appointment.carro == "AV CENTER 3 CARRO 1 - UND84"
+        )  # Extraído do Nome da Sala (após último hífen)
         assert (
             appointment.observacoes == "o exame pede anti-hiv"
         )  # Do campo Observação
