@@ -34,7 +34,7 @@ class RedisService:
         self.redis_url = getattr(settings, 'redis_url', 'redis://localhost:6379')
         self.redis_password = getattr(settings, 'redis_password', None)
         self.redis_db = getattr(settings, 'redis_db', 0)
-        self.redis: Optional[aioredis.Redis] = None
+        self.redis: Optional[redis.Redis] = None
         self.connected = False
         self.memory_cache = {}  # Fallback memory cache
         
