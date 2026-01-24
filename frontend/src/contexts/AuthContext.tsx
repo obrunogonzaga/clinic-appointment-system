@@ -2,7 +2,7 @@
  * Authentication context for managing user state and auth operations
  */
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useState } from 'react';
 import { authService } from '../services/auth';
 import type {
   AuthContextType,
@@ -36,12 +36,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return rawUser;
   };
 
-  // Initialize authentication state on mount
-  useEffect(() => {
-    initializeAuth();
-  }, []);
-
-  const initializeAuth = async () => {
+  const initializeAuth = useCallback(async () => {
     try {
       setIsLoading(true);
       
@@ -69,7 +64,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  // Initialize authentication state on mount
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
 
   const login = async (credentials: LoginCredentials): Promise<void> => {
     try {
@@ -147,16 +147,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth(): AuthContextType {
-  const context = useContext(AuthContext);
-  
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  
-  return context;
 }
 
 export { AuthContext };

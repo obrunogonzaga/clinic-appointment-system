@@ -79,37 +79,33 @@ export function Setup() {
       // Redirect to home page on successful registration
       navigate('/', { replace: true });
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Handle different types of errors
       let errorMessage = 'Erro ao criar administrador';
-      
-      console.log('Error caught:', err);
-      console.log('Error response:', err.response);
-      console.log('Error response data:', err.response?.data);
-      console.log('Error response status:', err.response?.status);
-      
-      if (err.response?.status === 403) {
+
+      const error = err as Error & {
+        response?: {
+          status?: number;
+          data?: { detail?: string; message?: string }
+        }
+      };
+
+      if (error.response?.status === 403) {
         // Authorization error - show detailed info
-        const errorData = err.response.data;
-        console.log('403 Error data:', errorData);
-        
-        if (typeof errorData === 'object' && errorData.message) {
+        const errorData = error.response.data;
+
+        if (typeof errorData === 'object' && errorData?.message) {
           errorMessage = errorData.message;
-          console.log('Using errorData.message:', errorMessage);
-        } else if (err.response?.data?.detail) {
-          errorMessage = err.response.data.detail;
-          console.log('Using response.data.detail:', errorMessage);
+        } else if (error.response?.data?.detail) {
+          errorMessage = error.response.data.detail;
         } else {
-          errorMessage = errorData.detail || errorMessage;
-          console.log('Using errorData.detail or default:', errorMessage);
+          errorMessage = errorData?.detail || errorMessage;
         }
       } else {
         // Other errors
-        errorMessage = err.response?.data?.detail || err.message || errorMessage;
-        console.log('Non-403 error message:', errorMessage);
+        errorMessage = error.response?.data?.detail || error.message || errorMessage;
       }
-      
-      console.log('Final error message:', errorMessage);
+
       setError(errorMessage);
     } finally {
       setIsSubmitting(false);
