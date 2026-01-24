@@ -1,8 +1,8 @@
 """API tests for appointment endpoints."""
 
 from datetime import datetime
-from uuid import uuid4
 from unittest.mock import AsyncMock, MagicMock
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -20,7 +20,9 @@ from src.presentation.dependencies.auth import (
     get_current_active_user,
     get_current_admin_user,
 )
-from src.presentation.dependencies.services import get_dashboard_analytics_service
+from src.presentation.dependencies.services import (
+    get_dashboard_analytics_service,
+)
 
 
 @pytest.fixture
@@ -264,7 +266,9 @@ def test_partial_update_appointment_success(client: TestClient) -> None:
     service_mock.update_appointment.assert_awaited_once()
 
 
-def test_partial_update_updates_confirmation_channel(client: TestClient) -> None:
+def test_partial_update_updates_confirmation_channel(
+    client: TestClient,
+) -> None:
     """PATCH endpoint should pass through confirmation channel changes."""
 
     appointment_id = str(uuid4())
@@ -302,7 +306,9 @@ def test_partial_update_updates_confirmation_channel(client: TestClient) -> None
     )
 
 
-def test_partial_update_appointment_validation_error(client: TestClient) -> None:
+def test_partial_update_appointment_validation_error(
+    client: TestClient,
+) -> None:
     """PATCH endpoint should map validation errors to HTTP 400."""
 
     service_mock = MagicMock()
@@ -374,16 +380,25 @@ def test_get_admin_dashboard_analytics(client: TestClient) -> None:
                 {"label": "Motoristas", "utilization": 75.0}
             ],
             "alerts": [
-                {"id": "pending-appointments", "message": "Atenção", "type": "warning"}
+                {
+                    "id": "pending-appointments",
+                    "message": "Atenção",
+                    "type": "warning",
+                }
             ],
-            "period": {"start": "2025-01-01T00:00:00", "end": "2025-01-07T23:59:59"},
+            "period": {
+                "start": "2025-01-01T00:00:00",
+                "end": "2025-01-07T23:59:59",
+            },
         }
     )
 
     async def override_service() -> MagicMock:
         return analytics_mock
 
-    app.dependency_overrides[get_dashboard_analytics_service] = override_service
+    app.dependency_overrides[get_dashboard_analytics_service] = (
+        override_service
+    )
     try:
         response = client.get("/api/v1/appointments/analytics/admin?period=7d")
     finally:

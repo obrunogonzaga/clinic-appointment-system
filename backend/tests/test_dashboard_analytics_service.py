@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import AsyncMock
+
+import pytest
 
 from src.application.services.dashboard_analytics_service import (
     DashboardAnalyticsService,

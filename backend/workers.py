@@ -17,8 +17,8 @@ import os
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
 from arq import run_worker
+from dotenv import load_dotenv
 
 # Load environment variables from .env file
 env_path = Path(__file__).parent.parent / ".env"
@@ -30,7 +30,6 @@ else:
 
 from src.workers.config import WorkerSettings
 from src.workers.normalization_tasks import normalize_appointment
-
 
 # Configure logging
 logging.basicConfig(
@@ -50,14 +49,20 @@ async def startup(ctx):
     logger.info("Tasks registered:")
     for func in WorkerSettings.functions:
         logger.info("  - %s", func.__name__)
-    logger.info("Redis: %s:%s", WorkerSettings.redis_settings.host, WorkerSettings.redis_settings.port)
+    logger.info(
+        "Redis: %s:%s",
+        WorkerSettings.redis_settings.host,
+        WorkerSettings.redis_settings.port,
+    )
     logger.info("Max concurrent jobs: %d", WorkerSettings.max_jobs)
     logger.info("Job timeout: %d seconds", WorkerSettings.job_timeout)
 
     # Check environment variables
     openrouter_key = os.getenv("OPENROUTER_API_KEY", "")
     if openrouter_key:
-        logger.info("✓ OPENROUTER_API_KEY is set (length: %d)", len(openrouter_key))
+        logger.info(
+            "✓ OPENROUTER_API_KEY is set (length: %d)", len(openrouter_key)
+        )
     else:
         logger.warning("⚠ OPENROUTER_API_KEY is NOT set!")
 

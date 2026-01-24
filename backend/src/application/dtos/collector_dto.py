@@ -110,9 +110,7 @@ class CollectorUpdateDTO(BaseModel):
 
     @field_validator("cpf", mode="before")
     @classmethod
-    def normalize_optional_cpf(
-        cls, value: Optional[str]
-    ) -> Optional[str]:
+    def normalize_optional_cpf(cls, value: Optional[str]) -> Optional[str]:
         """Normalize CPF when provided in updates."""
         if value in (None, ""):
             return None

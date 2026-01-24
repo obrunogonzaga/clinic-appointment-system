@@ -5,24 +5,31 @@ Authentication endpoints for user registration, login, and profile management.
 from datetime import datetime, timedelta
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Request,
+    Response,
+    status,
+)
 
 from src.application.dtos.user_dto import (
     AuthStatusResponse,
+    EmailVerificationRequest,
     FirstAdminCheckResponse,
     LoginRequest,
-    TokenResponse,
-    UserCreateRequest,
-    UserResponse,
-    UserListRequest,
-    UserListResponse,
-    UserUpdateRequest,
     PublicUserRegisterRequest,
-    UserEnhancedResponse,
-    EmailVerificationRequest,
-    ResendVerificationRequest,
     RefreshTokenRequest,
     RefreshTokenResponse,
+    ResendVerificationRequest,
+    TokenResponse,
+    UserCreateRequest,
+    UserEnhancedResponse,
+    UserListRequest,
+    UserListResponse,
+    UserResponse,
+    UserUpdateRequest,
 )
 from src.application.services.auth_service import AuthService
 from src.domain.base import DomainException
@@ -75,8 +82,7 @@ async def register_admin(
             # Remove the error code prefix for user-friendly message
             clean_message = error_message.replace("ADMIN_NOT_AUTHORIZED: ", "")
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, 
-                detail=clean_message
+                status_code=status.HTTP_403_FORBIDDEN, detail=clean_message
             )
         else:
             raise HTTPException(
@@ -135,7 +141,7 @@ async def logout(
     try:
         # Revoke refresh token in database
         await auth_service.logout(current_user.id)
-        
+
         # Clear authentication cookie
         response.delete_cookie(
             key="access_token",
@@ -144,7 +150,7 @@ async def logout(
             httponly=True,
             samesite="lax",
         )
-        
+
         # Clear refresh token cookie if it exists
         response.delete_cookie(
             key="refresh_token",
@@ -173,7 +179,7 @@ async def logout(
             httponly=True,
             samesite="lax",
         )
-        
+
         return SuccessResponse(
             success=True, message="Logout realizado com sucesso"
         )
@@ -216,13 +222,13 @@ async def verify_email(
         success = await auth_service.verify_email(token)
         if success:
             return SuccessResponse(
-                success=True, 
-                message="Email verificado com sucesso! Você já pode fazer login."
+                success=True,
+                message="Email verificado com sucesso! Você já pode fazer login.",
             )
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Não foi possível verificar o email"
+                detail="Não foi possível verificar o email",
             )
     except DomainException as e:
         raise HTTPException(
@@ -244,7 +250,7 @@ async def resend_verification(
     # TODO: Implement resend verification logic
     return SuccessResponse(
         success=True,
-        message=f"Email de verificação reenviado para {request.email} (mock - implementar lógica real)"
+        message=f"Email de verificação reenviado para {request.email} (mock - implementar lógica real)",
     )
 
 
@@ -303,8 +309,7 @@ async def create_user(
             # Remove the error code prefix for user-friendly message
             clean_message = error_message.replace("ADMIN_NOT_AUTHORIZED: ", "")
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, 
-                detail=clean_message
+                status_code=status.HTTP_403_FORBIDDEN, detail=clean_message
             )
         else:
             raise HTTPException(
@@ -330,30 +335,34 @@ async def list_users(
     try:
         # If filters are provided, use filtered methods
         if status or role:
-            from src.domain.enums import UserStatus, UserRole
-            
+            from src.domain.enums import UserRole, UserStatus
+
             # Validate and use status filter
             if status:
                 try:
                     status_enum = UserStatus(status)
-                    return await auth_service.list_users_by_status(status_enum, limit, offset)
+                    return await auth_service.list_users_by_status(
+                        status_enum, limit, offset
+                    )
                 except ValueError:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=f"Status inválido: {status}. Use: PENDENTE, APROVADO, REJEITADO, SUSPENSO, INATIVO"
+                        detail=f"Status inválido: {status}. Use: PENDENTE, APROVADO, REJEITADO, SUSPENSO, INATIVO",
                     )
-            
+
             # Validate and use role filter
             if role:
                 try:
                     role_enum = UserRole(role)
-                    return await auth_service.list_users_by_role(role_enum, limit, offset)
+                    return await auth_service.list_users_by_role(
+                        role_enum, limit, offset
+                    )
                 except ValueError:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=f"Role inválida: {role}. Use: admin, motorista, coletor, colaborador"
+                        detail=f"Role inválida: {role}. Use: admin, motorista, coletor, colaborador",
                     )
-        
+
         # No filters, return all users
         request = UserListRequest(limit=limit, offset=offset)
         return await auth_service.list_users(request)

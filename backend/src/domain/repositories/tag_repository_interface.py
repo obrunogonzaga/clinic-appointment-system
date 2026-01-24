@@ -25,7 +25,9 @@ class TagRepositoryInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def find_by_normalized_name(self, normalized_name: str) -> Optional[Tag]:
+    async def find_by_normalized_name(
+        self, normalized_name: str
+    ) -> Optional[Tag]:
         """Retrieve a tag by its normalized (lowercase) name."""
         raise NotImplementedError
 
@@ -41,7 +43,9 @@ class TagRepositoryInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def update(self, tag_id: str, update_data: Dict[str, object]) -> Optional[Tag]:
+    async def update(
+        self, tag_id: str, update_data: Dict[str, object]
+    ) -> Optional[Tag]:
         """Update persisted tag fields."""
         raise NotImplementedError
 

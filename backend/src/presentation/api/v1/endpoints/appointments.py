@@ -15,6 +15,7 @@ from fastapi import (
     UploadFile,
     status,
 )
+
 from src.application.dtos.appointment_dto import (
     AdminDashboardMetricsDTO,
     AppointmentCreateDTO,
@@ -32,8 +33,8 @@ from src.application.services.address_normalization_service import (
     AddressNormalizationService,
 )
 from src.application.services.appointment_service import AppointmentService
-from src.application.services.client_service import ClientService
 from src.application.services.car_service import CarService
+from src.application.services.client_service import ClientService
 from src.application.services.dashboard_analytics_service import (
     DashboardAnalyticsService,
 )
@@ -52,16 +53,16 @@ from src.infrastructure.container import (
 from src.infrastructure.repositories.appointment_repository import (
     AppointmentRepository,
 )
-from src.presentation.dependencies.auth import (
-    get_current_active_user,
-    get_current_admin_user,
-)
+from src.infrastructure.repositories.tag_repository import TagRepository
 from src.presentation.api.responses import (
     BaseResponse,
     DataResponse,
     ListResponse,
 )
-from src.infrastructure.repositories.tag_repository import TagRepository
+from src.presentation.dependencies.auth import (
+    get_current_active_user,
+    get_current_admin_user,
+)
 from src.presentation.dependencies.services import (
     get_client_service,
     get_dashboard_analytics_service,
@@ -108,6 +109,7 @@ async def get_appointment_service(
 
     # Get task service from container
     from src.infrastructure.container import Container
+
     container = Container()
     task_service = container.task_service()
 
@@ -411,7 +413,9 @@ async def get_admin_dashboard_analytics(
     end_date: Optional[str] = Query(
         None, description="Data final no formato YYYY-MM-DD"
     ),
-    service: DashboardAnalyticsService = Depends(get_dashboard_analytics_service),
+    service: DashboardAnalyticsService = Depends(
+        get_dashboard_analytics_service
+    ),
 ) -> AdminDashboardMetricsDTO:
     """Expose admin dashboard analytics with optional period overrides."""
 
@@ -457,7 +461,9 @@ async def get_appointment(
             if result.get("error_code") == "not_found"
             else status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-        raise HTTPException(status_code=status_code_value, detail=result["message"])
+        raise HTTPException(
+            status_code=status_code_value, detail=result["message"]
+        )
 
     return DataResponse(
         success=True,
@@ -597,7 +603,9 @@ async def partially_update_appointment(
         else:
             detail_payload = result["message"]
 
-        raise HTTPException(status_code=status_code_value, detail=detail_payload)
+        raise HTTPException(
+            status_code=status_code_value, detail=detail_payload
+        )
 
     return DataResponse(
         success=True,

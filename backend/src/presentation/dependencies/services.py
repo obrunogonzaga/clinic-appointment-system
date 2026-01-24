@@ -12,8 +12,10 @@ from src.application.services.notification_manager_service import (
 from src.application.services.patient_document_service import (
     PatientDocumentService,
 )
+from src.infrastructure.config import Settings
 from src.infrastructure.container import (
     container,
+    get_app_settings,
     get_appointment_repository,
     get_car_repository,
     get_client_repository,
@@ -21,13 +23,12 @@ from src.infrastructure.container import (
     get_driver_repository,
     get_patient_document_repository,
     get_r2_storage_service,
-    get_app_settings,
 )
 from src.infrastructure.repositories.appointment_repository import (
     AppointmentRepository,
 )
-from src.infrastructure.repositories.client_repository import ClientRepository
 from src.infrastructure.repositories.car_repository import CarRepository
+from src.infrastructure.repositories.client_repository import ClientRepository
 from src.infrastructure.repositories.collector_repository import (
     CollectorRepository,
 )
@@ -36,7 +37,6 @@ from src.infrastructure.repositories.patient_document_repository import (
     PatientDocumentRepository,
 )
 from src.infrastructure.services.r2_storage_service import R2StorageService
-from src.infrastructure.config import Settings
 
 
 async def get_notification_manager_service() -> NotificationManagerService:
@@ -52,7 +52,9 @@ async def get_dashboard_analytics_service(
         get_appointment_repository
     ),
     driver_repository: DriverRepository = Depends(get_driver_repository),
-    collector_repository: CollectorRepository = Depends(get_collector_repository),
+    collector_repository: CollectorRepository = Depends(
+        get_collector_repository
+    ),
     car_repository: CarRepository = Depends(get_car_repository),
 ) -> DashboardAnalyticsService:
     """Provide the dashboard analytics service with Mongo repositories."""

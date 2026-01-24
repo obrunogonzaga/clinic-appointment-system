@@ -4,7 +4,15 @@ from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    Header,
+    HTTPException,
+    Query,
+    Request,
+    status,
+)
 
 from src.application.dtos.patient_document_dto import (
     PatientDocumentConfirmRequestDTO,
@@ -28,7 +36,9 @@ def _resolve_user_identifier(user: User) -> str:
     return getattr(user, "id", None) or getattr(user, "email", "unknown")
 
 
-def _resolve_tenant_id(user: User, header_tenant: Optional[str]) -> Optional[str]:
+def _resolve_tenant_id(
+    user: User, header_tenant: Optional[str]
+) -> Optional[str]:
     if header_tenant:
         return header_tenant
     for attr in ("tenant_id", "department"):
@@ -218,7 +228,9 @@ async def delete_patient_document(
         user_id=_resolve_user_identifier(current_user),
         hard=hard,
     )
-    message = "Documento removido permanentemente" if hard else "Documento removido"
+    message = (
+        "Documento removido permanentemente" if hard else "Documento removido"
+    )
     return DataResponse(
         success=True,
         message=message,

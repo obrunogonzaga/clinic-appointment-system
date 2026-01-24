@@ -59,7 +59,9 @@ class DashboardAnalyticsService:
     ) -> Dict[str, Any]:
         """Return normalized metrics for the administrative dashboard."""
 
-        period_start, period_end = self._resolve_period(period, start_date, end_date)
+        period_start, period_end = self._resolve_period(
+            period, start_date, end_date
+        )
 
         (
             appointment_metrics,
@@ -75,24 +77,36 @@ class DashboardAnalyticsService:
             self.car_repository.get_car_stats(),
         )
 
-        status_counts: Dict[str, int] = appointment_metrics.get("status_counts", {})
+        status_counts: Dict[str, int] = appointment_metrics.get(
+            "status_counts", {}
+        )
         total_appointments = appointment_metrics.get("total", 0)
         trend_points = appointment_metrics.get("trend", [])
         top_units_raw = appointment_metrics.get("top_units", [])
         assignments = appointment_metrics.get("resource_assignments", {})
 
-        normalized_trend = self._fill_trend(period_start, period_end, trend_points)
+        normalized_trend = self._fill_trend(
+            period_start, period_end, trend_points
+        )
         trend_values = [point["value"] for point in normalized_trend]
         overall_trend = self._compute_trend_variation(trend_values)
 
-        confirmed_count = self._sum_statuses(status_counts, self._CONFIRMED_STATUSES)
-        cancelled_count = self._sum_statuses(status_counts, self._CANCELLATION_STATUSES)
-        no_show_count = self._sum_statuses(status_counts, self._NO_SHOW_STATUSES)
+        confirmed_count = self._sum_statuses(
+            status_counts, self._CONFIRMED_STATUSES
+        )
+        cancelled_count = self._sum_statuses(
+            status_counts, self._CANCELLATION_STATUSES
+        )
+        no_show_count = self._sum_statuses(
+            status_counts, self._NO_SHOW_STATUSES
+        )
         pending_period_count = self._sum_statuses(
             status_counts, self._PENDING_STATUSES
         )
         pending_alert_count = int(
-            appointment_metrics.get("pending_future_total", pending_period_count)
+            appointment_metrics.get(
+                "pending_future_total", pending_period_count
+            )
         )
 
         confirmation_rate = self._compute_percentage(
@@ -153,7 +167,9 @@ class DashboardAnalyticsService:
             return start, end
 
         days = self._parse_period_days(period)
-        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today = datetime.utcnow().replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
         period_end = today + timedelta(days=1)
         period_start = period_end - timedelta(days=days)
         return period_start, period_end
@@ -179,10 +195,14 @@ class DashboardAnalyticsService:
         for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d"):
             try:
                 parsed = datetime.strptime(cleaned, fmt)
-                return parsed.replace(hour=0, minute=0, second=0, microsecond=0)
+                return parsed.replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
             except ValueError:
                 continue
-        raise ValueError("Formato de data inválido. Use YYYY-MM-DD ou DD/MM/YYYY")
+        raise ValueError(
+            "Formato de data inválido. Use YYYY-MM-DD ou DD/MM/YYYY"
+        )
 
     @staticmethod
     def _fill_trend(
@@ -210,8 +230,12 @@ class DashboardAnalyticsService:
         return round(variation, 2)
 
     @staticmethod
-    def _sum_statuses(status_counts: Dict[str, int], statuses: Sequence[str]) -> int:
-        normalized = {key.lower(): value for key, value in status_counts.items()}
+    def _sum_statuses(
+        status_counts: Dict[str, int], statuses: Sequence[str]
+    ) -> int:
+        normalized = {
+            key.lower(): value for key, value in status_counts.items()
+        }
         total = 0
         for status in statuses:
             total += normalized.get(status.lower(), 0)
@@ -223,14 +247,20 @@ class DashboardAnalyticsService:
             return 0.0
         return round((partial / total) * 100, 2)
 
-    def _normalize_top_units(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _normalize_top_units(
+        self, items: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         normalized: List[Dict[str, Any]] = []
         for item in items:
             unit = item.get("unit") or "Unidade não informada"
             brand = item.get("brand") or ""
             count = int(item.get("count", 0))
 
-            if brand and brand != unit and "não informada" not in brand.lower():
+            if (
+                brand
+                and brand != unit
+                and "não informada" not in brand.lower()
+            ):
                 name = f"{unit} · {brand}"
             else:
                 name = unit

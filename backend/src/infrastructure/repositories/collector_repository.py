@@ -2,8 +2,8 @@
 MongoDB implementation of CollectorRepository.
 """
 
-from datetime import datetime
 import re
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -95,7 +95,9 @@ class CollectorRepository(CollectorRepositoryInterface):
         # Support legacy records that may still store formatted CPF values
         if doc is None and normalized_cpf != cpf:
             cpf_pattern = self._build_cpf_regex(normalized_cpf)
-            doc = await self.collection.find_one({"cpf": {"$regex": cpf_pattern}})
+            doc = await self.collection.find_one(
+                {"cpf": {"$regex": cpf_pattern}}
+            )
 
         if doc is None:
             return None

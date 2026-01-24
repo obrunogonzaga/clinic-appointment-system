@@ -222,7 +222,7 @@ class Settings(BaseSettings):
         default="Sistema de Coleta",
         description="Nome do remetente de email",
     )
-    
+
     # Redis settings
     redis_url: str = Field(
         default="redis://localhost:6379",
@@ -236,7 +236,7 @@ class Settings(BaseSettings):
         default=0,
         description="Database do Redis",
     )
-    
+
     # Enhanced security settings
     email_verification_expire_hours: int = Field(
         default=24,
@@ -254,7 +254,7 @@ class Settings(BaseSettings):
         default=30,
         description="Tempo de bloqueio da conta em minutos",
     )
-    
+
     # Rate limiting settings
     rate_limit_enabled: bool = Field(
         default=True,
@@ -276,13 +276,13 @@ class Settings(BaseSettings):
         default="2/hour",
         description="Rate limit para verificação de email",
     )
-    
+
     # Frontend URL
     frontend_url: str = Field(
         default="http://localhost:3000",
         description="URL do frontend para links em emails",
     )
-    
+
     # Admin notification settings
     admin_notification_emails: Optional[str] = Field(
         default=None,

@@ -34,9 +34,7 @@ class R2StorageService:
         if self._settings.s3_endpoint:
             return self._settings.s3_endpoint
         if self._settings.r2_account_id:
-            return (
-                f"https://{self._settings.r2_account_id}.r2.cloudflarestorage.com"
-            )
+            return f"https://{self._settings.r2_account_id}.r2.cloudflarestorage.com"
         raise DomainException(
             "Endpoint S3/R2 não configurado. Defina S3_ENDPOINT ou R2_ACCOUNT_ID."
         )
@@ -44,7 +42,9 @@ class R2StorageService:
     def _client_instance(self) -> BaseClient:
         if self._client is None:
             endpoint = self._resolve_endpoint()
-            config = Config(signature_version="s3v4", retries={"max_attempts": 3})
+            config = Config(
+                signature_version="s3v4", retries={"max_attempts": 3}
+            )
             self._client = boto3.client(
                 "s3",
                 endpoint_url=endpoint,

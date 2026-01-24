@@ -16,7 +16,6 @@ from src.presentation.api.responses import DataResponse
 from src.presentation.dependencies.auth import get_current_active_user
 from src.presentation.dependencies.services import get_client_service
 
-
 router = APIRouter()
 
 
@@ -37,7 +36,9 @@ async def list_clients(
     """List clients with pagination."""
 
     del current_user  # Context is enforced by dependency
-    filters = ClientFilterDTO(search=search, cpf=cpf, page=page, page_size=page_size)
+    filters = ClientFilterDTO(
+        search=search, cpf=cpf, page=page, page_size=page_size
+    )
     return await service.list_clients(filters)
 
 
@@ -87,7 +88,9 @@ async def update_client(
     del current_user
     result = await service.update_client(client_id, payload)
     if not result["success"]:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["message"])
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=result["message"]
+        )
 
     return DataResponse(
         success=True,
@@ -112,6 +115,8 @@ async def get_client_detail(
     del current_user
     result = await service.get_client_detail(client_id)
     if not result.get("success"):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=result.get("message"))
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=result.get("message")
+        )
 
     return ClientDetailResponseDTO(**result)

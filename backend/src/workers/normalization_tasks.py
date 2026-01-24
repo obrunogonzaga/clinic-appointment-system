@@ -161,17 +161,31 @@ async def normalize_appointment(ctx: Dict, appointment_id: str) -> Dict:
         await appointment_repo.update(appointment_id, update_data)
 
         # Sync client if CPF was extracted during normalization
-        if update_data.get("cpf") and update_data.get("normalization_status") == NormalizationStatus.COMPLETED.value:
+        if (
+            update_data.get("cpf")
+            and update_data.get("normalization_status")
+            == NormalizationStatus.COMPLETED.value
+        ):
             try:
-                from src.application.services.client_service import ClientService
-                from src.infrastructure.repositories.client_repository import ClientRepository
+                from src.application.services.client_service import (
+                    ClientService,
+                )
+                from src.infrastructure.repositories.client_repository import (
+                    ClientRepository,
+                )
 
                 # Get updated appointment with new CPF
-                updated_appointment = await appointment_repo.find_by_id(appointment_id)
+                updated_appointment = await appointment_repo.find_by_id(
+                    appointment_id
+                )
                 if updated_appointment:
                     client_repo = ClientRepository(container._database)
-                    client_service = ClientService(client_repo, appointment_repo)
-                    client_id = await client_service.upsert_from_appointment(updated_appointment)
+                    client_service = ClientService(
+                        client_repo, appointment_repo
+                    )
+                    client_id = await client_service.upsert_from_appointment(
+                        updated_appointment
+                    )
 
                     if client_id:
                         logger.info(

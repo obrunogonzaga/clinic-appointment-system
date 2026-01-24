@@ -38,7 +38,9 @@ class ClientRepository(ClientRepositoryInterface):
 
         doc = await self.collection.find_one({"cpf": data["cpf"]})
         if not doc:
-            raise ValueError("Failed to retrieve client after upsert operation")
+            raise ValueError(
+                "Failed to retrieve client after upsert operation"
+            )
 
         doc.pop("_id", None)
         created = result.upserted_id is not None

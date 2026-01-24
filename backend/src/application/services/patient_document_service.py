@@ -105,7 +105,9 @@ class PatientDocumentService:
     ) -> PatientDocumentMetadataDTO:
         document = await self._documents.get_by_id(document_id)
         if not document or document.appointment_id != appointment_id:
-            raise DomainException("Documento não encontrado para este agendamento")
+            raise DomainException(
+                "Documento não encontrado para este agendamento"
+            )
         self._ensure_tenant_access(document, tenant_id)
 
         if document.is_deleted():
@@ -142,7 +144,9 @@ class PatientDocumentService:
             tenant_id=tenant_id,
             include_deleted=include_deleted,
         )
-        return [PatientDocumentMetadataDTO.from_entity(doc) for doc in documents]
+        return [
+            PatientDocumentMetadataDTO.from_entity(doc) for doc in documents
+        ]
 
     async def generate_download_url(
         self,
@@ -153,7 +157,9 @@ class PatientDocumentService:
     ) -> PatientDocumentDownloadURLDTO:
         document = await self._documents.get_by_id(document_id)
         if not document or document.appointment_id != appointment_id:
-            raise DomainException("Documento não encontrado para este agendamento")
+            raise DomainException(
+                "Documento não encontrado para este agendamento"
+            )
         self._ensure_tenant_access(document, tenant_id)
         if not document.is_upload_complete():
             raise DomainException(
@@ -183,7 +189,9 @@ class PatientDocumentService:
     ) -> PatientDocumentMetadataDTO:
         document = await self._documents.get_by_id(document_id)
         if not document or document.appointment_id != appointment_id:
-            raise DomainException("Documento não encontrado para este agendamento")
+            raise DomainException(
+                "Documento não encontrado para este agendamento"
+            )
         self._ensure_tenant_access(document, tenant_id)
 
         if hard:
@@ -200,7 +208,9 @@ class PatientDocumentService:
             )
             # Keep metadata for audit purposes even on hard delete
             if not updated:
-                raise DomainException("Falha ao registrar exclusão do documento")
+                raise DomainException(
+                    "Falha ao registrar exclusão do documento"
+                )
             return PatientDocumentMetadataDTO.from_entity(updated)
 
         updates = {
@@ -278,7 +288,13 @@ class PatientDocumentService:
     def _ensure_tenant_access(
         self, document: PatientDocument, tenant_id: Optional[str]
     ) -> None:
-        if document.tenant_id and tenant_id and document.tenant_id != tenant_id:
+        if (
+            document.tenant_id
+            and tenant_id
+            and document.tenant_id != tenant_id
+        ):
             raise DomainException("Documento não pertence a este tenant")
         if document.tenant_id and tenant_id is None:
-            raise DomainException("Tenant obrigatório para acessar este documento")
+            raise DomainException(
+                "Tenant obrigatório para acessar este documento"
+            )

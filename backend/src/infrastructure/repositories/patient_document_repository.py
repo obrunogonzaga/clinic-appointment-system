@@ -27,7 +27,9 @@ class PatientDocumentRepository(PatientDocumentRepositoryInterface):
         """Create indexes to speed up lookups."""
 
         indexes = [
-            IndexModel([("appointment_id", ASCENDING)], name="appointment_idx"),
+            IndexModel(
+                [("appointment_id", ASCENDING)], name="appointment_idx"
+            ),
             IndexModel([("patient_id", ASCENDING)], name="patient_idx"),
             IndexModel([("tenant_id", ASCENDING)], name="tenant_idx"),
             IndexModel([("created_at", ASCENDING)], name="created_at_idx"),

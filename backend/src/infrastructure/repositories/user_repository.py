@@ -2,8 +2,8 @@
 MongoDB implementation of User repository.
 """
 
-from typing import Optional, List
 from datetime import datetime, timezone
+from typing import List, Optional
 
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorDatabase
@@ -13,7 +13,7 @@ from pymongo.errors import DuplicateKeyError
 from src.domain.base import DomainException
 from src.domain.entities.user import User
 from src.domain.entities.user_enhanced import UserEnhanced
-from src.domain.enums import UserStatus, UserRole
+from src.domain.enums import UserRole, UserStatus
 from src.domain.repositories.user_repository_interface import (
     UserRepositoryInterface,
 )
@@ -50,33 +50,66 @@ class UserRepository(UserRepositoryInterface):
                         pass
         except Exception:
             pass
-        
+
         indexes = [
             # Basic indexes
             IndexModel([("email", 1)], unique=True, name="email_unique_idx"),
             IndexModel([("is_admin", 1)], name="is_admin_idx"),
             IndexModel([("is_active", 1)], name="is_active_idx"),
             IndexModel([("created_at", -1)], name="created_at_desc_idx"),
-            
             # Enhanced authentication indexes (AE-009)
-            IndexModel([("status", 1)], name="status_idx"),  # For filtering by status
-            IndexModel([("role", 1)], name="role_idx"),  # For filtering by role
-            IndexModel([("status", 1), ("created_at", -1)], name="status_created_compound_idx"),  # For pending users sorted by date
-            IndexModel([("role", 1), ("status", 1)], name="role_status_compound_idx"),  # For role-based status filtering
-            IndexModel([("email_verified", 1)], name="email_verified_idx"),  # For unverified users
-            IndexModel([("status", 1), ("role", 1), ("created_at", -1)], name="status_role_created_compound_idx"),  # Complex filtering
-            
+            IndexModel(
+                [("status", 1)], name="status_idx"
+            ),  # For filtering by status
+            IndexModel(
+                [("role", 1)], name="role_idx"
+            ),  # For filtering by role
+            IndexModel(
+                [("status", 1), ("created_at", -1)],
+                name="status_created_compound_idx",
+            ),  # For pending users sorted by date
+            IndexModel(
+                [("role", 1), ("status", 1)], name="role_status_compound_idx"
+            ),  # For role-based status filtering
+            IndexModel(
+                [("email_verified", 1)], name="email_verified_idx"
+            ),  # For unverified users
+            IndexModel(
+                [("status", 1), ("role", 1), ("created_at", -1)],
+                name="status_role_created_compound_idx",
+            ),  # Complex filtering
             # Security token indexes
-            IndexModel([("security.email_verification_token", 1)], sparse=True, name="email_verification_token_idx"),  # For email verification
-            IndexModel([("security.password_reset_token", 1)], sparse=True, name="password_reset_token_idx"),  # For password reset
-            IndexModel([("security.refresh_token", 1)], sparse=True, name="refresh_token_idx"),  # For refresh token lookup
-            
+            IndexModel(
+                [("security.email_verification_token", 1)],
+                sparse=True,
+                name="email_verification_token_idx",
+            ),  # For email verification
+            IndexModel(
+                [("security.password_reset_token", 1)],
+                sparse=True,
+                name="password_reset_token_idx",
+            ),  # For password reset
+            IndexModel(
+                [("security.refresh_token", 1)],
+                sparse=True,
+                name="refresh_token_idx",
+            ),  # For refresh token lookup
             # Login security indexes
-            IndexModel([("security.login_attempts", 1)], name="login_attempts_idx"),  # For blocked accounts
-            IndexModel([("security.last_failed_login", 1)], sparse=True, name="last_failed_login_idx"),  # For time-based unlocking
-            IndexModel([("security.account_locked_until", 1)], sparse=True, name="account_locked_until_idx"),  # For locked accounts
+            IndexModel(
+                [("security.login_attempts", 1)], name="login_attempts_idx"
+            ),  # For blocked accounts
+            IndexModel(
+                [("security.last_failed_login", 1)],
+                sparse=True,
+                name="last_failed_login_idx",
+            ),  # For time-based unlocking
+            IndexModel(
+                [("security.account_locked_until", 1)],
+                sparse=True,
+                name="account_locked_until_idx",
+            ),  # For locked accounts
         ]
-        
+
         # Create indexes, ignoring conflicts
         try:
             await self.collection.create_indexes(indexes)
@@ -200,12 +233,14 @@ class UserRepository(UserRepositoryInterface):
         """List active users with pagination."""
         try:
             cursor = (
-                self.collection.find({"is_active": {"$ne": False}})  # Only active users
+                self.collection.find(
+                    {"is_active": {"$ne": False}}
+                )  # Only active users
                 .sort("created_at", -1)  # Order by created_at desc
                 .skip(offset)
                 .limit(limit)
             )
-            
+
             docs = await cursor.to_list(length=limit)
             return [self._doc_to_user(doc) for doc in docs]
         except Exception:
@@ -214,7 +249,9 @@ class UserRepository(UserRepositoryInterface):
     async def count_total_users(self) -> int:
         """Count total number of active users."""
         try:
-            return await self.collection.count_documents({"is_active": {"$ne": False}})
+            return await self.collection.count_documents(
+                {"is_active": {"$ne": False}}
+            )
         except Exception:
             return 0
 
@@ -225,13 +262,12 @@ class UserRepository(UserRepositoryInterface):
                 return False
 
             result = await self.collection.update_one(
-                {"_id": ObjectId(user_id)},
-                {"$set": {"is_active": False}}
+                {"_id": ObjectId(user_id)}, {"$set": {"is_active": False}}
             )
             return result.modified_count > 0
         except Exception:
             return False
-    
+
     async def get_inactive_by_email(self, email: str) -> Optional[User]:
         """Get inactive user by email address."""
         try:
@@ -241,33 +277,32 @@ class UserRepository(UserRepositoryInterface):
             return self._doc_to_user(doc) if doc else None
         except Exception:
             return None
-    
+
     async def reactivate_user(
-        self, user_id: str, 
-        update_data: dict
+        self, user_id: str, update_data: dict
     ) -> Optional[User]:
         """Reactivate a soft-deleted user with new data."""
         try:
             if not ObjectId.is_valid(user_id):
                 return None
-            
+
             from src.domain.enums import UserStatus
-            
+
             # Prepare update with reactivation
             update_data["is_active"] = True
             update_data["updated_at"] = datetime.now(timezone.utc)
-            
+
             # Reset status fields for fresh start
             if "status" not in update_data:
                 # Default to approved for reactivated users by admin
                 update_data["status"] = UserStatus.APROVADO
-            
+
             result = await self.collection.find_one_and_update(
                 {"_id": ObjectId(user_id)},
                 {"$set": update_data},
-                return_document=True
+                return_document=True,
             )
-            
+
             return self._doc_to_user(result) if result else None
         except Exception as e:
             raise DomainException(f"Erro ao reativar usuário: {str(e)}")
@@ -276,20 +311,20 @@ class UserRepository(UserRepositoryInterface):
         """Convert MongoDB document to User entity (supports both User and UserEnhanced)."""
         if "_id" in doc:
             doc["_id"] = str(doc["_id"])
-        
+
         # Check if this is an enhanced user (has status/role fields)
         if "status" in doc or "role" in doc:
             # Convert to UserEnhanced
             return self._doc_to_user_enhanced(doc)
-        
+
         # Legacy User entity
         return User.model_validate(doc)
-    
+
     def _doc_to_user_enhanced(self, doc: dict) -> UserEnhanced:
         """Convert MongoDB document to UserEnhanced entity."""
         if "_id" in doc:
             doc["_id"] = str(doc["_id"])
-        
+
         # Ensure nested objects exist
         if "approval" not in doc:
             doc["approval"] = {}
@@ -297,77 +332,99 @@ class UserRepository(UserRepositoryInterface):
             doc["security"] = {}
         if "metadata" not in doc:
             doc["metadata"] = {}
-        
+
         return UserEnhanced.model_validate(doc)
-    
+
     async def get_pending_users(
         self, limit: int = 10, offset: int = 0
     ) -> List[User]:
         """Get all active users with PENDENTE status."""
         try:
-            cursor = self.collection.find(
-                {"status": UserStatus.PENDENTE, "is_active": {"$ne": False}}
-            ).sort("created_at", -1).skip(offset).limit(limit)
-            
+            cursor = (
+                self.collection.find(
+                    {
+                        "status": UserStatus.PENDENTE,
+                        "is_active": {"$ne": False},
+                    }
+                )
+                .sort("created_at", -1)
+                .skip(offset)
+                .limit(limit)
+            )
+
             users = []
             async for doc in cursor:
                 user = self._doc_to_user(doc)
                 users.append(user)
-            
+
             return users
         except Exception:
             return []
-    
+
     async def get_users_by_status(
         self, status: UserStatus, limit: int = 10, offset: int = 0
     ) -> List[User]:
         """Get active users by status."""
         try:
-            cursor = self.collection.find(
-                {"status": status, "is_active": {"$ne": False}}
-            ).sort("created_at", -1).skip(offset).limit(limit)
-            
+            cursor = (
+                self.collection.find(
+                    {"status": status, "is_active": {"$ne": False}}
+                )
+                .sort("created_at", -1)
+                .skip(offset)
+                .limit(limit)
+            )
+
             users = []
             async for doc in cursor:
                 user = self._doc_to_user(doc)
                 users.append(user)
-            
+
             return users
         except Exception:
             return []
-    
+
     async def get_users_by_role(
         self, role: UserRole, limit: int = 10, offset: int = 0
     ) -> List[User]:
         """Get active users by role."""
         try:
-            cursor = self.collection.find(
-                {"role": role, "is_active": {"$ne": False}}
-            ).sort("created_at", -1).skip(offset).limit(limit)
-            
+            cursor = (
+                self.collection.find(
+                    {"role": role, "is_active": {"$ne": False}}
+                )
+                .sort("created_at", -1)
+                .skip(offset)
+                .limit(limit)
+            )
+
             users = []
             async for doc in cursor:
                 user = self._doc_to_user(doc)
                 users.append(user)
-            
+
             return users
         except Exception:
             return []
-    
+
     async def count_pending_users(self) -> int:
         """Count active users with PENDENTE status."""
         try:
-            return await self.collection.count_documents({"status": UserStatus.PENDENTE, "is_active": {"$ne": False}})
+            return await self.collection.count_documents(
+                {"status": UserStatus.PENDENTE, "is_active": {"$ne": False}}
+            )
         except Exception:
             return 0
-    
+
     async def count_users_by_status(self, status: UserStatus) -> int:
         """Count active users by status."""
         try:
-            return await self.collection.count_documents({"status": status, "is_active": {"$ne": False}})
+            return await self.collection.count_documents(
+                {"status": status, "is_active": {"$ne": False}}
+            )
         except Exception:
             return 0
-    
+
     async def approve_user(
         self, user_id: str, admin_id: str
     ) -> Optional[User]:
@@ -375,7 +432,7 @@ class UserRepository(UserRepositoryInterface):
         try:
             if not ObjectId.is_valid(user_id):
                 return None
-            
+
             current_time = datetime.now(timezone.utc)
 
             update_data = {
@@ -392,18 +449,18 @@ class UserRepository(UserRepositoryInterface):
                 "security.email_verification_token": None,
                 "security.email_verification_expires": None,
             }
-            
+
             result = await self.collection.find_one_and_update(
                 {"_id": ObjectId(user_id), "status": UserStatus.PENDENTE},
                 {"$set": update_data},
-                return_document=True
+                return_document=True,
             )
-            
+
             return self._doc_to_user(result) if result else None
-            
+
         except Exception:
             return None
-    
+
     async def reject_user(
         self, user_id: str, admin_id: str, reason: str
     ) -> Optional[User]:
@@ -411,7 +468,7 @@ class UserRepository(UserRepositoryInterface):
         try:
             if not ObjectId.is_valid(user_id):
                 return None
-            
+
             update_data = {
                 "status": UserStatus.REJEITADO,
                 "approval.rejected_by": admin_id,
@@ -420,18 +477,18 @@ class UserRepository(UserRepositoryInterface):
                 "updated_at": datetime.now(timezone.utc),
                 "updated_by": admin_id,
             }
-            
+
             result = await self.collection.find_one_and_update(
                 {"_id": ObjectId(user_id), "status": UserStatus.PENDENTE},
                 {"$set": update_data},
-                return_document=True
+                return_document=True,
             )
-            
+
             return self._doc_to_user(result) if result else None
-            
+
         except Exception:
             return None
-    
+
     async def get_by_email_verification_token(
         self, token: str
     ) -> Optional[User]:
@@ -440,28 +497,30 @@ class UserRepository(UserRepositoryInterface):
             doc = await self.collection.find_one(
                 {
                     "security.email_verification_token": token,
-                    "security.email_verification_expires": {"$gt": datetime.now(timezone.utc)}
+                    "security.email_verification_expires": {
+                        "$gt": datetime.now(timezone.utc)
+                    },
                 }
             )
             return self._doc_to_user(doc) if doc else None
         except Exception:
             return None
-    
-    async def get_by_password_reset_token(
-        self, token: str
-    ) -> Optional[User]:
+
+    async def get_by_password_reset_token(self, token: str) -> Optional[User]:
         """Get user by password reset token."""
         try:
             doc = await self.collection.find_one(
                 {
                     "security.password_reset_token": token,
-                    "security.password_reset_expires": {"$gt": datetime.now(timezone.utc)}
+                    "security.password_reset_expires": {
+                        "$gt": datetime.now(timezone.utc)
+                    },
                 }
             )
             return self._doc_to_user(doc) if doc else None
         except Exception:
             return None
-    
+
     async def update_refresh_token(
         self, user_id: str, refresh_token: str, expires_at: datetime
     ) -> bool:
@@ -469,7 +528,7 @@ class UserRepository(UserRepositoryInterface):
         try:
             if not ObjectId.is_valid(user_id):
                 return False
-            
+
             result = await self.collection.update_one(
                 {"_id": ObjectId(user_id)},
                 {
@@ -478,33 +537,33 @@ class UserRepository(UserRepositoryInterface):
                         "security.refresh_token_expires": expires_at,
                         "updated_at": datetime.now(timezone.utc),
                     }
-                }
+                },
             )
             return result.modified_count > 0
         except Exception:
             return False
-    
-    async def get_by_refresh_token(
-        self, refresh_token: str
-    ) -> Optional[User]:
+
+    async def get_by_refresh_token(self, refresh_token: str) -> Optional[User]:
         """Get user by refresh token."""
         try:
             doc = await self.collection.find_one(
                 {
                     "security.refresh_token": refresh_token,
-                    "security.refresh_token_expires": {"$gt": datetime.now(timezone.utc)}
+                    "security.refresh_token_expires": {
+                        "$gt": datetime.now(timezone.utc)
+                    },
                 }
             )
             return self._doc_to_user(doc) if doc else None
         except Exception:
             return None
-    
+
     async def clear_refresh_token(self, user_id: str) -> bool:
         """Clear user's refresh token (for logout)."""
         try:
             if not ObjectId.is_valid(user_id):
                 return False
-            
+
             result = await self.collection.update_one(
                 {"_id": ObjectId(user_id)},
                 {
@@ -513,7 +572,7 @@ class UserRepository(UserRepositoryInterface):
                         "security.refresh_token_expires": None,
                         "updated_at": datetime.now(timezone.utc),
                     }
-                }
+                },
             )
             return result.modified_count > 0
         except Exception:

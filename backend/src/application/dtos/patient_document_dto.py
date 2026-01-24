@@ -7,23 +7,34 @@ from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
 
-from src.domain.entities.patient_document import PatientDocument, PatientDocumentStatus
+from src.domain.entities.patient_document import (
+    PatientDocument,
+    PatientDocumentStatus,
+)
 
 
 class PatientDocumentPresignRequestDTO(BaseModel):
     """Payload required to request an upload pre-signed URL."""
 
     file_name: str = Field(..., description="Nome do arquivo a ser enviado")
-    content_type: str = Field(..., description="MIME type informado pelo cliente")
-    file_size: int = Field(..., ge=1, description="Tamanho do arquivo em bytes")
+    content_type: str = Field(
+        ..., description="MIME type informado pelo cliente"
+    )
+    file_size: int = Field(
+        ..., ge=1, description="Tamanho do arquivo em bytes"
+    )
     patient_id: str = Field(..., description="Identificador do paciente")
 
 
 class PatientDocumentPresignResponseDTO(BaseModel):
     """Response containing the pre-signed URL and metadata."""
 
-    document_id: str = Field(..., description="Identificador do documento gerado")
-    upload_url: str = Field(..., description="URL pré-assinada para envio via PUT")
+    document_id: str = Field(
+        ..., description="Identificador do documento gerado"
+    )
+    upload_url: str = Field(
+        ..., description="URL pré-assinada para envio via PUT"
+    )
     headers: Dict[str, str] = Field(
         default_factory=dict,
         description="Cabeçalhos obrigatórios para o upload",
@@ -66,7 +77,9 @@ class PatientDocumentMetadataDTO(BaseModel):
     hard_deleted_at: Optional[datetime]
 
     @classmethod
-    def from_entity(cls, document: PatientDocument) -> "PatientDocumentMetadataDTO":
+    def from_entity(
+        cls, document: PatientDocument
+    ) -> "PatientDocumentMetadataDTO":
         return cls(
             id=str(document.id),
             appointment_id=document.appointment_id,
@@ -92,5 +105,9 @@ class PatientDocumentMetadataDTO(BaseModel):
 class PatientDocumentDownloadURLDTO(BaseModel):
     """Response containing a pre-signed URL for downloading the document."""
 
-    download_url: str = Field(..., description="URL pré-assinada para download via GET")
-    expires_at: datetime = Field(..., description="Momento de expiração da URL")
+    download_url: str = Field(
+        ..., description="URL pré-assinada para download via GET"
+    )
+    expires_at: datetime = Field(
+        ..., description="Momento de expiração da URL"
+    )

@@ -6,16 +6,15 @@ from pydantic import Field, field_validator
 
 from src.domain.base import Entity, ValueObject
 
-
-HEX_COLOR_ERROR = (
-    "Cor inválida. Use o formato hexadecimal #RRGGBB."
-)
+HEX_COLOR_ERROR = "Cor inválida. Use o formato hexadecimal #RRGGBB."
 
 
 class Tag(Entity):
     """Domain entity representing a tag that can be attached to appointments."""
 
-    name: str = Field(..., min_length=1, max_length=50, description="Nome da tag")
+    name: str = Field(
+        ..., min_length=1, max_length=50, description="Nome da tag"
+    )
     color: str = Field(
         "#2563eb",
         description="Cor no formato hexadecimal",

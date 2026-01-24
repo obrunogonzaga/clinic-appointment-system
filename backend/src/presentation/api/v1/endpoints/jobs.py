@@ -8,7 +8,6 @@ from src.application.services.task_service import TaskService
 from src.infrastructure.container import Container
 from src.presentation.dependencies.auth import get_current_user
 
-
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 

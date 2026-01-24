@@ -61,4 +61,3 @@ class LogisticsPackageRepository(LogisticsPackageRepositoryInterface):
         await self.collection.create_index("id", unique=True)
         await self.collection.create_index("nome", unique=True)
         await self.collection.create_index("status")
-

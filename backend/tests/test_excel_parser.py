@@ -151,7 +151,9 @@ class TestExcelParserService:
 
         excel_file = self.create_excel_file(data)
 
-        result = await parser_service.parse_excel_file(excel_file, "status.xlsx")
+        result = await parser_service.parse_excel_file(
+            excel_file, "status.xlsx"
+        )
 
         assert result.success is True
         assert [apt.status for apt in result.appointments] == [

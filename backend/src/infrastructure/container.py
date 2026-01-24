@@ -4,6 +4,7 @@ Dependency injection container for managing application dependencies.
 
 from typing import Any, AsyncGenerator, Optional
 
+from src.application.services.task_service import TaskService
 from src.infrastructure.config import Settings, get_settings
 from src.infrastructure.repositories.appointment_repository import (
     AppointmentRepository,
@@ -14,19 +15,20 @@ from src.infrastructure.repositories.collector_repository import (
     CollectorRepository,
 )
 from src.infrastructure.repositories.driver_repository import DriverRepository
-from src.infrastructure.repositories.patient_document_repository import (
-    PatientDocumentRepository,
-)
-from src.infrastructure.repositories.user_repository import UserRepository
-from src.infrastructure.repositories.notification_repository import NotificationRepository
-from src.infrastructure.repositories.tag_repository import TagRepository
 from src.infrastructure.repositories.logistics_package_repository import (
     LogisticsPackageRepository,
 )
-from src.infrastructure.services.redis_service import RedisService
-from src.infrastructure.services.rate_limiter import RateLimiter
+from src.infrastructure.repositories.notification_repository import (
+    NotificationRepository,
+)
+from src.infrastructure.repositories.patient_document_repository import (
+    PatientDocumentRepository,
+)
+from src.infrastructure.repositories.tag_repository import TagRepository
+from src.infrastructure.repositories.user_repository import UserRepository
 from src.infrastructure.services.r2_storage_service import R2StorageService
-from src.application.services.task_service import TaskService
+from src.infrastructure.services.rate_limiter import RateLimiter
+from src.infrastructure.services.redis_service import RedisService
 
 
 class Container:
@@ -192,7 +194,7 @@ class Container:
         if self._user_repository is None:
             self._user_repository = UserRepository(self.database)
         return self._user_repository
-    
+
     @property
     def notification_repository(self) -> NotificationRepository:
         """
@@ -202,16 +204,18 @@ class Container:
             NotificationRepository: Repository instance
         """
         if self._notification_repository is None:
-            self._notification_repository = NotificationRepository(self.database)
+            self._notification_repository = NotificationRepository(
+                self.database
+            )
         return self._notification_repository
-    
+
     @property
     def tag_repository(self) -> TagRepository:
         """Get tag repository instance."""
         if self._tag_repository is None:
             self._tag_repository = TagRepository(self.database)
         return self._tag_repository
-    
+
     @property
     def redis_service(self) -> RedisService:
         """
@@ -223,7 +227,7 @@ class Container:
         if self._redis_service is None:
             self._redis_service = RedisService(self.settings)
         return self._redis_service
-    
+
     @property
     def rate_limiter(self) -> RateLimiter:
         """
@@ -243,7 +247,7 @@ class Container:
         if self._r2_storage_service is None:
             self._r2_storage_service = R2StorageService(self.settings)
         return self._r2_storage_service
-    
+
     def task_service(self) -> TaskService:
         """
         Get task service instance for background jobs.
@@ -265,7 +269,7 @@ class Container:
             print(f"✅ Connected to Redis")
         except Exception as e:
             print(f"⚠️ Redis connection failed (using in-memory fallback): {e}")
-        
+
         # Test database connection
         try:
             await self.mongodb_client.admin.command("ping")
@@ -295,7 +299,7 @@ class Container:
         if self._redis_service is not None:
             await self._redis_service.disconnect()
             print("✅ Closed Redis connection")
-        
+
         # Close MongoDB
         if self._mongodb_client is not None:
             self._mongodb_client.close()

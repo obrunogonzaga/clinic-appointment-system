@@ -7,11 +7,11 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.application.dtos.user_dto import (
-    PendingUsersResponse,
-    UserEnhancedResponse,
-    UserApprovalRequest,
-    UserRejectionRequest,
     DashboardStatsResponse,
+    PendingUsersResponse,
+    UserApprovalRequest,
+    UserEnhancedResponse,
+    UserRejectionRequest,
 )
 from src.application.services.auth_service import AuthService
 from src.domain.base import DomainException
@@ -128,17 +128,18 @@ async def get_user_details(
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Usuário não encontrado"
+                detail="Usuário não encontrado",
             )
-        
+
         # Convert to enhanced response if it's a UserEnhanced
         from src.domain.entities.user_enhanced import UserEnhanced
+
         if isinstance(user, UserEnhanced):
             return auth_service._user_to_enhanced_response(user)
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Usuário não possui informações aprimoradas"
+                detail="Usuário não possui informações aprimoradas",
             )
     except DomainException as e:
         raise HTTPException(
