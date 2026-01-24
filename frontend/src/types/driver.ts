@@ -94,8 +94,8 @@ export interface DriverFilterOptions {
 export interface ActiveDriver {
   id: string;
   nome_completo: string;
-  cnh: string;
-  telefone: string;
+  cnh?: string;
+  telefone?: string;
 }
 
 export interface ActiveDriverListResponse {
