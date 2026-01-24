@@ -1,3 +1,4 @@
+// API service
 import axios from 'axios';
 import type {
     AdminDashboardMetricsResponse,
@@ -67,36 +68,29 @@ import type {
     ClientUpdateRequest,
 } from '../types/client';
 
-const resolveApiBaseUrl = (): string => {
+// Resolve API base URL dynamically at runtime (not at module load time)
+const getApiBaseUrl = (): string => {
   if (typeof window !== 'undefined' && window.ENV?.API_URL) {
     return window.ENV.API_URL;
   }
-
-  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL as string;
-  }
-
+  // Fallback for development
   return 'http://localhost:8000';
 };
 
-const API_BASE_URL = resolveApiBaseUrl();
-
+// Create axios instance without baseURL - it will be set dynamically
 const api = axios.create({
-  baseURL: `${API_BASE_URL}/api/v1`,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor for adding auth headers in the future
+// Request interceptor to set baseURL dynamically on each request
 api.interceptors.request.use(
   (config) => {
-    // Add auth token if available
-    // const token = localStorage.getItem('authToken');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    // Set baseURL dynamically to pick up window.ENV at runtime
+    const baseUrl = getApiBaseUrl();
+    config.baseURL = `${baseUrl}/api/v1`;
     return config;
   },
   (error) => Promise.reject(error)

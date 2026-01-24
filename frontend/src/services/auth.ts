@@ -21,12 +21,17 @@ import type {
   VerifyEmailResponse,
 } from '../types/auth';
 
-const API_BASE_URL =
-  window.ENV?.API_URL || import.meta?.env?.VITE_API_URL || 'http://localhost:8000';
+// Resolve API base URL dynamically at runtime (not at module load time)
+const getApiBaseUrl = (): string => {
+  if (typeof window !== 'undefined' && window.ENV?.API_URL) {
+    return window.ENV.API_URL;
+  }
+  // Fallback for development only
+  return 'http://localhost:8000';
+};
 
-// Create axios instance with default configuration
+// Create axios instances without baseURL - it will be set dynamically
 const authApi = axios.create({
-  baseURL: `${API_BASE_URL}/api/v1/auth`,
   timeout: 10000,
   withCredentials: true, // Important for cookies
   headers: {
@@ -35,13 +40,31 @@ const authApi = axios.create({
 });
 
 const adminApi = axios.create({
-  baseURL: `${API_BASE_URL}/api/v1/admin`,
   timeout: 10000,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Request interceptors to set baseURL dynamically on each request
+authApi.interceptors.request.use(
+  (config) => {
+    const baseUrl = getApiBaseUrl();
+    config.baseURL = `${baseUrl}/api/v1/auth`;
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+adminApi.interceptors.request.use(
+  (config) => {
+    const baseUrl = getApiBaseUrl();
+    config.baseURL = `${baseUrl}/api/v1/admin`;
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 // Response interceptor to handle authentication errors
 authApi.interceptors.response.use(
