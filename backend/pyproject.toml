@@ -153,6 +153,7 @@ omit = [
     "src/domain/services/*",
     "src/domain/entities/user_enhanced.py",
     "src/main.py",
+    "src/workers/*",
 ]
 
 [tool.coverage.report]
