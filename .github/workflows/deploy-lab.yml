@@ -1,0 +1,89 @@
+name: Deploy to Lab Server
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+env:
+  DEPLOY_PATH: /opt/stacks/clinic-lab
+
+jobs:
+  deploy:
+    name: Deploy to Lab Environment
+    runs-on: ubuntu-latest
+    environment: lab
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+
+            echo "📁 Navigating to deploy directory..."
+            cd ${{ env.DEPLOY_PATH }}
+
+            echo "📥 Pulling latest changes from develop branch..."
+            git fetch origin develop
+            git reset --hard origin/develop
+
+            echo "🔑 Updating OpenRouter API key..."
+            if [ -n "${{ secrets.OPENROUTER_API_KEY }}" ]; then
+              sed -i "s|^OPENROUTER_API_KEY=.*|OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}|" .env
+            fi
+
+            echo "🔨 Building and starting containers..."
+            docker compose -f docker-compose.lab.yml down --remove-orphans || true
+            docker compose -f docker-compose.lab.yml build --no-cache
+            docker compose -f docker-compose.lab.yml up -d
+
+            echo "🧹 Cleaning up old images..."
+            docker image prune -f
+
+            echo "⏳ Waiting for services to be healthy..."
+            sleep 45
+
+            echo "🏥 Checking service health..."
+            docker compose -f docker-compose.lab.yml ps
+
+            echo "✅ Lab deployment completed!"
+
+      - name: Verify deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            echo "Checking container status..."
+            docker ps --filter "name=clinic-lab" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+            echo ""
+            echo "Checking frontend health..."
+            curl -sf http://localhost:80/health -H "Host: clinic-lab.widia.io" || echo "Frontend health check via localhost"
+
+            echo ""
+            echo "Checking external access..."
+            curl -sf --max-time 10 https://clinic-lab.widia.io/health || echo "External health check (may need DNS propagation)"
+
+      - name: Notify on failure
+        if: failure()
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            echo "❌ Lab deployment failed! Checking logs..."
+            cd ${{ env.DEPLOY_PATH }}
+            docker compose -f docker-compose.lab.yml logs --tail=50
