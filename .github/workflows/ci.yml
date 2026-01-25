@@ -40,6 +40,7 @@ jobs:
         cd backend
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install black==24.10.0 --force-reinstall
 
     - name: Lint with flake8
       run: |
@@ -159,7 +160,7 @@ jobs:
     - name: Build frontend image
       uses: docker/build-push-action@v5
       with:
-        context: .
+        context: ./frontend
         file: ./frontend/Dockerfile
         target: production
         push: false
@@ -184,7 +185,7 @@ jobs:
         output: 'trivy-results.sarif'
 
     - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
         sarif_file: 'trivy-results.sarif'

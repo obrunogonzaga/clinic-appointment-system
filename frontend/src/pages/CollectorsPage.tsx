@@ -60,7 +60,7 @@ export const CollectorsPage: React.FC = () => {
       setError(null);
       setFormError(null);
     },
-    onError: (error: any) => {
+    onError: (error: Error & { response?: { data?: { detail?: string; message?: string } } }) => {
       const message = error.response?.data?.detail || error.response?.data?.message || 'Erro ao criar coletora';
       setFormError(message);
       setError(message);
@@ -79,7 +79,7 @@ export const CollectorsPage: React.FC = () => {
       setError(null);
       setFormError(null);
     },
-    onError: (error: any) => {
+    onError: (error: Error & { response?: { data?: { detail?: string; message?: string } } }) => {
       const message = error.response?.data?.detail || error.response?.data?.message || 'Erro ao atualizar coletora';
       setFormError(message);
       setError(message);
@@ -93,7 +93,7 @@ export const CollectorsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['collectors'] });
       queryClient.invalidateQueries({ queryKey: ['collectorStats'] });
     },
-    onError: (error: any) => {
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
       setError(error.response?.data?.detail || 'Erro ao excluir coletora');
     }
   });
@@ -106,7 +106,7 @@ export const CollectorsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['collectors'] });
       queryClient.invalidateQueries({ queryKey: ['collectorStats'] });
     },
-    onError: (error: any) => {
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
       setError(error.response?.data?.detail || 'Erro ao atualizar status');
     }
   });

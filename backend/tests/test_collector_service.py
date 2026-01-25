@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import AsyncMock
+
+import pytest
 
 from src.application.dtos.collector_dto import CollectorCreateDTO
 from src.application.services.collector_service import CollectorService

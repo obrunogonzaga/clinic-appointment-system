@@ -93,8 +93,8 @@ export const CalendarDayModal: React.FC<DayModalProps> = ({
                         <AppointmentCard
                           key={appointment.id}
                           appointment={appointment}
-                          drivers={drivers as any[]}
-                          collectors={collectors as any[]}
+                          drivers={drivers}
+                          collectors={collectors}
                           onStatusChange={isReadOnly ? undefined : onStatusChange}
                           logisticsPackages={logisticsPackages}
                           onLogisticsPackageChange={

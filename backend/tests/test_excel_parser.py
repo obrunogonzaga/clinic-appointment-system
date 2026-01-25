@@ -151,7 +151,9 @@ class TestExcelParserService:
 
         excel_file = self.create_excel_file(data)
 
-        result = await parser_service.parse_excel_file(excel_file, "status.xlsx")
+        result = await parser_service.parse_excel_file(
+            excel_file, "status.xlsx"
+        )
 
         assert result.success is True
         assert [apt.status for apt in result.appointments] == [
@@ -188,8 +190,8 @@ class TestExcelParserService:
 
         appointment = result.appointments[0]
         assert (
-            appointment.carro == "CENTER 3 CARRO 1 - UND84"
-        )  # Extraído do Nome da Sala
+            appointment.carro == "AV CENTER 3 CARRO 1 - UND84"
+        )  # Extraído do Nome da Sala (após último hífen)
         assert (
             appointment.observacoes == "o exame pede anti-hiv"
         )  # Do campo Observação

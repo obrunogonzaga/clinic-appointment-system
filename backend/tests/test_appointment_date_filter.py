@@ -1,7 +1,5 @@
 from datetime import datetime, timedelta
 
-from datetime import datetime
-
 from src.application.dtos.appointment_dto import AppointmentScope
 from src.application.services.appointment_service import AppointmentService
 from src.application.services.excel_parser_service import ExcelParserService
@@ -12,7 +10,9 @@ class DummyRepo:  # Minimal stub; not used in these tests
 
 
 def _make_service() -> AppointmentService:
-    return AppointmentService(appointment_repository=DummyRepo(), excel_parser=ExcelParserService())
+    return AppointmentService(
+        appointment_repository=DummyRepo(), excel_parser=ExcelParserService()
+    )
 
 
 def test_parse_filter_date_accepts_iso_format():
@@ -33,7 +33,9 @@ def test_parse_filter_date_accepts_brazilian_format():
 def test_parse_filter_date_rejects_invalid_format():
     service = _make_service()
     try:
-        service._parse_filter_date("09-23-2025")  # US format should be rejected
+        service._parse_filter_date(
+            "09-23-2025"
+        )  # US format should be rejected
         assert False, "Expected ValueError for invalid format"
     except ValueError as e:
         assert "Formato de data inválido" in str(e)
@@ -75,8 +77,9 @@ def test_merge_scope_with_dates_applies_lower_and_upper_limits():
     history_bounds = service._resolve_scope_bounds(
         AppointmentScope.HISTORY, reference=reference
     )
-    merged_history = service._merge_scope_with_dates(parsed_dates, history_bounds)
+    merged_history = service._merge_scope_with_dates(
+        parsed_dates, history_bounds
+    )
     # Upper bound should be clamped to the start of the reference day
     assert merged_history[0] == datetime(2025, 1, 20)
     assert merged_history[1] == datetime(2025, 1, 18)
-

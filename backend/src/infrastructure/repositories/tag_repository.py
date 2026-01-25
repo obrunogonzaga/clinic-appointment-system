@@ -52,7 +52,9 @@ class TagRepository(TagRepositoryInterface):
             tags.append(self._deserialize(document))
         return tags
 
-    async def find_by_normalized_name(self, normalized_name: str) -> Optional[Tag]:
+    async def find_by_normalized_name(
+        self, normalized_name: str
+    ) -> Optional[Tag]:
         document = await self.collection.find_one(
             {"normalized_name": normalized_name}
         )
@@ -86,10 +88,16 @@ class TagRepository(TagRepositoryInterface):
             tags.append(self._deserialize(document))
         return tags, total
 
-    async def update(self, tag_id: str, update_data: Dict[str, object]) -> Optional[Tag]:
+    async def update(
+        self, tag_id: str, update_data: Dict[str, object]
+    ) -> Optional[Tag]:
         update_payload = dict(update_data)
-        if "name" in update_payload and isinstance(update_payload["name"], str):
-            update_payload["normalized_name"] = update_payload["name"].strip().lower()
+        if "name" in update_payload and isinstance(
+            update_payload["name"], str
+        ):
+            update_payload["normalized_name"] = (
+                update_payload["name"].strip().lower()
+            )
         update_payload["updated_at"] = datetime.utcnow()
 
         result = await self.collection.update_one(

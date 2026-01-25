@@ -2,12 +2,11 @@
 
 import io
 from datetime import datetime, timedelta
-from uuid import uuid4
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
+from uuid import uuid4
 
 import pytest
-
-from types import SimpleNamespace
 
 from src.application.dtos.appointment_dto import (
     AppointmentCreateDTO,
@@ -15,8 +14,8 @@ from src.application.dtos.appointment_dto import (
 )
 from src.application.services.appointment_service import AppointmentService
 from src.domain.entities.appointment import Appointment
-from src.domain.entities.tag import Tag, TagReference
 from src.domain.entities.logistics_package import LogisticsPackage
+from src.domain.entities.tag import Tag, TagReference
 
 
 @pytest.mark.asyncio
@@ -174,7 +173,9 @@ async def test_create_appointment_internal_error() -> None:
 async def test_import_excel_blocks_past_dates() -> None:
     """Import should fail when appointments contain past-dated entries."""
 
-    today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    today = datetime.utcnow().replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
     past_day = today - timedelta(days=1)
 
     appointment = Appointment(
@@ -215,7 +216,9 @@ async def test_import_excel_blocks_past_dates() -> None:
     assert result["past_appointments_blocked"] == 1
     assert result["imported_appointments"] == 0
     assert "passado" in result["message"].lower()
-    assert any("anterior a hoje" in message.lower() for message in result["errors"])
+    assert any(
+        "anterior a hoje" in message.lower() for message in result["errors"]
+    )
     repository.create_many.assert_not_awaited()
 
 
@@ -245,7 +248,9 @@ async def test_create_appointment_missing_phone() -> None:
 
 
 @pytest.mark.asyncio
-async def test_create_appointment_sets_agendado_por_when_status_agendado() -> None:
+async def test_create_appointment_sets_agendado_por_when_status_agendado() -> (
+    None
+):
     """Agendado_por should capture creator when status starts as Agendado."""
     repository = MagicMock()
     repository.find_duplicates = AsyncMock(return_value=[])
@@ -604,14 +609,16 @@ async def test_update_appointment_assigns_logistics_package() -> None:
     logistics_repo = MagicMock()
     logistics_repo.find_by_id = AsyncMock(return_value=package)
 
-    updated = appointment.model_copy(update={
-        "logistics_package_id": str(package.id),
-        "logistics_package_name": package.nome,
-        "driver_id": package.driver_id,
-        "collector_id": package.collector_id,
-        "car_id": package.car_id,
-        "carro": package.car_display_name,
-    })
+    updated = appointment.model_copy(
+        update={
+            "logistics_package_id": str(package.id),
+            "logistics_package_name": package.nome,
+            "driver_id": package.driver_id,
+            "collector_id": package.collector_id,
+            "car_id": package.car_id,
+            "carro": package.car_display_name,
+        }
+    )
     repository.update = AsyncMock(return_value=updated)
 
     service = AppointmentService(
@@ -688,10 +695,12 @@ async def test_update_appointment_clears_logistics_package() -> None:
     repository = MagicMock()
     repository.find_by_id = AsyncMock(return_value=appointment)
     repository.update = AsyncMock(
-        return_value=appointment.model_copy(update={
-            "logistics_package_id": None,
-            "logistics_package_name": None,
-        })
+        return_value=appointment.model_copy(
+            update={
+                "logistics_package_id": None,
+                "logistics_package_name": None,
+            }
+        )
     )
 
     service = AppointmentService(repository, excel_parser=MagicMock())

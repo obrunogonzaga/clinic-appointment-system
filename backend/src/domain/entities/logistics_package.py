@@ -15,7 +15,9 @@ class LogisticsPackage(Entity):
         None, description="Notas adicionais para identificar o pacote"
     )
     driver_id: str = Field(..., description="Identificador do motorista")
-    driver_nome: str = Field(..., description="Nome do motorista no momento do cadastro")
+    driver_nome: str = Field(
+        ..., description="Nome do motorista no momento do cadastro"
+    )
     collector_id: str = Field(..., description="Identificador da coletora")
     collector_nome: str = Field(
         ..., description="Nome da coletora no momento do cadastro"
@@ -26,7 +28,8 @@ class LogisticsPackage(Entity):
         None, description="Unidade associada ao carro, quando disponível"
     )
     car_display_name: str = Field(
-        ..., description="Rótulo pronto para preencher o campo `carro` do agendamento"
+        ...,
+        description="Rótulo pronto para preencher o campo `carro` do agendamento",
     )
     status: str = Field(
         "Ativo",
@@ -67,4 +70,3 @@ class LogisticsPackage(Entity):
                 "Status inválido. Utilize 'Ativo' ou 'Inativo' para pacotes logísticos."
             )
         return normalized
-

@@ -2,20 +2,20 @@
 Email service for sending notifications with real SMTP support.
 """
 
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from typing import List, Optional, Dict, Any
-from datetime import datetime
-import logging
 import asyncio
+import logging
+import smtplib
+from datetime import datetime
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 import aiosmtplib
 from jinja2 import Environment, FileSystemLoader, Template
 
-from src.infrastructure.config import Settings
 from src.domain.entities.user_enhanced import UserEnhanced
+from src.infrastructure.config import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -23,58 +23,62 @@ logger = logging.getLogger(__name__)
 class EmailService:
     """
     Service for sending emails with SMTP support and HTML templates.
-    
+
     Supports multiple email providers (SMTP, SendGrid, AWS SES).
     Currently implements SMTP with async support.
     """
-    
+
     def __init__(self, settings: Settings):
         """
         Initialize email service.
-        
+
         Args:
             settings: Application settings
         """
         self.settings = settings
-        
+
         # Email configuration
-        self.smtp_host = getattr(settings, 'smtp_host', None)
-        self.smtp_port = getattr(settings, 'smtp_port', 587)
-        self.smtp_username = getattr(settings, 'smtp_username', None)
-        self.smtp_password = getattr(settings, 'smtp_password', None)
-        self.smtp_from_email = getattr(settings, 'smtp_from_email', 'noreply@sistema.com')
-        self.smtp_from_name = getattr(settings, 'smtp_from_name', 'Sistema de Coleta')
-        
+        self.smtp_host = getattr(settings, "smtp_host", None)
+        self.smtp_port = getattr(settings, "smtp_port", 587)
+        self.smtp_username = getattr(settings, "smtp_username", None)
+        self.smtp_password = getattr(settings, "smtp_password", None)
+        self.smtp_from_email = getattr(
+            settings, "smtp_from_email", "noreply@sistema.com"
+        )
+        self.smtp_from_name = getattr(
+            settings, "smtp_from_name", "Sistema de Coleta"
+        )
+
         # Check if email is configured
         self.is_configured = bool(
-            self.smtp_host and 
-            self.smtp_username and 
-            self.smtp_password
+            self.smtp_host and self.smtp_username and self.smtp_password
         )
-        
+
         # Frontend URL for links
-        self.frontend_url = getattr(settings, 'frontend_url', 'http://localhost:3000')
-        
+        self.frontend_url = getattr(
+            settings, "frontend_url", "http://localhost:3000"
+        )
+
         # Setup Jinja2 for email templates
-        template_dir = Path(__file__).parent.parent / 'templates' / 'emails'
+        template_dir = Path(__file__).parent.parent / "templates" / "emails"
         if not template_dir.exists():
             template_dir.mkdir(parents=True, exist_ok=True)
-            
+
         self.env = Environment(
-            loader=FileSystemLoader(str(template_dir)),
-            autoescape=True
+            loader=FileSystemLoader(str(template_dir)), autoescape=True
         )
-        
+
         # Create default templates if they don't exist
         self._create_default_templates(template_dir)
-        
+
     def _create_default_templates(self, template_dir: Path):
         """Create default email templates if they don't exist."""
-        
+
         # Base template
-        base_template = template_dir / 'base.html'
+        base_template = template_dir / "base.html"
         if not base_template.exists():
-            base_template.write_text('''<!DOCTYPE html>
+            base_template.write_text(
+                """<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -156,12 +160,14 @@ class EmailService:
         </div>
     </div>
 </body>
-</html>''')
-        
+</html>"""
+            )
+
         # Email verification template
-        verification_template = template_dir / 'verification.html'
+        verification_template = template_dir / "verification.html"
         if not verification_template.exists():
-            verification_template.write_text('''{% extends "base.html" %}
+            verification_template.write_text(
+                """{% extends "base.html" %}
 {% block content %}
     <h2>Olá {{ user_name }}!</h2>
     <p>Obrigado por se cadastrar em nosso sistema.</p>
@@ -181,12 +187,14 @@ class EmailService:
     </div>
     
     <p>Se você não criou uma conta em nosso sistema, ignore este email.</p>
-{% endblock %}''')
-        
+{% endblock %}"""
+            )
+
         # Welcome (approval) template
-        welcome_template = template_dir / 'welcome.html'
+        welcome_template = template_dir / "welcome.html"
         if not welcome_template.exists():
-            welcome_template.write_text('''{% extends "base.html" %}
+            welcome_template.write_text(
+                """{% extends "base.html" %}
 {% block content %}
     <h2>Bem-vindo(a), {{ user_name }}!</h2>
     
@@ -210,12 +218,14 @@ class EmailService:
     </div>
     
     <p>Se tiver alguma dúvida, entre em contato com o suporte.</p>
-{% endblock %}''')
-        
+{% endblock %}"""
+            )
+
         # Rejection template
-        rejection_template = template_dir / 'rejection.html'
+        rejection_template = template_dir / "rejection.html"
         if not rejection_template.exists():
-            rejection_template.write_text('''{% extends "base.html" %}
+            rejection_template.write_text(
+                """{% extends "base.html" %}
 {% block content %}
     <h2>Olá {{ user_name }}</h2>
     
@@ -233,12 +243,14 @@ class EmailService:
     <p>Se você acredita que houve um engano ou gostaria de mais informações, entre em contato com nosso suporte.</p>
     
     <p><strong>Email de suporte:</strong> suporte@sistema.com</p>
-{% endblock %}''')
-        
+{% endblock %}"""
+            )
+
         # Password reset template
-        password_reset_template = template_dir / 'password_reset.html'
+        password_reset_template = template_dir / "password_reset.html"
         if not password_reset_template.exists():
-            password_reset_template.write_text('''{% extends "base.html" %}
+            password_reset_template.write_text(
+                """{% extends "base.html" %}
 {% block content %}
     <h2>Redefinição de Senha</h2>
     
@@ -262,12 +274,14 @@ class EmailService:
     <p>Se você não solicitou a redefinição de senha, ignore este email. Sua senha permanecerá inalterada.</p>
     
     <p style="color: #dc3545;"><strong>Segurança:</strong> Por motivos de segurança, nunca compartilhe este link com outras pessoas.</p>
-{% endblock %}''')
-        
+{% endblock %}"""
+            )
+
         # Account locked template
-        account_locked_template = template_dir / 'account_locked.html'
+        account_locked_template = template_dir / "account_locked.html"
         if not account_locked_template.exists():
-            account_locked_template.write_text('''{% extends "base.html" %}
+            account_locked_template.write_text(
+                """{% extends "base.html" %}
 {% block content %}
     <h2>⚠️ Conta Bloqueada Temporariamente</h2>
     
@@ -297,12 +311,14 @@ class EmailService:
     </div>
     
     <p><strong>Email de suporte:</strong> suporte@sistema.com</p>
-{% endblock %}''')
-        
+{% endblock %}"""
+            )
+
         # New user notification for admins
-        admin_notification_template = template_dir / 'admin_new_user.html'
+        admin_notification_template = template_dir / "admin_new_user.html"
         if not admin_notification_template.exists():
-            admin_notification_template.write_text('''{% extends "base.html" %}
+            admin_notification_template.write_text(
+                """{% extends "base.html" %}
 {% block content %}
     <h2>📋 Novo Cadastro Pendente de Aprovação</h2>
     
@@ -341,24 +357,25 @@ class EmailService:
     <p style="font-size: 14px; color: #666;">
         Acesse o painel administrativo para aprovar ou rejeitar este cadastro.
     </p>
-{% endblock %}''')
-    
+{% endblock %}"""
+            )
+
     async def send_email(
         self,
         to_emails: List[str],
         subject: str,
         html_content: str,
-        text_content: Optional[str] = None
+        text_content: Optional[str] = None,
     ) -> bool:
         """
         Send email asynchronously.
-        
+
         Args:
             to_emails: List of recipient emails
             subject: Email subject
             html_content: HTML email content
             text_content: Optional plain text content
-            
+
         Returns:
             True if email sent successfully
         """
@@ -366,22 +383,22 @@ class EmailService:
             logger.warning("Email service not configured, skipping email send")
             logger.info(f"[MOCK EMAIL] To: {to_emails}, Subject: {subject}")
             return False
-            
+
         try:
             # Create message
-            message = MIMEMultipart('alternative')
-            message['Subject'] = subject
-            message['From'] = f"{self.smtp_from_name} <{self.smtp_from_email}>"
-            message['To'] = ', '.join(to_emails)
-            
+            message = MIMEMultipart("alternative")
+            message["Subject"] = subject
+            message["From"] = f"{self.smtp_from_name} <{self.smtp_from_email}>"
+            message["To"] = ", ".join(to_emails)
+
             # Add text and HTML parts
             if text_content:
-                text_part = MIMEText(text_content, 'plain', 'utf-8')
+                text_part = MIMEText(text_content, "plain", "utf-8")
                 message.attach(text_part)
-                
-            html_part = MIMEText(html_content, 'html', 'utf-8')
+
+            html_part = MIMEText(html_content, "html", "utf-8")
             message.attach(html_part)
-            
+
             # Send email asynchronously
             await aiosmtplib.send(
                 message,
@@ -391,22 +408,22 @@ class EmailService:
                 password=self.smtp_password,
                 start_tls=True,
             )
-            
+
             logger.info(f"Email sent successfully to {to_emails}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Failed to send email: {e}")
             return False
-            
+
     def render_template(self, template_name: str, **context) -> str:
         """
         Render email template with context.
-        
+
         Args:
             template_name: Template file name
             **context: Template variables
-            
+
         Returns:
             Rendered HTML content
         """
@@ -427,177 +444,161 @@ class EmailService:
         return "colaborador"
 
     async def send_verification_email(
-        self, 
-        user: UserEnhanced, 
-        verification_token: str
+        self, user: UserEnhanced, verification_token: str
     ) -> bool:
         """
         Send email verification to user.
-        
+
         Args:
             user: User to verify
             verification_token: Verification token
-            
+
         Returns:
             True if sent successfully
         """
-        verification_url = f"{self.frontend_url}/verify-email/{verification_token}"
-        
-        html_content = self.render_template(
-            'verification.html',
-            title='Verificação de Email',
-            user_name=user.name,
-            verification_url=verification_url
+        verification_url = (
+            f"{self.frontend_url}/verify-email/{verification_token}"
         )
-        
+
+        html_content = self.render_template(
+            "verification.html",
+            title="Verificação de Email",
+            user_name=user.name,
+            verification_url=verification_url,
+        )
+
         return await self.send_email(
             [user.email],
-            'Verifique seu Email - Sistema de Coleta',
-            html_content
+            "Verifique seu Email - Sistema de Coleta",
+            html_content,
         )
-        
+
     async def send_welcome_email(self, user: UserEnhanced) -> bool:
         """
         Send welcome email after approval.
-        
+
         Args:
             user: Approved user
-            
+
         Returns:
             True if sent successfully
         """
         html_content = self.render_template(
-            'welcome.html',
-            title='Bem-vindo ao Sistema!',
+            "welcome.html",
+            title="Bem-vindo ao Sistema!",
             user_name=user.name,
             user_email=user.email,
             user_role=self._serialize_role(user.role),
-            login_url=f"{self.frontend_url}/login"
+            login_url=f"{self.frontend_url}/login",
         )
-        
+
         return await self.send_email(
-            [user.email],
-            'Cadastro Aprovado - Bem-vindo!',
-            html_content
+            [user.email], "Cadastro Aprovado - Bem-vindo!", html_content
         )
-        
+
     async def send_rejection_email(
-        self, 
-        user: UserEnhanced, 
-        reason: str
+        self, user: UserEnhanced, reason: str
     ) -> bool:
         """
         Send rejection notification.
-        
+
         Args:
             user: Rejected user
             reason: Rejection reason
-            
+
         Returns:
             True if sent successfully
         """
         html_content = self.render_template(
-            'rejection.html',
-            title='Cadastro Não Aprovado',
+            "rejection.html",
+            title="Cadastro Não Aprovado",
             user_name=user.name,
-            rejection_reason=reason
+            rejection_reason=reason,
         )
-        
+
         return await self.send_email(
-            [user.email],
-            'Cadastro Não Aprovado',
-            html_content
+            [user.email], "Cadastro Não Aprovado", html_content
         )
-        
+
     async def send_password_reset_email(
-        self, 
-        user: UserEnhanced, 
-        reset_token: str
+        self, user: UserEnhanced, reset_token: str
     ) -> bool:
         """
         Send password reset email.
-        
+
         Args:
             user: User requesting reset
             reset_token: Reset token
-            
+
         Returns:
             True if sent successfully
         """
         reset_url = f"{self.frontend_url}/reset-password/{reset_token}"
-        
+
         html_content = self.render_template(
-            'password_reset.html',
-            title='Redefinir Senha',
+            "password_reset.html",
+            title="Redefinir Senha",
             user_name=user.name,
-            reset_url=reset_url
+            reset_url=reset_url,
         )
-        
+
         return await self.send_email(
-            [user.email],
-            'Redefinição de Senha',
-            html_content
+            [user.email], "Redefinição de Senha", html_content
         )
-        
+
     async def send_account_locked_email(
-        self, 
-        user: UserEnhanced, 
-        attempts: int
+        self, user: UserEnhanced, attempts: int
     ) -> bool:
         """
         Send account locked notification.
-        
+
         Args:
             user: User whose account was locked
             attempts: Number of failed attempts
-            
+
         Returns:
             True if sent successfully
         """
         html_content = self.render_template(
-            'account_locked.html',
-            title='Conta Bloqueada',
+            "account_locked.html",
+            title="Conta Bloqueada",
             user_name=user.name,
             attempts=attempts,
-            locked_at=datetime.utcnow().strftime('%d/%m/%Y %H:%M UTC')
+            locked_at=datetime.utcnow().strftime("%d/%m/%Y %H:%M UTC"),
         )
-        
+
         return await self.send_email(
-            [user.email],
-            '⚠️ Conta Bloqueada Temporariamente',
-            html_content
+            [user.email], "⚠️ Conta Bloqueada Temporariamente", html_content
         )
-        
+
     async def send_admin_notification(
-        self, 
-        user: UserEnhanced,
-        admin_emails: List[str]
+        self, user: UserEnhanced, admin_emails: List[str]
     ) -> bool:
         """
         Notify admins about new user registration.
-        
+
         Args:
             user: New user
             admin_emails: List of admin emails
-            
+
         Returns:
             True if sent successfully
         """
         role_value = self._serialize_role(user.role)
 
         html_content = self.render_template(
-            'admin_new_user.html',
-            title='Novo Cadastro Pendente',
+            "admin_new_user.html",
+            title="Novo Cadastro Pendente",
             user_name=user.name,
             user_email=user.email,
             user_role=role_value,
             user_department=user.metadata.department,
-            registration_date=user.created_at.strftime('%d/%m/%Y %H:%M'),
-            admin_url=f"{self.frontend_url}/admin/users/pending"
+            registration_date=user.created_at.strftime("%d/%m/%Y %H:%M"),
+            admin_url=f"{self.frontend_url}/admin/users/pending",
         )
-        
+
         return await self.send_email(
             admin_emails,
-            f'📋 Novo Cadastro Pendente - {user.name}',
-            html_content
+            f"📋 Novo Cadastro Pendente - {user.name}",
+            html_content,
         )

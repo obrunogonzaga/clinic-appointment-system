@@ -1,8 +1,8 @@
 """Unit tests for logistics package service."""
 
 from types import SimpleNamespace
-from uuid import uuid4
 from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import pytest
 
@@ -171,7 +171,9 @@ async def test_update_package_no_changes_returns_original() -> None:
     existing = _package_from_refs(driver, collector, car)
     service.logistics_package_repository.find_by_id.return_value = existing
 
-    result = await service.update_package("package-id", LogisticsPackageUpdateDTO())
+    result = await service.update_package(
+        "package-id", LogisticsPackageUpdateDTO()
+    )
 
     assert result["success"] is True
     assert result["message"] == "Nenhuma alteração realizada."
@@ -209,10 +211,12 @@ async def test_update_package_updates_references() -> None:
         id=uuid4(), nome_completo="Carlos Motorista", status="Ativo"
     )
     service.driver_repository.find_by_id.return_value = new_driver
-    updated_entity = existing.model_copy(update={
-        "driver_id": str(new_driver.id),
-        "driver_nome": new_driver.nome_completo,
-    })
+    updated_entity = existing.model_copy(
+        update={
+            "driver_id": str(new_driver.id),
+            "driver_nome": new_driver.nome_completo,
+        }
+    )
     service.logistics_package_repository.update.return_value = updated_entity
 
     result = await service.update_package(

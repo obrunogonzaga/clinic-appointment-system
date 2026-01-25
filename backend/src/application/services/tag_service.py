@@ -36,7 +36,9 @@ class TagService:
     async def create_tag(self, payload: TagCreateDTO) -> Dict[str, object]:
         normalized_name = self._normalize_name(payload.name)
 
-        if await self.tag_repository.exists_by_normalized_name(normalized_name):
+        if await self.tag_repository.exists_by_normalized_name(
+            normalized_name
+        ):
             return {
                 "success": False,
                 "message": "Já existe uma tag com este nome.",
@@ -193,9 +195,7 @@ class TagService:
         tag = await self.tag_repository.find_by_id(tag_id)
         if not tag:
             return None
-        return TagSummaryDTO(
-            **tag.model_dump(include={"id", "name", "color"})
-        )
+        return TagSummaryDTO(**tag.model_dump(include={"id", "name", "color"}))
 
     async def fetch_active_tags_by_ids(
         self, tag_ids: list[str]

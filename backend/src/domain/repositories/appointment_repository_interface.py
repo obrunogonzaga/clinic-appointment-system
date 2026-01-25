@@ -122,7 +122,9 @@ class AppointmentRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    async def find_many_by_ids(self, appointment_ids: List[str]) -> List[Appointment]:
+    async def find_many_by_ids(
+        self, appointment_ids: List[str]
+    ) -> List[Appointment]:
         """Retrieve appointments by a list of identifiers."""
 
     @abstractmethod
@@ -204,7 +206,9 @@ class AppointmentRepositoryInterface(ABC):
 
     @abstractmethod
     async def get_appointment_stats(
-        self, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None
+        self,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
     ) -> Dict[str, Any]:
         """
         Get appointment statistics for dashboard.

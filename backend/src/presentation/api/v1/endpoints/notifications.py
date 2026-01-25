@@ -7,15 +7,15 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.application.dtos.notification_dto import (
-    NotificationResponse,
-    NotificationListResponse,
-    NotificationBadgeResponse,
     CreateNotificationRequest,
     MarkAsReadRequest,
     MarkAsReadResponse,
+    NotificationBadgeResponse,
+    NotificationListResponse,
+    NotificationResponse,
 )
 from src.application.services.notification_manager_service import (
-    NotificationManagerService
+    NotificationManagerService,
 )
 from src.domain.base import DomainException
 from src.domain.entities.user import User
@@ -25,7 +25,7 @@ from src.presentation.dependencies.auth import (
     get_current_admin_user,
 )
 from src.presentation.dependencies.services import (
-    get_notification_manager_service
+    get_notification_manager_service,
 )
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
@@ -48,7 +48,7 @@ async def get_badge_data(
         # Admin users see all notifications, regular users see their own
         user_id = None if current_user.is_admin else current_user.id
         return await notification_service.get_badge_data(user_id)
-        
+
     except DomainException as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
@@ -74,14 +74,14 @@ async def list_notifications(
     try:
         # Admin users see all notifications, regular users see their own
         user_id = None if current_user.is_admin else current_user.id
-        
+
         return await notification_service.get_notifications(
             user_id=user_id,
             limit=limit,
             offset=offset,
-            unread_only=unread_only
+            unread_only=unread_only,
         )
-        
+
     except DomainException as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
@@ -106,20 +106,18 @@ async def get_notification(
         # TODO: Implement get single notification
         # For now, get list and filter
         notifications = await notification_service.get_notifications(
-            user_id=current_user.id,
-            limit=100,
-            offset=0
+            user_id=current_user.id, limit=100, offset=0
         )
-        
+
         for notif in notifications.notifications:
             if notif.id == notification_id:
                 return notif
-        
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Notificação não encontrada"
+            detail="Notificação não encontrada",
         )
-        
+
     except DomainException as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
@@ -143,10 +141,9 @@ async def mark_notification_read(
     try:
         request = MarkAsReadRequest(notification_ids=[notification_id])
         return await notification_service.mark_as_read(
-            user_id=current_user.id,
-            request=request
+            user_id=current_user.id, request=request
         )
-        
+
     except DomainException as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
@@ -169,10 +166,9 @@ async def mark_all_read(
     try:
         request = MarkAsReadRequest(mark_all=True)
         return await notification_service.mark_as_read(
-            user_id=current_user.id,
-            request=request
+            user_id=current_user.id, request=request
         )
-        
+
     except DomainException as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
@@ -195,10 +191,9 @@ async def mark_multiple_read(
     """Mark multiple notifications as read."""
     try:
         return await notification_service.mark_as_read(
-            user_id=current_user.id,
-            request=request
+            user_id=current_user.id, request=request
         )
-        
+
     except DomainException as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
@@ -221,21 +216,19 @@ async def delete_notification(
     """Delete a notification."""
     try:
         success = await notification_service.delete_notification(
-            notification_id=notification_id,
-            user_id=current_user.id
+            notification_id=notification_id, user_id=current_user.id
         )
-        
+
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Notificação não encontrada"
+                detail="Notificação não encontrada",
             )
-        
+
         return SuccessResponse(
-            success=True,
-            message="Notificação deletada com sucesso"
+            success=True, message="Notificação deletada com sucesso"
         )
-        
+
     except DomainException as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
@@ -258,7 +251,7 @@ async def create_notification(
     """Create a new notification (admin only)."""
     try:
         return await notification_service.create_notification(request)
-        
+
     except DomainException as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
@@ -280,12 +273,11 @@ async def cleanup_notifications(
     """Cleanup expired notifications."""
     try:
         count = await notification_service.cleanup_expired()
-        
+
         return SuccessResponse(
-            success=True,
-            message=f"{count} notificações expiradas removidas"
+            success=True, message=f"{count} notificações expiradas removidas"
         )
-        
+
     except DomainException as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)

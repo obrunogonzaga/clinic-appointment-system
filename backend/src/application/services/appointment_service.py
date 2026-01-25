@@ -20,14 +20,13 @@ from src.domain.entities.tag import TagReference
 from src.domain.repositories.appointment_repository_interface import (
     AppointmentRepositoryInterface,
 )
-from src.domain.repositories.tag_repository_interface import (
-    TagRepositoryInterface,
-)
 from src.domain.repositories.logistics_package_repository_interface import (
     LogisticsPackageRepositoryInterface,
 )
+from src.domain.repositories.tag_repository_interface import (
+    TagRepositoryInterface,
+)
 from src.domain.utils import is_valid_cpf, normalize_cpf
-
 
 logger = logging.getLogger(__name__)
 
@@ -93,9 +92,7 @@ class AppointmentService:
             )
             return None
 
-    async def _enqueue_normalization(
-        self, appointment: Appointment
-    ) -> None:
+    async def _enqueue_normalization(self, appointment: Appointment) -> None:
         """
         Enqueue background normalization job for an appointment.
 
@@ -112,7 +109,8 @@ class AppointmentService:
         # Only enqueue if there's data to normalize
         # Skip address normalization if already provided
         has_address = bool(
-            appointment.endereco_completo and not appointment.endereco_normalizado
+            appointment.endereco_completo
+            and not appointment.endereco_normalizado
         )
         has_documents = bool(appointment.documento_completo)
 

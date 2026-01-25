@@ -24,7 +24,6 @@ from src.domain.repositories.client_repository_interface import (
 )
 from src.domain.utils import is_valid_cpf, normalize_cpf
 
-
 logger = logging.getLogger(__name__)
 
 

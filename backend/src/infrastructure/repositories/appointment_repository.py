@@ -17,7 +17,6 @@ from src.domain.repositories.appointment_repository_interface import (
 )
 from src.domain.utils import normalize_cpf
 
-
 _PENDING_STATUS_VALUES: Tuple[str, ...] = (
     "Pendente",
     "Autorização",
@@ -364,7 +363,9 @@ class AppointmentRepository(AppointmentRepositoryInterface):
                 array_filters=[{"tag.id": tag_id}],
             )
             return result.modified_count
-        except NotImplementedError as error:  # mongomock doesn't support array filters
+        except (
+            NotImplementedError
+        ) as error:  # mongomock doesn't support array filters
             if "array filters" not in str(error).lower():
                 raise
 
@@ -418,7 +419,9 @@ class AppointmentRepository(AppointmentRepositoryInterface):
 
         for appointment in appointments:
             # Only run duplicate checks when date and time are provided
-            if not (appointment.data_agendamento and appointment.hora_agendamento):
+            if not (
+                appointment.data_agendamento and appointment.hora_agendamento
+            ):
                 continue
 
             query = {
@@ -535,12 +538,20 @@ class AppointmentRepository(AppointmentRepositoryInterface):
                         "total_appointments": {"$sum": 1},
                         "confirmed_appointments": {
                             "$sum": {
-                                "$cond": [{"$eq": ["$status", "Confirmado"]}, 1, 0]
+                                "$cond": [
+                                    {"$eq": ["$status", "Confirmado"]},
+                                    1,
+                                    0,
+                                ]
                             }
                         },
                         "cancelled_appointments": {
                             "$sum": {
-                                "$cond": [{"$eq": ["$status", "Cancelado"]}, 1, 0]
+                                "$cond": [
+                                    {"$eq": ["$status", "Cancelado"]},
+                                    1,
+                                    0,
+                                ]
                             }
                         },
                         "units": {"$addToSet": "$nome_unidade"},
@@ -617,8 +628,15 @@ class AppointmentRepository(AppointmentRepositoryInterface):
             {
                 "$group": {
                     "_id": {
-                        "unit": {"$ifNull": ["$nome_unidade", "Unidade não informada"]},
-                        "brand": {"$ifNull": ["$nome_marca", "Marca não informada"]},
+                        "unit": {
+                            "$ifNull": [
+                                "$nome_unidade",
+                                "Unidade não informada",
+                            ]
+                        },
+                        "brand": {
+                            "$ifNull": ["$nome_marca", "Marca não informada"]
+                        },
                     },
                     "count": {"$sum": 1},
                 }
@@ -639,7 +657,9 @@ class AppointmentRepository(AppointmentRepositoryInterface):
             },
         ]
 
-        today_utc = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_utc = datetime.utcnow().replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
         pending_future_pipeline = [
             {
                 "$match": {
@@ -647,11 +667,7 @@ class AppointmentRepository(AppointmentRepositoryInterface):
                         {
                             "$expr": {
                                 "$in": [
-                                    {
-                                        "$toLower": {
-                                            "$ifNull": ["$status", ""]
-                                        }
-                                    },
+                                    {"$toLower": {"$ifNull": ["$status", ""]}},
                                     list(_PENDING_STATUS_VALUES_LOWER),
                                 ]
                             }
@@ -710,13 +726,25 @@ class AppointmentRepository(AppointmentRepositoryInterface):
             assignment_record = assignments_result[0]
             assignments_summary = {
                 "drivers": len(
-                    [value for value in assignment_record.get("drivers", []) if value]
+                    [
+                        value
+                        for value in assignment_record.get("drivers", [])
+                        if value
+                    ]
                 ),
                 "collectors": len(
-                    [value for value in assignment_record.get("collectors", []) if value]
+                    [
+                        value
+                        for value in assignment_record.get("collectors", [])
+                        if value
+                    ]
                 ),
                 "cars": len(
-                    [value for value in assignment_record.get("cars", []) if value]
+                    [
+                        value
+                        for value in assignment_record.get("cars", [])
+                        if value
+                    ]
                 ),
             }
 

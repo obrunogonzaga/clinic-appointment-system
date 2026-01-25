@@ -3,11 +3,11 @@ User repository interface for data access abstraction.
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional, List
 from datetime import datetime
+from typing import List, Optional
 
 from src.domain.entities.user import User
-from src.domain.enums import UserStatus, UserRole
+from src.domain.enums import UserRole, UserStatus
 
 
 class UserRepositoryInterface(ABC):
@@ -281,9 +281,7 @@ class UserRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    async def get_by_password_reset_token(
-        self, token: str
-    ) -> Optional[User]:
+    async def get_by_password_reset_token(self, token: str) -> Optional[User]:
         """
         Get user by password reset token.
 
@@ -313,9 +311,7 @@ class UserRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    async def get_by_refresh_token(
-        self, refresh_token: str
-    ) -> Optional[User]:
+    async def get_by_refresh_token(self, refresh_token: str) -> Optional[User]:
         """
         Get user by refresh token.
 

@@ -36,4 +36,3 @@ class LogisticsPackageRepositoryInterface(ABC):
     @abstractmethod
     async def create_indexes(self) -> None:
         """Ensure collection indexes exist."""
-

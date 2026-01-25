@@ -58,7 +58,7 @@ export const CarsPage: React.FC = () => {
       setIsFormOpen(false);
       setError(null);
     },
-    onError: (error: any) => {
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
       setError(error.response?.data?.detail || 'Erro ao criar carro');
     }
   });
@@ -74,7 +74,7 @@ export const CarsPage: React.FC = () => {
       setSelectedCar(undefined);
       setError(null);
     },
-    onError: (error: any) => {
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
       setError(error.response?.data?.detail || 'Erro ao atualizar carro');
     }
   });
@@ -87,7 +87,7 @@ export const CarsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['carStats'] });
       setError(null);
     },
-    onError: (error: any) => {
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
       setError(error.response?.data?.detail || 'Erro ao excluir carro');
     }
   });

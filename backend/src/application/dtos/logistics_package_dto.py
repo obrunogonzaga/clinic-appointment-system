@@ -37,4 +37,3 @@ class LogisticsPackageResponseDTO(BaseModel):
     car_unidade: Optional[str]
     car_display_name: str
     status: str
-

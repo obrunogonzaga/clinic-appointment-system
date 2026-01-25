@@ -1,4 +1,6 @@
 import type { AppointmentViewModel } from './appointment';
+import type { ActiveCollector } from './collector';
+import type { ActiveDriver } from './driver';
 import type { LogisticsPackage } from './logistics-package';
 
 export interface CalendarDay {
@@ -33,8 +35,8 @@ export interface CalendarViewProps {
     logisticsPackageId: string | null,
   ) => void;
   onAppointmentDelete?: (id: string) => void;
-  drivers?: Array<{ id: string; nome_completo: string; cnh?: string; telefone?: string }>;
-  collectors?: Array<{ id: string; nome_completo: string; cpf?: string; telefone?: string }>;
+  drivers?: ActiveDriver[];
+  collectors?: ActiveCollector[];
   logisticsPackages?: LogisticsPackage[];
   isLoading?: boolean;
   isReadOnly?: boolean;
@@ -51,8 +53,8 @@ export interface DayModalProps {
     logisticsPackageId: string | null,
   ) => void;
   onDelete?: (id: string) => void;
-  drivers?: Array<{ id: string; nome_completo: string; cnh?: string; telefone?: string }>;
-  collectors?: Array<{ id: string; nome_completo: string; cpf?: string; telefone?: string }>;
+  drivers?: ActiveDriver[];
+  collectors?: ActiveCollector[];
   logisticsPackages?: LogisticsPackage[];
   isReadOnly?: boolean;
 }

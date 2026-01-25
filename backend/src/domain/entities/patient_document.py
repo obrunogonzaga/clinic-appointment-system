@@ -26,15 +26,20 @@ class PatientDocument(Entity):
     appointment_id: str = Field(..., description="Agendamento associado")
     patient_id: str = Field(..., description="Identificador único do paciente")
     tenant_id: Optional[str] = Field(
-        None, description="Identificador do tenant/cliente ao qual o documento pertence"
+        None,
+        description="Identificador do tenant/cliente ao qual o documento pertence",
     )
     file_name: str = Field(..., description="Nome original do arquivo")
     sanitized_file_name: str = Field(
         ..., description="Nome sanitizado utilizado no objeto no storage"
     )
-    storage_key: str = Field(..., description="Caminho da chave no bucket S3/R2")
+    storage_key: str = Field(
+        ..., description="Caminho da chave no bucket S3/R2"
+    )
     content_type: str = Field(..., description="MIME type detectado")
-    file_size: int = Field(..., ge=0, description="Tamanho do arquivo em bytes")
+    file_size: int = Field(
+        ..., ge=0, description="Tamanho do arquivo em bytes"
+    )
     status: PatientDocumentStatus = Field(
         default=PatientDocumentStatus.PENDING, description="Status do upload"
     )

@@ -22,7 +22,9 @@ def _validate_hex_color(value: str) -> str:
 class TagCreateDTO(BaseModel):
     """Payload utilizado para criar uma nova tag."""
 
-    name: str = Field(..., min_length=1, max_length=50, description="Nome da tag")
+    name: str = Field(
+        ..., min_length=1, max_length=50, description="Nome da tag"
+    )
     color: str = Field(
         "#2563eb", description="Cor no formato hexadecimal #RRGGBB"
     )

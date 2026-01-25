@@ -9,7 +9,6 @@ import pytest
 import pytest_asyncio
 from mongomock_motor import AsyncMongoMockClient
 
-
 pytestmark = pytest.mark.asyncio
 
 from src.domain.entities.appointment import Appointment
@@ -274,7 +273,9 @@ class TestAppointmentRepository:
         assert len(metrics["trend"]) == 3
         assert metrics["resource_assignments"]["drivers"] == 2
         assert metrics["resource_assignments"]["collectors"] == 2
-        assert any(item["unit"] == "UBS Centro" for item in metrics["top_units"])
+        assert any(
+            item["unit"] == "UBS Centro" for item in metrics["top_units"]
+        )
 
         with pytest.raises(ValueError):
             await repository.get_admin_dashboard_metrics(end, start)

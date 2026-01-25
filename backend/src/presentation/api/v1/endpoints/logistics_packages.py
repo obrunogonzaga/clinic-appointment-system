@@ -18,7 +18,11 @@ from src.infrastructure.container import (
     get_driver_repository,
     get_logistics_package_repository,
 )
-from src.presentation.api.responses import BaseResponse, DataResponse, ListResponse
+from src.presentation.api.responses import (
+    BaseResponse,
+    DataResponse,
+    ListResponse,
+)
 from src.presentation.dependencies.auth import get_current_active_user
 
 router = APIRouter()
@@ -164,7 +168,9 @@ async def update_logistics_package(
     if not result["success"]:
         error_code = result.get("error_code", "validation")
         status_code_value = 404 if error_code == "not_found" else 400
-        raise HTTPException(status_code=status_code_value, detail=result["message"])
+        raise HTTPException(
+            status_code=status_code_value, detail=result["message"]
+        )
 
     return DataResponse(
         success=True,
@@ -191,4 +197,3 @@ async def delete_logistics_package(
         raise HTTPException(status_code=404, detail=result["message"])
 
     return BaseResponse(success=True, message=result["message"])
-

@@ -62,7 +62,7 @@ export const DriversPage: React.FC = () => {
       setIsFormOpen(false);
       setError(null);
     },
-    onError: (error: any) => {
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
       setError(error.response?.data?.detail || 'Erro ao criar motorista');
     }
   });
@@ -78,7 +78,7 @@ export const DriversPage: React.FC = () => {
       setSelectedDriver(undefined);
       setError(null);
     },
-    onError: (error: any) => {
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
       setError(error.response?.data?.detail || 'Erro ao atualizar motorista');
     }
   });
@@ -90,7 +90,7 @@ export const DriversPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['drivers'] });
       queryClient.invalidateQueries({ queryKey: ['driverStats'] });
     },
-    onError: (error: any) => {
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
       setError(error.response?.data?.detail || 'Erro ao excluir motorista');
     }
   });
@@ -103,7 +103,7 @@ export const DriversPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['drivers'] });
       queryClient.invalidateQueries({ queryKey: ['driverStats'] });
     },
-    onError: (error: any) => {
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
       setError(error.response?.data?.detail || 'Erro ao atualizar status');
     }
   });
@@ -161,7 +161,7 @@ export const DriversPage: React.FC = () => {
         : (driversData.drivers.find(d => d.id === reportDriverId) || driversData.drivers[0]);
       const date = reportDate || new Date().toISOString().slice(0, 10);
       navigate(`/routes/driver?driverId=${encodeURIComponent(driver.id)}&date=${encodeURIComponent(date)}`);
-    } catch (err: any) {
+    } catch {
       alert('Erro ao abrir página de rota');
     }
   };

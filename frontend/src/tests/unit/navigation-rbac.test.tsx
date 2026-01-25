@@ -1,10 +1,12 @@
+import assert from 'node:assert/strict';
+import { describe, test } from 'node:test';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { MemoryRouter } from 'react-router-dom';
 import type { AuthContextType, User } from '../../types/auth';
-
-const assert = require('node:assert/strict');
-const { describe, test } = require('node:test');
-const React = require('react');
-const { renderToStaticMarkup } = require('react-dom/server');
-const { MemoryRouter } = require('react-router-dom');
+import { Navigation } from '../../components/Navigation';
+import { AuthContext } from '../../contexts/AuthContext';
+import { ThemeContext } from '../../contexts/ThemeContext';
 
 const noop = () => undefined;
 
@@ -40,10 +42,6 @@ const noop = () => undefined;
     },
   },
 };
-
-const { Navigation } = require('../../components/Navigation');
-const { AuthContext } = require('../../contexts/AuthContext');
-const { ThemeContext } = require('../../contexts/ThemeContext');
 
 const buildAuthContext = (user: User | null): AuthContextType => ({
   user,

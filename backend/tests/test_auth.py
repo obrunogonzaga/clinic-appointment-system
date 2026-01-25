@@ -140,7 +140,8 @@ class TestAuthService:
 
         # Execute & Assert
         with pytest.raises(
-            DomainException, match="Usuário com email 'admin@example.com' já existe"
+            DomainException,
+            match="Usuário com email 'admin@example.com' já existe",
         ):
             await auth_service.register_first_admin(request)
 

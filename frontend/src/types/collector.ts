@@ -100,8 +100,8 @@ export interface CollectorFilterOptions {
 export interface ActiveCollector {
   id: string;
   nome_completo: string;
-  cpf: string;
-  telefone: string;
+  cpf?: string;
+  telefone?: string;
 }
 
 export interface ActiveCollectorListResponse {

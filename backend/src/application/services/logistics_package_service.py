@@ -8,7 +8,9 @@ from src.application.dtos.logistics_package_dto import (
     LogisticsPackageUpdateDTO,
 )
 from src.domain.entities.logistics_package import LogisticsPackage
-from src.domain.repositories.car_repository_interface import CarRepositoryInterface
+from src.domain.repositories.car_repository_interface import (
+    CarRepositoryInterface,
+)
 from src.domain.repositories.collector_repository_interface import (
     CollectorRepositoryInterface,
 )
@@ -35,8 +37,12 @@ class LogisticsPackageService:
         self.collector_repository = collector_repository
         self.car_repository = car_repository
 
-    async def list_packages(self, status: Optional[str] = None) -> Dict[str, Any]:
-        packages = await self.logistics_package_repository.find_all(status=status)
+    async def list_packages(
+        self, status: Optional[str] = None
+    ) -> Dict[str, Any]:
+        packages = await self.logistics_package_repository.find_all(
+            status=status
+        )
         return {
             "success": True,
             "packages": [self._to_response(package) for package in packages],
@@ -46,7 +52,9 @@ class LogisticsPackageService:
         return await self.list_packages(status="Ativo")
 
     async def get_package(self, package_id: str) -> Dict[str, Any]:
-        package = await self.logistics_package_repository.find_by_id(package_id)
+        package = await self.logistics_package_repository.find_by_id(
+            package_id
+        )
         if not package:
             return {
                 "success": False,
@@ -90,7 +98,9 @@ class LogisticsPackageService:
             car_id=str(car.id),
             car_nome=car.nome,
             car_unidade=car.unidade,
-            car_display_name=self._build_car_display_name(car.nome, car.unidade),
+            car_display_name=self._build_car_display_name(
+                car.nome, car.unidade
+            ),
         )
 
         created = await self.logistics_package_repository.create(package)
@@ -102,7 +112,9 @@ class LogisticsPackageService:
     async def update_package(
         self, package_id: str, update_data: LogisticsPackageUpdateDTO
     ) -> Dict[str, Any]:
-        existing = await self.logistics_package_repository.find_by_id(package_id)
+        existing = await self.logistics_package_repository.find_by_id(
+            package_id
+        )
         if not existing:
             return {
                 "success": False,
@@ -268,7 +280,9 @@ class LogisticsPackageService:
 
         return {"driver": driver}
 
-    async def _fetch_active_collector(self, collector_id: str) -> Dict[str, Any]:
+    async def _fetch_active_collector(
+        self, collector_id: str
+    ) -> Dict[str, Any]:
         collector = await self.collector_repository.find_by_id(collector_id)
         if not collector:
             return {
@@ -308,7 +322,9 @@ class LogisticsPackageService:
 
         return {"car": car}
 
-    def _build_car_display_name(self, car_name: str, unidade: Optional[str]) -> str:
+    def _build_car_display_name(
+        self, car_name: str, unidade: Optional[str]
+    ) -> str:
         base = car_name.strip()
         if unidade and unidade.strip():
             return f"Carro: {base} | Unidade: {unidade.strip()}"
@@ -320,4 +336,3 @@ class LogisticsPackageService:
         data = package.model_dump()
         data["id"] = str(package.id)
         return LogisticsPackageResponseDTO(**data)
-
