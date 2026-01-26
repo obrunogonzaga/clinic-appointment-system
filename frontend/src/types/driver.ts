@@ -9,6 +9,7 @@ export interface Driver {
   status: string;
   carro?: string;
   observacoes?: string;
+  google_calendar_id?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -23,6 +24,7 @@ export interface DriverCreateRequest {
   status?: string;
   carro?: string;
   observacoes?: string;
+  google_calendar_id?: string;
 }
 
 export interface DriverUpdateRequest {
@@ -35,6 +37,7 @@ export interface DriverUpdateRequest {
   status?: string;
   carro?: string;
   observacoes?: string;
+  google_calendar_id?: string;
 }
 
 export interface DriverFilter {
@@ -132,6 +135,7 @@ export interface DriverFormData {
   status: DriverStatus;
   carro: string;
   observacoes: string;
+  google_calendar_id: string;
 }
 
 // Driver table column types

@@ -163,3 +163,4 @@ instance/
 .webassets-cache
 # Excel exports
 *.xls
+backend/config/google-calendar-credentials.json

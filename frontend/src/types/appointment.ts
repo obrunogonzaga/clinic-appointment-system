@@ -61,6 +61,8 @@ export interface Appointment {
   normalization_status?: 'pending' | 'processing' | 'completed' | 'failed' | 'skipped';
   normalization_job_id?: string;
   normalization_error?: string;
+  // Google Calendar integration
+  google_calendar_event_id?: string;
 }
 
 export interface AppointmentViewModel extends Appointment {

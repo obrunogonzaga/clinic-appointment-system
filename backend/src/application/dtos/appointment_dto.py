@@ -151,6 +151,10 @@ class AppointmentResponseDTO(BaseModel):
     normalization_error: Optional[str] = Field(
         None, description="Erro da normalização (se houver)"
     )
+    # Google Calendar integration
+    google_calendar_event_id: Optional[str] = Field(
+        None, description="ID do evento no Google Calendar"
+    )
     created_at: datetime
     updated_at: Optional[datetime]
 

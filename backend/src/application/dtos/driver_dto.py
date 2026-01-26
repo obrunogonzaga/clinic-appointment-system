@@ -25,6 +25,9 @@ class DriverCreateDTO(BaseModel):
         None, description="Informações do carro utilizado"
     )
     observacoes: Optional[str] = Field(None, description="Observações")
+    google_calendar_id: Optional[str] = Field(
+        None, description="ID do Google Calendar do motorista"
+    )
 
     @field_validator("data_nascimento", mode="before")
     @classmethod
@@ -72,6 +75,7 @@ class DriverResponseDTO(BaseModel):
     status: str
     carro: Optional[str]
     observacoes: Optional[str]
+    google_calendar_id: Optional[str]
     created_at: datetime
     updated_at: Optional[datetime]
 
@@ -88,6 +92,7 @@ class DriverUpdateDTO(BaseModel):
     status: Optional[str] = None
     carro: Optional[str] = None
     observacoes: Optional[str] = None
+    google_calendar_id: Optional[str] = None
 
     @field_validator("data_nascimento", mode="before")
     @classmethod

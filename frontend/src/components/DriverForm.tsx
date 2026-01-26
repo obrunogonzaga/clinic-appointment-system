@@ -20,6 +20,7 @@ const initialFormData: DriverFormData = {
   status: 'Ativo',
   carro: '',
   observacoes: '',
+  google_calendar_id: '',
 };
 
 export const DriverForm: React.FC<DriverFormProps> = ({
@@ -40,12 +41,13 @@ export const DriverForm: React.FC<DriverFormProps> = ({
         cnh: driver.cnh || '',
         telefone: driver.telefone || '',
         email: driver.email || '',
-        data_nascimento: driver.data_nascimento ? 
+        data_nascimento: driver.data_nascimento ?
           new Date(driver.data_nascimento).toISOString().split('T')[0] : '',
         endereco: driver.endereco || '',
         status: driver.status as typeof DRIVER_STATUS[keyof typeof DRIVER_STATUS] || 'Ativo',
         carro: driver.carro || '',
         observacoes: driver.observacoes || '',
+        google_calendar_id: driver.google_calendar_id || '',
       });
     } else if (isOpen && !driver) {
       setFormData(initialFormData);
@@ -371,6 +373,25 @@ export const DriverForm: React.FC<DriverFormProps> = ({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Observações adicionais"
             />
+          </div>
+
+          {/* Google Calendar ID */}
+          <div>
+            <label htmlFor="google_calendar_id" className="block text-sm font-medium text-gray-700 mb-1">
+              Google Calendar ID
+            </label>
+            <input
+              type="text"
+              id="google_calendar_id"
+              name="google_calendar_id"
+              value={formData.google_calendar_id}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Ex: abc123@group.calendar.google.com"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Opcional. Se não informado, será usado o calendário padrão do sistema.
+            </p>
           </div>
 
           {/* Footer */}
