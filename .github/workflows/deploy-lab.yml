@@ -12,7 +12,7 @@ jobs:
   deploy:
     name: Deploy to Lab Environment
     runs-on: ubuntu-latest
-    environment: lab
+    environment: dev
 
     steps:
       - name: Checkout code
