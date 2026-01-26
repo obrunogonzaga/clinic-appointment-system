@@ -20,6 +20,9 @@ from src.domain.entities.tag import TagReference
 from src.domain.repositories.appointment_repository_interface import (
     AppointmentRepositoryInterface,
 )
+from src.domain.repositories.driver_repository_interface import (
+    DriverRepositoryInterface,
+)
 from src.domain.repositories.logistics_package_repository_interface import (
     LogisticsPackageRepositoryInterface,
 )
@@ -27,6 +30,9 @@ from src.domain.repositories.tag_repository_interface import (
     TagRepositoryInterface,
 )
 from src.domain.utils import is_valid_cpf, normalize_cpf
+from src.infrastructure.services.google_calendar_service import (
+    GoogleCalendarService,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +56,8 @@ class AppointmentService:
         max_tags_per_appointment: int = 5,
         client_service: Optional[ClientService] = None,
         task_service: Optional[TaskService] = None,
+        google_calendar_service: Optional[GoogleCalendarService] = None,
+        driver_repository: Optional[DriverRepositoryInterface] = None,
     ):
         """
         Initialize the service with dependencies.
@@ -58,6 +66,8 @@ class AppointmentService:
             appointment_repository: Repository for appointment persistence
             excel_parser: Service for parsing Excel files
             task_service: Service for enqueueing background tasks
+            google_calendar_service: Service for Google Calendar integration
+            driver_repository: Repository for driver data (needed for calendar sync)
         """
         self.appointment_repository = appointment_repository
         self.excel_parser = excel_parser
@@ -66,6 +76,8 @@ class AppointmentService:
         self.max_tags_per_appointment = max(max_tags_per_appointment, 0)
         self.client_service = client_service
         self.task_service = task_service
+        self.google_calendar_service = google_calendar_service
+        self.driver_repository = driver_repository
 
     async def _sync_client_from_appointment(
         self, appointment: Appointment
@@ -155,6 +167,151 @@ class AppointmentService:
                 appointment.id,
                 exc,
             )
+
+    async def _sync_calendar_event(
+        self,
+        appointment: Appointment,
+        action: str = "create",
+        old_driver_id: Optional[str] = None,
+    ) -> Optional[str]:
+        """
+        Sync appointment with Google Calendar.
+
+        Args:
+            appointment: The appointment to sync
+            action: "create", "update", or "delete"
+            old_driver_id: Previous driver_id (for driver change scenarios)
+
+        Returns:
+            Google Calendar event ID if created/updated, None otherwise
+        """
+        if not self.google_calendar_service or not self.driver_repository:
+            return None
+
+        if not self.google_calendar_service.enabled:
+            return None
+
+        driver_calendar_id = None
+
+        if appointment.driver_id:
+            driver = await self.driver_repository.find_by_id(
+                appointment.driver_id
+            )
+            if driver:
+                driver_calendar_id = getattr(
+                    driver, "google_calendar_id", None
+                )
+
+        if action == "delete":
+            if appointment.google_calendar_event_id:
+                old_calendar_id = None
+                if old_driver_id:
+                    old_driver = await self.driver_repository.find_by_id(
+                        old_driver_id
+                    )
+                    if old_driver:
+                        old_calendar_id = getattr(
+                            old_driver, "google_calendar_id", None
+                        )
+                await self.google_calendar_service.delete_event(
+                    appointment.google_calendar_event_id,
+                    old_calendar_id or driver_calendar_id,
+                )
+            return None
+
+        if (
+            not appointment.data_agendamento
+            or not appointment.hora_agendamento
+        ):
+            return None
+
+        address = None
+        if appointment.endereco_normalizado:
+            parts = []
+            norm = appointment.endereco_normalizado
+            if norm.get("rua"):
+                parts.append(norm["rua"])
+            if norm.get("numero"):
+                parts.append(norm["numero"])
+            if norm.get("bairro"):
+                parts.append(norm["bairro"])
+            if norm.get("cidade"):
+                parts.append(norm["cidade"])
+            if norm.get("estado"):
+                parts.append(norm["estado"])
+            address = ", ".join(parts)
+        elif appointment.endereco_coleta:
+            address = appointment.endereco_coleta
+
+        if action == "create":
+            event_id = await self.google_calendar_service.create_event(
+                driver_calendar_id=driver_calendar_id,
+                appointment_id=str(appointment.id),
+                patient_name=appointment.nome_paciente,
+                appointment_date=appointment.data_agendamento,
+                appointment_time=appointment.hora_agendamento,
+                address=address,
+                phone=appointment.telefone,
+                notes=appointment.observacoes,
+            )
+            return event_id
+
+        if action == "update":
+            if old_driver_id and old_driver_id != appointment.driver_id:
+                old_driver = await self.driver_repository.find_by_id(
+                    old_driver_id
+                )
+                old_calendar_id = None
+                if old_driver:
+                    old_calendar_id = getattr(
+                        old_driver, "google_calendar_id", None
+                    )
+
+                if appointment.google_calendar_event_id and old_calendar_id:
+                    new_event_id = (
+                        await self.google_calendar_service.move_event(
+                            appointment.google_calendar_event_id,
+                            old_calendar_id,
+                            driver_calendar_id,
+                        )
+                    )
+                    if new_event_id:
+                        await self.google_calendar_service.update_event(
+                            event_id=new_event_id,
+                            driver_calendar_id=driver_calendar_id,
+                            patient_name=appointment.nome_paciente,
+                            appointment_date=appointment.data_agendamento,
+                            appointment_time=appointment.hora_agendamento,
+                            address=address,
+                            phone=appointment.telefone,
+                            notes=appointment.observacoes,
+                            appointment_id=str(appointment.id),
+                        )
+                        return new_event_id
+                else:
+                    return await self._sync_calendar_event(
+                        appointment, action="create"
+                    )
+
+            if appointment.google_calendar_event_id:
+                await self.google_calendar_service.update_event(
+                    event_id=appointment.google_calendar_event_id,
+                    driver_calendar_id=driver_calendar_id,
+                    patient_name=appointment.nome_paciente,
+                    appointment_date=appointment.data_agendamento,
+                    appointment_time=appointment.hora_agendamento,
+                    address=address,
+                    phone=appointment.telefone,
+                    notes=appointment.observacoes,
+                    appointment_id=str(appointment.id),
+                )
+                return appointment.google_calendar_event_id
+            else:
+                return await self._sync_calendar_event(
+                    appointment, action="create"
+                )
+
+        return None
 
     async def _load_logistics_package(self, package_id: str) -> Dict[str, Any]:
         if not package_id:
@@ -679,6 +836,27 @@ class AppointmentService:
             # Enqueue normalization job if task service is available
             await self._enqueue_normalization(created)
 
+            # Sync with Google Calendar if driver is assigned
+            if created.driver_id:
+                try:
+                    event_id = await self._sync_calendar_event(
+                        created, action="create"
+                    )
+                    if event_id:
+                        await self.appointment_repository.update(
+                            str(created.id),
+                            {"google_calendar_event_id": event_id},
+                        )
+                        created_dict = created.model_dump()
+                        created_dict["google_calendar_event_id"] = event_id
+                        created = Appointment(**created_dict)
+                except Exception as cal_exc:
+                    logger.warning(
+                        "Failed to sync calendar for appointment %s: %s",
+                        created.id,
+                        cal_exc,
+                    )
+
             return {
                 "success": True,
                 "message": "Agendamento criado com sucesso",
@@ -845,6 +1023,21 @@ class AppointmentService:
                     "success": False,
                     "message": "Agendamento não encontrado",
                 }
+
+            # Delete calendar event first
+            if appointment.google_calendar_event_id:
+                try:
+                    await self._sync_calendar_event(
+                        appointment,
+                        action="delete",
+                        old_driver_id=appointment.driver_id,
+                    )
+                except Exception as cal_exc:
+                    logger.warning(
+                        "Failed to delete calendar event for appointment %s: %s",
+                        appointment_id,
+                        cal_exc,
+                    )
 
             # Delete appointment
             deleted = await self.appointment_repository.delete(appointment_id)
@@ -1094,6 +1287,9 @@ class AppointmentService:
                     "appointment": AppointmentResponseDTO(**normalized),
                 }
 
+            # Capture old driver_id before update for calendar sync
+            old_driver_id = appointment.driver_id
+
             updated = await self.appointment_repository.update(
                 appointment_id, changes
             )
@@ -1106,6 +1302,36 @@ class AppointmentService:
                 }
 
             await self._sync_client_from_appointment(updated)
+
+            # Sync with Google Calendar if relevant fields changed
+            calendar_relevant_fields = {
+                "driver_id",
+                "data_agendamento",
+                "hora_agendamento",
+                "nome_paciente",
+                "telefone",
+                "observacoes",
+                "endereco_normalizado",
+            }
+            if changes.keys() & calendar_relevant_fields or updated.driver_id:
+                try:
+                    event_id = await self._sync_calendar_event(
+                        updated, action="update", old_driver_id=old_driver_id
+                    )
+                    if (
+                        event_id
+                        and event_id != updated.google_calendar_event_id
+                    ):
+                        await self.appointment_repository.update(
+                            str(updated.id),
+                            {"google_calendar_event_id": event_id},
+                        )
+                except Exception as cal_exc:
+                    logger.warning(
+                        "Failed to sync calendar for appointment %s: %s",
+                        updated.id,
+                        cal_exc,
+                    )
 
             return {
                 "success": True,
@@ -1206,12 +1432,54 @@ class AppointmentService:
                     "message": "Agendamento não encontrado",
                 }
 
+            # Capture old driver_id for calendar sync
+            old_driver_id = appointment.driver_id
+
             # Update appointment
             updated = await self.appointment_repository.update(
                 appointment_id, {"driver_id": driver_id}
             )
 
             if updated:
+                # Sync with Google Calendar
+                if driver_id or old_driver_id:
+                    try:
+                        if driver_id:
+                            event_id = await self._sync_calendar_event(
+                                updated,
+                                action="update",
+                                old_driver_id=old_driver_id,
+                            )
+                            if (
+                                event_id
+                                and event_id
+                                != updated.google_calendar_event_id
+                            ):
+                                await self.appointment_repository.update(
+                                    str(updated.id),
+                                    {"google_calendar_event_id": event_id},
+                                )
+                        elif (
+                            old_driver_id
+                            and appointment.google_calendar_event_id
+                        ):
+                            # Driver removed, delete calendar event
+                            await self._sync_calendar_event(
+                                appointment,
+                                action="delete",
+                                old_driver_id=old_driver_id,
+                            )
+                            await self.appointment_repository.update(
+                                str(updated.id),
+                                {"google_calendar_event_id": None},
+                            )
+                    except Exception as cal_exc:
+                        logger.warning(
+                            "Failed to sync calendar for appointment %s: %s",
+                            appointment_id,
+                            cal_exc,
+                        )
+
                 return {
                     "success": True,
                     "message": "Motorista atualizado com sucesso",

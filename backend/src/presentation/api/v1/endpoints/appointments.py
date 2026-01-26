@@ -47,12 +47,15 @@ from src.infrastructure.config import Settings, get_settings
 from src.infrastructure.container import (
     get_appointment_repository,
     get_car_repository,
+    get_driver_repository,
+    get_google_calendar_service,
     get_logistics_package_repository,
     get_tag_repository,
 )
 from src.infrastructure.repositories.appointment_repository import (
     AppointmentRepository,
 )
+from src.infrastructure.repositories.driver_repository import DriverRepository
 from src.infrastructure.repositories.tag_repository import TagRepository
 from src.presentation.api.responses import (
     BaseResponse,
@@ -77,10 +80,12 @@ async def get_appointment_service(
         get_appointment_repository
     ),
     car_repository=Depends(get_car_repository),
+    driver_repository=Depends(get_driver_repository),
     logistics_package_repository=Depends(get_logistics_package_repository),
     tag_repository: TagRepository = Depends(get_tag_repository),
     settings: Settings = Depends(get_settings),
     client_service: ClientService = Depends(get_client_service),
+    google_calendar_service=Depends(get_google_calendar_service),
 ) -> AppointmentService:
     """Get appointment service instance."""
     # Create car service
@@ -121,6 +126,8 @@ async def get_appointment_service(
         max_tags_per_appointment=settings.max_tags_per_appointment,
         client_service=client_service,
         task_service=task_service,
+        google_calendar_service=google_calendar_service,
+        driver_repository=driver_repository,
     )
 
 

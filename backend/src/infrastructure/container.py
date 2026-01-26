@@ -26,6 +26,9 @@ from src.infrastructure.repositories.patient_document_repository import (
 )
 from src.infrastructure.repositories.tag_repository import TagRepository
 from src.infrastructure.repositories.user_repository import UserRepository
+from src.infrastructure.services.google_calendar_service import (
+    GoogleCalendarService,
+)
 from src.infrastructure.services.r2_storage_service import R2StorageService
 from src.infrastructure.services.rate_limiter import RateLimiter
 from src.infrastructure.services.redis_service import RedisService
@@ -64,6 +67,7 @@ class Container:
         ] = None
         self._r2_storage_service: Optional[R2StorageService] = None
         self._task_service: Optional[TaskService] = None
+        self._google_calendar_service: Optional[GoogleCalendarService] = None
 
     @property
     def settings(self) -> Settings:
@@ -248,6 +252,16 @@ class Container:
             self._r2_storage_service = R2StorageService(self.settings)
         return self._r2_storage_service
 
+    @property
+    def google_calendar_service(self) -> GoogleCalendarService:
+        """Get Google Calendar service instance."""
+
+        if self._google_calendar_service is None:
+            self._google_calendar_service = GoogleCalendarService(
+                self.settings
+            )
+        return self._google_calendar_service
+
     def task_service(self) -> TaskService:
         """
         Get task service instance for background jobs.
@@ -410,3 +424,9 @@ async def get_r2_storage_service() -> R2StorageService:
     """Dependency for getting R2 storage service instance."""
 
     return container.r2_storage_service
+
+
+async def get_google_calendar_service() -> GoogleCalendarService:
+    """Dependency for getting Google Calendar service instance."""
+
+    return container.google_calendar_service

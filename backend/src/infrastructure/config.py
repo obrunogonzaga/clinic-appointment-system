@@ -320,6 +320,23 @@ class Settings(BaseSettings):
         description="Tamanho do lote para normalização de endereços",
     )
 
+    # Google Calendar Integration
+    google_calendar_enabled: bool = Field(
+        default=False,
+        description="Habilitar integração com Google Calendar",
+        validation_alias="GOOGLE_CALENDAR_ENABLED",
+    )
+    google_calendar_credentials_path: Optional[str] = Field(
+        default="./config/google-calendar-credentials.json",
+        description="Caminho para o arquivo de credenciais do Google Calendar",
+        validation_alias="GOOGLE_CALENDAR_CREDENTIALS_PATH",
+    )
+    google_calendar_default_id: Optional[str] = Field(
+        default=None,
+        description="Calendar ID padrão (usado se motorista não tiver calendar_id)",
+        validation_alias="GOOGLE_CALENDAR_ID",
+    )
+
     @field_validator("allowed_origins", mode="before")
     @classmethod
     def validate_allowed_origins(cls, v) -> List[str]:
@@ -452,6 +469,7 @@ class Settings(BaseSettings):
             "smtp_username",
             "openrouter_api_key",
             "admin_email_whitelist",
+            "google_calendar_credentials_path",
         ]
         for field in sensitive_fields:
             if field in data:

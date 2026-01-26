@@ -156,6 +156,11 @@ class Appointment(Entity):
         None, description="Erro da normalização (se houver)"
     )
 
+    # Google Calendar integration
+    google_calendar_event_id: Optional[str] = Field(
+        None, description="ID do evento no Google Calendar do motorista"
+    )
+
     # Metadata fields (handled by Entity base class)
     # created_at: datetime
     # updated_at: datetime

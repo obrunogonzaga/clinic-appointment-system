@@ -39,6 +39,10 @@ class Driver(Entity):
     observacoes: Optional[str] = Field(
         None, description="Observações adicionais"
     )
+    google_calendar_id: Optional[str] = Field(
+        None,
+        description="ID do Google Calendar do motorista para sincronização",
+    )
 
     # Metadata fields (handled by Entity base class)
     # created_at: datetime
@@ -182,6 +186,7 @@ class Driver(Entity):
                 "status": "Ativo",
                 "carro": "Honda Civic Prata",
                 "observacoes": "Motorista experiente, conhece bem a região",
+                "google_calendar_id": "abc123@group.calendar.google.com",
                 "created_at": "2025-01-14T10:00:00",
                 "updated_at": "2025-01-14T10:00:00",
             }

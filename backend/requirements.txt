@@ -39,6 +39,10 @@ httpx==0.26.0
 # AI/ML Services
 openai>=1.0.0
 
+# Google Calendar Integration
+google-api-python-client>=2.100.0
+google-auth>=2.25.0
+
 # Rate Limiting & Caching
 slowapi==0.1.9
 redis==5.0.1
