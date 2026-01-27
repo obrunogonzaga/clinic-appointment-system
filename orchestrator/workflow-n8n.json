@@ -1,0 +1,215 @@
+{
+  "name": "Extract Investment Positions",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "fileSelector": {
+          "path": "/data/input_pdfs/*.pdf"
+        }
+      },
+      "id": "2",
+      "name": "Read Binary Files",
+      "type": "n8n-nodes-base.readBinaryFiles",
+      "typeVersion": 1,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$env.EXTRACTOR_URL || 'http://pdf-extractor:8000'}}/extract",
+        "jsonParameters": true,
+        "options": {
+          "ignoreResponseCode": true
+        },
+        "bodyParametersJson": "={\"filename\": $binary.data.fileName, \"file_b64\": $binary.data.data, \"bank_hint\": \"auto\", \"return_format\": \"json\", \"enrichment\": {\"try_cnpj_match\": false}}"
+      },
+      "id": "3",
+      "name": "Call Extractor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const defaults = {\n  'ITÁU': { Nome: 'Titular Itaú', 'Código XP': 0, 'Código BTG': 0 },\n  'XP': { Nome: 'Titular XP', 'Código XP': 12345, 'Código BTG': 0 },\n  'BRADESCO': { Nome: 'Titular Bradesco', 'Código XP': 0, 'Código BTG': 0 },\n  'BTG': { Nome: 'Titular BTG', 'Código XP': 0, 'Código BTG': 67890 },\n};\n\nconst results = [];\nfor (const item of items) {\n  const response = item.json || {};\n  const filename = item.binary?.data?.fileName || response.filename || 'arquivo';\n  if (response.error || response.statusCode >= 400) {\n    const payload = response.error || response;\n    const data = Buffer.from(JSON.stringify(payload, null, 2));\n    results.push({\n      json: { error: payload, fileName: filename },\n      binary: {\n        data: {\n          data: data.toString('base64'),\n          mimeType: 'application/json',\n          fileName: `${filename}.json`\n        }\n      }\n    });\n    continue;\n  }\n  const bank = response.bank || 'UNKNOWN';\n  const base = defaults[bank] || { Nome: '', 'Código XP': 0, 'Código BTG': 0 };\n  const rows = response.items || [];\n  for (const row of rows) {\n    const enriched = { ...base, ...row };\n    enriched['Nome'] = row['Nome'] || base.Nome || '';\n    enriched['Código XP'] = row['Código XP'] || base['Código XP'] || 0;\n    enriched['Código BTG'] = row['Código BTG'] || base['Código BTG'] || 0;\n    results.push({ json: enriched });\n  }\n}\nreturn results;"
+      },
+      "id": "4",
+      "name": "Normalize Items",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            {
+              "value1": "={{$json.error}}",
+              "operation": "isEmpty",
+              "value2": ""
+            }
+          ]
+        }
+      },
+      "id": "5",
+      "name": "IF Error",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1080, 180]
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "options": {
+          "fileName": "posicoes.csv",
+          "path": "/data/output",
+          "format": "csv",
+          "sheetName": "Sheet1"
+        }
+      },
+      "id": "6",
+      "name": "Write CSV",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 3,
+      "position": [1080, 360]
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "options": {
+          "fileName": "posicoes.xlsx",
+          "path": "/data/output",
+          "format": "xlsx",
+          "sheetName": "Sheet1"
+        }
+      },
+      "id": "7",
+      "name": "Write XLSX",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 3,
+      "position": [1300, 460]
+    },
+    {
+      "parameters": {
+        "triggerOn": "workflow",
+        "workflowId": ""
+      },
+      "id": "8",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [1300, 40]
+    },
+    {
+      "parameters": {
+        "options": {
+          "fileName": "={{$json.fileName || ($json.filename || 'unknown.pdf')}}.json",
+          "path": "/data/output/errors"
+        },
+        "fileName": "={{$json.fileName || ($json.filename || 'unknown.pdf')}}.json"
+      },
+      "id": "9",
+      "name": "Write Error JSON",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [1300, 180]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Binary Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Binary Files": {
+      "main": [
+        [
+          {
+            "node": "Call Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Extractor": {
+      "main": [
+        [
+          {
+            "node": "Normalize Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Items": {
+      "main": [
+        [
+          {
+            "node": "IF Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Error": {
+      "main": [
+        [
+          {
+            "node": "Write CSV",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Write Error JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write CSV": {
+      "main": [
+        [
+          {
+            "node": "Write XLSX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Write Error JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "id": "1"
+}
